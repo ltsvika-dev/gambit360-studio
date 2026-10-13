@@ -405,6 +405,19 @@
     body.mPicking #dock #tools > button:not(#mbtn):not(#abtn):not(#mDone):not(#mUndo):not(#mClear):not(#shotBtn) { display:none; }   /* measuring on a phone: only the measuring tools and the snapshot stay (the video and the rest step aside), so they fit on one row even when ✓ shows */
     #floorMenu { inset-inline-start:auto; inset-inline-end:0; max-width:calc(100vw - 24px); }
     #copyright { right:50%; transform:translateX(50%); bottom:max(5px, env(safe-area-inset-bottom)); white-space:nowrap; }
+    /* phones: the start window starts below the top row (logo, options) and scrolls when it is taller than the screen; buttons and texts fit its width */
+    #start.panel { align-items:flex-start; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; padding:calc(max(10px, env(safe-area-inset-top)) + 60px) 10px calc(max(5px, env(safe-area-inset-bottom)) + 26px); }
+    #start.panel > div { padding:18px 16px; margin:auto 0; }
+    #start .welcome { font-size:1rem; }
+    #start h1 { font-size:1.45rem; margin:4px 0 10px; }
+    #start p { font-size:.88rem; line-height:1.5; margin:0 0 12px; }
+    #start .loadRow { flex-wrap:wrap; gap:8px; margin:4px 0 12px; }
+    #start .loadBtn { flex:1 1 130px; min-width:0; white-space:normal; padding:12px 8px; font-size:.88rem; }
+    #start .q { flex-wrap:wrap; gap:6px 10px; font-size:.88rem; }
+    #start .q > span { white-space:nowrap; }
+    #start .q select { flex:1 1 150px; min-width:0; max-width:100%; }
+    #start .resume { padding:11px 12px; }
+    #start #msg:empty { margin-top:6px; min-height:0; }
   }
   #g360Ask { position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; padding:16px; animation:g360AskIn .15s ease both; }
   #g360Ask[hidden] { display:none; }

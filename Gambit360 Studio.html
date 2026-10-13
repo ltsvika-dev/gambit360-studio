@@ -402,7 +402,7 @@
     #dock #floorBtn .fl { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; max-width:34vw; }
     #dock button .ic { width:17px; height:17px; }
     #dock #tools button { padding:9px 12px; }
-    body.mPicking #dock #tools > button:not(#mbtn):not(#abtn):not(#mDone):not(#mUndo):not(#mClear) { display:none; }   /* measuring on a phone: only the measuring tools stay, so they fit on one row even when ✓ shows */
+    body.mPicking #dock #tools > button:not(#mbtn):not(#abtn):not(#mDone):not(#mUndo):not(#mClear):not(#shotBtn) { display:none; }   /* measuring on a phone: only the measuring tools and the snapshot stay (the video and the rest step aside), so they fit on one row even when ✓ shows */
     #floorMenu { inset-inline-start:auto; inset-inline-end:0; max-width:calc(100vw - 24px); }
     #copyright { right:50%; transform:translateX(50%); bottom:max(5px, env(safe-area-inset-bottom)); white-space:nowrap; }
   }

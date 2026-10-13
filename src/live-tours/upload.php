@@ -5,7 +5,7 @@
 // It also keeps the Studio's synced data (a private _bk_ folder), lets another computer connect with a password,
 // serves the Studio online at /app/ after that password, replaces itself when the Studio has a newer copy, and emails the clients' view reports.
 $KEY_SHA256 = '@@KEYHASH@@';
-$VER = 4;   // grows with every change to this file: the Studio replaces an older copy on the server by itself
+$VER = 5;   // grows with every change to this file: the Studio replaces an older copy on the server by itself
 $LOGO = '@@LOGO@@';   // the Gambit360 logo for the sign-in page, filled in by the Studio
 $MAX_BYTES = 500 * 1024 * 1024;
 
@@ -228,6 +228,14 @@ function out($code, $arr) { http_response_code($code); echo json_encode($arr); e
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') out(405, array('ok' => false, 'error' => 'method'));
 $action = isset($_POST['action']) ? (string)$_POST['action'] : '';
 
+if ($action === 'sdkfail' || $action === 'sdkok') {   // a tour page tells whether the Matterport SDK key connected on this site; the Studio shows it (ping) and warns before SDK options
+  $f = $root . '/_stats/sdk.json'; $j = @json_decode((string)@file_get_contents($f), true); if (!is_array($j)) $j = array();
+  $k = $action === 'sdkfail' ? 'fail' : 'ok';
+  if (isset($j[$k]['at']) && time() - (int)$j[$k]['at'] < 60) out(200, array('ok' => true));   // one note a minute is enough
+  $j[$k] = array('at' => time(), 'key' => substr(preg_replace('#[^A-Za-z0-9]#', '', isset($_POST['k']) ? (string)$_POST['k'] : ''), 0, 4), 'err' => substr(preg_replace('#[^\x20-\x7E]#', '', isset($_POST['err']) ? (string)$_POST['err'] : ''), 0, 200), 'host' => substr(preg_replace('#[^A-Za-z0-9.:-]#', '', isset($_SERVER['HTTP_HOST']) ? (string)$_SERVER['HTTP_HOST'] : ''), 0, 100));
+  denyDir($root . '/_stats'); @file_put_contents($f, json_encode($j));
+  out(200, array('ok' => true));
+}
 if ($action === 'login' || $action === 'logout') {   // another computer: the cloud password gives back the upload key (encrypted with that same password)
   if ($action === 'logout') { header('Set-Cookie: g360app=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=Lax'); out(200, array('ok' => true)); }
   if (!$keyOk || !is_file($bd . '/auth.json')) { sleep(1); out(200, array('ok' => false, 'error' => 'nopass')); }
@@ -249,7 +257,7 @@ register_shutdown_function(function () use ($root, $bd, $KEY_SHA256) {   // emai
 });
 
 $meta = function ($f) { $j = @json_decode(@file_get_contents($f), true); return is_array($j) ? $j : null; };
-if ($action === 'ping') out(200, array('ok' => true, 'php' => PHP_VERSION, 'writable' => is_writable($root), 'ver' => $VER, 'self' => basename(__FILE__), 'pass' => is_file($bd . '/auth.json'), 'app' => $meta($bd . '/app.json')));
+if ($action === 'ping') out(200, array('ok' => true, 'php' => PHP_VERSION, 'writable' => is_writable($root), 'ver' => $VER, 'self' => basename(__FILE__), 'pass' => is_file($bd . '/auth.json'), 'app' => $meta($bd . '/app.json'), 'sdk' => $meta($root . '/_stats/sdk.json')));
 if ($action === 'setpass') {   // the cloud password: kept only as a hash, with the upload key encrypted by that password on the computer
   $pw = isset($_POST['pass']) ? (string)$_POST['pass'] : ''; $w = isset($_POST['wrap']) ? (string)$_POST['wrap'] : '';
   if (strlen($pw) < 8 || json_decode($w) === null) out(400, array('ok' => false, 'error' => 'pass'));

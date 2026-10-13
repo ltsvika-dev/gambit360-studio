@@ -5862,7 +5862,10 @@ renderer.domElement.addEventListener('mousedown', e => {
 
   const calibMode = q.get('calib') === '1';
   const mini = ti === 0 && cfg.mini && cfg.mini.floors && cfg.mini.floors.some(f => f && f.file) ? cfg.mini : null;
-  const wantSdk = !!cfg.sdkKey && (calibMode || !!cfg.nadir || !!(cfg.photos && cfg.info) || (mini && mini.floors.some(f => f && f.calib && f.calib.length >= 3)));
+  // the SDK key did not connect on this site a short while ago (in this browser): the tour opens without it, with no extras that need it
+  const sdkBadK = 'g360sdkBad:' + (cfg.sdkKey || ''), sdkOkK = 'g360sdkOk:' + (cfg.sdkKey || '');
+  let sdkBad = false; try { sdkBad = Date.now() - (+localStorage.getItem(sdkBadK) || 0) < 600e3; } catch (e) {}
+  let wantSdk = !!cfg.sdkKey && !sdkBad && (calibMode || !!cfg.nadir || !!(cfg.photos && cfg.info) || (mini && mini.floors.some(f => f && f.calib && f.calib.length >= 3)));
 
   // ---- the Matterport tour ----
   const p = new URLSearchParams();
@@ -6133,16 +6136,24 @@ renderer.domElement.addEventListener('mousedown', e => {
   }
 
   // ---- Showcase SDK ----
+  // a key that Matterport refuses (wrong key, or this site's address not allowed for it) stops the tour from loading at all,
+  // so when the SDK does not connect the tour opens again without the key: the tour always works, only the SDK extras are left out
+  const sdkNote = (a, e) => { try { const fd = new FormData(); fd.append('action', a); fd.append('k', String(cfg.sdkKey).slice(-4)); fd.append('err', String(e && e.message || e || '').slice(0, 200)); navigator.sendBeacon(root + 'upload.php', fd); } catch (x) {} };
   let sdk;
   try {
-    await new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://static.matterport.com/showcase-sdk/latest.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+    await new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://static.matterport.com/showcase-sdk/latest.js'; s.onload = res; s.onerror = () => rej(new Error('showcase-sdk script did not load')); document.head.appendChild(s); });
     if (tapWait) await tapWait;   /* connect to the tour that actually plays */
-    sdk = await window.MP_SDK.connect(iframe, cfg.sdkKey, '');
+    sdk = await Promise.race([window.MP_SDK.connect(iframe, cfg.sdkKey, ''), new Promise((res, rej) => setTimeout(() => rej(new Error('timeout')), 60e3))]);   // no answer at all for a minute counts as a refusal
   } catch (e) {
-    console.warn('Gambit360: SDK connect failed', e); reelState = 'fail'; reelDone();
+    console.warn('Gambit360: SDK connect failed, the tour opens without the SDK', e);
+    wantSdk = false; reelState = 'fail'; reelDone();
+    try { localStorage.setItem(sdkBadK, String(Date.now())); } catch (x) {}
+    p.delete('applicationKey'); iframe.src = 'https://my.matterport.com/show/?' + p.toString();
+    sdkNote('sdkfail', e);
     if (mini) setupMini(null);
     return;
   }
+  try { if (localStorage.getItem(sdkBadK) || Date.now() - (+localStorage.getItem(sdkOkK) || 0) > 12 * 3600e3) { localStorage.removeItem(sdkBadK); localStorage.setItem(sdkOkK, String(Date.now())); sdkNote('sdkok', ''); } } catch (x) {}   // the Studio learns that the key works (again)
 
   try {
     sdk.Sweep.data.subscribe({
@@ -6298,7 +6309,7 @@ renderer.domElement.addEventListener('mousedown', e => {
 // It also keeps the Studio's synced data (a private _bk_ folder), lets another computer connect with a password,
 // serves the Studio online at /app/ after that password, replaces itself when the Studio has a newer copy, and emails the clients' view reports.
 $KEY_SHA256 = '@@KEYHASH@@';
-$VER = 4;   // grows with every change to this file: the Studio replaces an older copy on the server by itself
+$VER = 5;   // grows with every change to this file: the Studio replaces an older copy on the server by itself
 $LOGO = '@@LOGO@@';   // the Gambit360 logo for the sign-in page, filled in by the Studio
 $MAX_BYTES = 500 * 1024 * 1024;
 
@@ -6521,6 +6532,14 @@ function out($code, $arr) { http_response_code($code); echo json_encode($arr); e
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') out(405, array('ok' => false, 'error' => 'method'));
 $action = isset($_POST['action']) ? (string)$_POST['action'] : '';
 
+if ($action === 'sdkfail' || $action === 'sdkok') {   // a tour page tells whether the Matterport SDK key connected on this site; the Studio shows it (ping) and warns before SDK options
+  $f = $root . '/_stats/sdk.json'; $j = @json_decode((string)@file_get_contents($f), true); if (!is_array($j)) $j = array();
+  $k = $action === 'sdkfail' ? 'fail' : 'ok';
+  if (isset($j[$k]['at']) && time() - (int)$j[$k]['at'] < 60) out(200, array('ok' => true));   // one note a minute is enough
+  $j[$k] = array('at' => time(), 'key' => substr(preg_replace('#[^A-Za-z0-9]#', '', isset($_POST['k']) ? (string)$_POST['k'] : ''), 0, 4), 'err' => substr(preg_replace('#[^\x20-\x7E]#', '', isset($_POST['err']) ? (string)$_POST['err'] : ''), 0, 200), 'host' => substr(preg_replace('#[^A-Za-z0-9.:-]#', '', isset($_SERVER['HTTP_HOST']) ? (string)$_SERVER['HTTP_HOST'] : ''), 0, 100));
+  denyDir($root . '/_stats'); @file_put_contents($f, json_encode($j));
+  out(200, array('ok' => true));
+}
 if ($action === 'login' || $action === 'logout') {   // another computer: the cloud password gives back the upload key (encrypted with that same password)
   if ($action === 'logout') { header('Set-Cookie: g360app=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=Lax'); out(200, array('ok' => true)); }
   if (!$keyOk || !is_file($bd . '/auth.json')) { sleep(1); out(200, array('ok' => false, 'error' => 'nopass')); }
@@ -6542,7 +6561,7 @@ register_shutdown_function(function () use ($root, $bd, $KEY_SHA256) {   // emai
 });
 
 $meta = function ($f) { $j = @json_decode(@file_get_contents($f), true); return is_array($j) ? $j : null; };
-if ($action === 'ping') out(200, array('ok' => true, 'php' => PHP_VERSION, 'writable' => is_writable($root), 'ver' => $VER, 'self' => basename(__FILE__), 'pass' => is_file($bd . '/auth.json'), 'app' => $meta($bd . '/app.json')));
+if ($action === 'ping') out(200, array('ok' => true, 'php' => PHP_VERSION, 'writable' => is_writable($root), 'ver' => $VER, 'self' => basename(__FILE__), 'pass' => is_file($bd . '/auth.json'), 'app' => $meta($bd . '/app.json'), 'sdk' => $meta($root . '/_stats/sdk.json')));
 if ($action === 'setpass') {   // the cloud password: kept only as a hash, with the upload key encrypted by that password on the computer
   $pw = isset($_POST['pass']) ? (string)$_POST['pass'] : ''; $w = isset($_POST['wrap']) ? (string)$_POST['wrap'] : '';
   if (strlen($pw) < 8 || json_decode($w) === null) out(400, array('ok' => false, 'error' => 'pass'));
@@ -7143,7 +7162,7 @@ function g360_count($slug) {
     const r = document.createElement('input'); r.type = 'range'; r.min = min; r.max = max; r.step = step; r.value = val; parent.appendChild(r);
     r.oninput = () => { l.textContent = label(+r.value); onIn(+r.value); };
   }
-  function bindToggle(s, obj, t, cb) { const c = s.querySelector('h4 input[data-k=on]'); c.checked = !!obj.on; s.classList.toggle('off', !obj.on); c.onchange = () => { obj.on = c.checked; s.classList.toggle('off', !obj.on); save(t); preview(); if (cb) cb(); }; }
+  function bindToggle(s, obj, t, cb, guard) { const c = s.querySelector('h4 input[data-k=on]'); c.checked = !!obj.on; s.classList.toggle('off', !obj.on); c.onchange = async () => { if (c.checked && guard && !(await guard())) { c.checked = false; return; } obj.on = c.checked; s.classList.toggle('off', !obj.on); save(t); preview(); if (cb) cb(); }; }
 
   // ---- copy / paste the settings of one tour into another (not the name, address, model, extra tours, videos or map floors) ----
   const CPS = ['logo', 'welcome', 'music', 'nadir', 'mini', 'info', 'contact', 'icons', 'btnPos', 'btnOff', 'vidMode', 'btnLbl', 'btnSty', 'btnOrder', 'uiLang', 'mp'];   // (the on/off of the videos and extra-tours sections stays with each tour)
@@ -7254,11 +7273,11 @@ function g360_count($slug) {
     const mn = document.createElement('div'); mn.className = 'note'; mn.textContent = L('musicNote'); s.appendChild(mn);
 
     // nadir
-    s = sec('lvSecN', L('sNadir'), true); box.appendChild(s); bindToggle(s, t.nadir, t);
+    s = sec('lvSecN', L('sNadir'), true); box.appendChild(s); bindToggle(s, t.nadir, t, null, sdkWarn);
     await fileRow(s, t.id + ':nadir', 'image/*', imgOk, () => { save(t); preview(); }, true); if (!alive()) return;
     range(s, L.bind(null, 'size'), .3, 2, .05, t.nadir.size, v => { t.nadir.size = v; save(t); });
     range(s, L.bind(null, 'opacity'), 20, 100, 5, t.nadir.opacity, v => { t.nadir.opacity = v; save(t); });
-    const nn = document.createElement('div'); nn.className = 'note' + (settings.sdk ? '' : ' warn'); nn.textContent = L('nadirNote'); s.appendChild(nn);
+    const nn = document.createElement('div'); nn.className = 'note' + (sdkNoteWarn() ? ' warn' : ''); nn.textContent = sdkNoteText(L('nadirNote')); s.appendChild(nn);
 
     // mini map
     s = sec('lvSecP', L('sMini'), true); box.appendChild(s); bindToggle(s, t.mini, t);
@@ -7282,9 +7301,9 @@ function g360_count($slug) {
     af.querySelector('button').onclick = () => { t.mini.floors.push({ label: '', calib: null }); save(t); renderEdit(); };
     const mnote = document.createElement('div'); mnote.className = 'note'; mnote.textContent = L('miniNote') + ' ' + L('miniNoCal'); s.appendChild(mnote);
     const ch = document.createElement('label'); ch.className = 'f'; ch.textContent = L('calHead'); s.appendChild(ch);
-    const cs = document.createElement('div'); cs.className = 'note' + (settings.sdk ? '' : ' warn'); cs.textContent = L('calSteps') + (settings.sdk ? '' : ' ' + L('sdkNeed')); s.appendChild(cs);
+    const cs = document.createElement('div'); cs.className = 'note' + (sdkNoteWarn() ? ' warn' : ''); cs.textContent = sdkNoteText(L('calSteps') + (settings.sdk ? '' : ' ' + L('sdkNeed'))); s.appendChild(cs);
     const co = document.createElement('div'); co.className = 'row'; co.innerHTML = '<button type="button">' + esc(L('calOpen')) + '</button>'; s.appendChild(co);
-    co.querySelector('button').dataset.calopen = '1'; co.querySelector('button').onclick = () => window.open(siteLink(t) + '&calib=1', '_blank', 'noopener');
+    co.querySelector('button').dataset.calopen = '1'; co.querySelector('button').onclick = async () => { if (sdkNoteWarn() && !(await sdkWarn())) return; window.open(siteLink(t) + '&calib=1', '_blank', 'noopener'); };
     const ta = document.createElement('textarea'); ta.placeholder = L('calPaste'); s.appendChild(ta); ta.style.marginTop = '6px';
     const ca = document.createElement('div'); ca.className = 'row'; ca.innerHTML = '<button type="button">' + esc(L('calApply')) + '</button>'; s.appendChild(ca);
     ca.querySelector('button').onclick = () => {
@@ -7310,7 +7329,7 @@ function g360_count($slug) {
     };
     // details card: hide Matterport's own card and/or build ours as a layer over the tour
     s = sec('lvSecI', L('sInfo')); box.appendChild(s);
-    const mkChk = (parent, label, get, set, rerender) => { const c = document.createElement('label'); c.className = 'tgl'; c.style.display = 'flex'; c.style.marginTop = '6px'; c.innerHTML = '<input type="checkbox"> ' + esc(label); parent.appendChild(c); const i = c.querySelector('input'); i.checked = !!get(); i.onchange = () => { set(i.checked); save(t); if (rerender) { preview(true); renderEdit(); } else preview(); }; return c; };
+    const mkChk = (parent, label, get, set, rerender, guard) => { const c = document.createElement('label'); c.className = 'tgl'; c.style.display = 'flex'; c.style.marginTop = '6px'; c.innerHTML = '<input type="checkbox"> ' + esc(label); parent.appendChild(c); const i = c.querySelector('input'); i.checked = !!get(); i.onchange = async () => { if (i.checked && guard && !(await guard())) { i.checked = false; return; } set(i.checked); save(t); if (rerender) { preview(true); renderEdit(); } else preview(); }; return c; };
     mkChk(s, L('infoHideMp'), () => !(+t.mp.title) && !(+t.mp.brand), v => { t.mp.title = v ? 0 : 1; t.mp.brand = 0; }, true);
     const iw = document.createElement('div'); iw.style.display = t.info.on ? '' : 'none';
     mkChk(s, L('infoCustom'), () => t.info.on, v => { t.info.on = v; iw.style.display = v ? '' : 'none'; }, false);
@@ -7327,10 +7346,10 @@ function g360_count($slug) {
     { const il = document.createElement('label'); il.className = 'f'; il.textContent = L('infoImgL'); iw.appendChild(il); }
     await fileRow(iw, t.id + ':infoimg', 'image/*', imgOk, () => { save(t); preview(); }, true); if (!alive()) return;
     const pw = document.createElement('div'); pw.style.display = t.photos.on ? '' : 'none';
-    mkChk(iw, L('infoPhotos'), () => t.photos.on, v => { t.photos.on = v; pw.style.display = v ? '' : 'none'; }, false);
+    mkChk(iw, L('infoPhotos'), () => t.photos.on, v => { t.photos.on = v; pw.style.display = v ? '' : 'none'; }, false, sdkWarn);
     iw.appendChild(pw);
     mkChk(pw, L('infoOnly360'), () => t.photos.only360, v => { t.photos.only360 = v; }, false);
-    { const pn = document.createElement('div'); pn.className = 'note' + (settings.sdk ? '' : ' warn'); pn.textContent = L('infoPhotosNote'); pw.appendChild(pn); }
+    { const pn = document.createElement('div'); pn.className = 'note' + (sdkNoteWarn() ? ' warn' : ''); pn.textContent = sdkNoteText(L('infoPhotosNote')); pw.appendChild(pn); }
     // contact button, inside the details card
     const cw = document.createElement('div'); cw.className = 'cbox'; iw.appendChild(cw);
     const ctg = document.createElement('label'); ctg.className = 'tgl'; ctg.innerHTML = '<input type="checkbox"> ' + esc(L('sContact')); cw.appendChild(ctg);
@@ -8195,17 +8214,54 @@ function g360_count($slug) {
     return !!k;
   }
   if (HOSTED) { let k = null; try { k = localStorage.getItem('g360cloudKey'); } catch (e) {} if (k) setTimeout(() => { if (window.G360_openLive) window.G360_openLive(); }, 300); }
+  // ---- Matterport SDK key: options that need it (nadir, Photos tab, map position) warn when they are turned on and the key is missing,
+  // or when the tour pages on the site reported that Matterport refused the key (upload.php keeps that note, ping returns it) ----
+  Object.assign(STR.he, {
+    sdkAskNone: 'אין מפתח SDK בהגדרות, ולכן האפשרות הזו לא תעבוד באתר. הסיור עצמו ייפתח כרגיל, רק בלי האפשרות.\n\nלהפעיל בכל זאת?',
+    sdkAskBad: (d, h) => 'מפתח ה-SDK שבהגדרות לא מתחבר באתר: Matterport דחה אותו (' + d + '). בדרך כלל זה אומר שהכתובת ' + h + ' לא נמצאת ברשימת הכתובות המורשות של המפתח (Matterport: Account Settings ← Developer Tools ← SDK Key Management), או שהמפתח שגוי.\n\nעד שזה יתוקן האפשרות לא תעבוד. הסיור עצמו ייפתח כרגיל, רק בלי האפשרות.\n\nלהפעיל בכל זאת?',
+    sdkBadNote: (d, h) => 'המפתח לא מתחבר באתר (' + d + '): כנראה ש-' + h + ' לא ברשימת הכתובות המורשות של המפתח. הסיורים נפתחים בלי נדיר, תמונות ומיקום על המפה.',
+    sdkOkNote: d => 'המפתח מתחבר באתר ✓ (' + d + ')'
+  });
+  Object.assign(STR.en, {
+    sdkAskNone: 'There is no SDK key in Settings, so this option will not work on the site. The tour itself opens as usual, just without it.\n\nTurn it on anyway?',
+    sdkAskBad: (d, h) => 'The SDK key in Settings does not connect on the site: Matterport refused it (' + d + '). Usually this means ' + h + ' is not in the key\'s allowed addresses (Matterport: Account Settings → Developer Tools → SDK Key Management), or the key is wrong.\n\nUntil that is fixed this option will not work. The tour itself opens as usual, just without it.\n\nTurn it on anyway?',
+    sdkBadNote: (d, h) => 'The key does not connect on the site (' + d + '): ' + h + ' is probably not in the key\'s allowed addresses. Tours open without the nadir, photos and map position.',
+    sdkOkNote: d => 'The key connects on the site ✓ (' + d + ')'
+  });
+  // 'none' = no key, 'bad' = the site reported a refusal of this key since its last good connection, 'ok' = it connected, '' = not known yet
+  function sdkState() {
+    if (!settings.sdk) return { s: 'none' };
+    const r = srvInfo && srvInfo.sdk, k4 = settings.sdk.slice(-4), mine = x => x && x.key === k4 ? x : null;
+    const f = mine(r && r.fail), o = mine(r && r.ok), when = x => new Date(x.at * 1000).toLocaleString();
+    if (f && (!o || f.at > o.at) && !(settings.sdkAt && settings.sdkAt > f.at * 1000)) return { s: 'bad', d: when(f), h: f.host || settings.base };
+    if (o) return { s: 'ok', d: when(o) };
+    return { s: '' };
+  }
+  async function sdkWarn() {   // before an option that needs the SDK is turned on: true = go ahead
+    try { await Promise.race([srvCheck(false), new Promise(r => setTimeout(r, 2500))]); } catch (e) {}
+    const st = sdkState();
+    if (st.s === 'none') return g360Ask(L('sdkAskNone'));
+    if (st.s === 'bad') return g360Ask(L('sdkAskBad', st.d, st.h));
+    return true;
+  }
+  function sdkNoteText(base) { const st = sdkState(); return st.s === 'bad' ? base + ' ' + L('sdkBadNote', st.d, st.h) : base; }
+  const sdkNoteWarn = () => { const s = sdkState().s; return s === 'none' || s === 'bad'; };
+  function sdkSetNote() {   // the line under the key in Settings
+    const st = sdkState(), n = $('lvSdkN');
+    n.textContent = L('sdkN') + (st.s === 'bad' ? '\n' + L('sdkBadNote', st.d, st.h) : st.s === 'ok' ? '\n' + L('sdkOkNote', st.d) : '');
+    n.classList.toggle('warn', st.s === 'bad'); n.style.whiteSpace = 'pre-line';
+  }
   // ---- settings ----
   async function openSet() {
     $('lvSdk').value = settings.sdk || ''; $('lvBase').value = settings.base || '';
     let d = null; try { d = await db.kget('outDir'); } catch (e) {} if (!d) d = await studioDirHandle();
     $('lvOutP').textContent = d ? d.name + '\\Export\\Live Tours' : L('outNone');
-    $('lvUpOn').checked = settings.upOn !== false; $('lvTopIco').checked = !!settings.topIco; texts(); srvTexts(); cloudTexts(); srvSt(); $('lvSrvBk').checked = settings.srvBk !== false; refreshBk(); refreshSplash();
+    $('lvUpOn').checked = settings.upOn !== false; $('lvTopIco').checked = !!settings.topIco; texts(); srvTexts(); cloudTexts(); srvSt(); $('lvSrvBk').checked = settings.srvBk !== false; refreshBk(); refreshSplash(); sdkSetNote(); srvCheck(false).then(() => { if (!$('lvSet').hidden) sdkSetNote(); }).catch(() => {});
     $('lvSet').hidden = false;
   }
   $('lvOutBtn').onclick = async () => { try { const d = await outDir(true); $('lvOutP').textContent = d.name + '\\Export\\Live Tours'; } catch (e) {} };
   function readSet() {
-    settings.sdk = $('lvSdk').value.trim(); settings.upOn = $('lvUpOn').checked; settings.srvBk = $('lvSrvBk').checked;
+    const nk = $('lvSdk').value.trim(); if (nk !== (settings.sdk || '')) settings.sdkAt = Date.now(); settings.sdk = nk; settings.upOn = $('lvUpOn').checked; settings.srvBk = $('lvSrvBk').checked;
     let b = $('lvBase').value.trim(); if (b && !/^https?:\/\//i.test(b)) b = 'https://' + b; settings.base = b ? b.replace(/\/?$/, '/') : 'https://studio.gambit360.co.il/';
   }
   $('lvKeyBtn').onclick = async () => {

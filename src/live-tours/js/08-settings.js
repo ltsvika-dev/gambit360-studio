@@ -12,7 +12,7 @@
     let b = $('lvBase').value.trim(); if (b && !/^https?:\/\//i.test(b)) b = 'https://' + b; settings.base = b ? b.replace(/\/?$/, '/') : 'https://studio.gambit360.co.il/';
   }
   $('lvKeyBtn').onclick = async () => {
-    if (settings.upKey && !confirm(L('keyConfirm'))) return;
+    if (settings.upKey && !(await g360Ask(L('keyConfirm')))) return;
     readSet(); const oldKey = settings.upKey;
     const a = new Uint8Array(24); crypto.getRandomValues(a); settings.upKey = [...a].map(x => x.toString(16).padStart(2, '0')).join('');
     try { await db.kset('settings', settings); } catch (e) {}

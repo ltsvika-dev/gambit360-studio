@@ -406,6 +406,18 @@
     #floorMenu { inset-inline-start:auto; inset-inline-end:0; max-width:calc(100vw - 24px); }
     #copyright { right:50%; transform:translateX(50%); bottom:max(5px, env(safe-area-inset-bottom)); white-space:nowrap; }
   }
+  #g360Ask { position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; padding:16px; animation:g360AskIn .15s ease both; }
+  #g360Ask[hidden] { display:none; }
+  #g360Ask .box { background:var(--panel); color:var(--ink); border:1px solid var(--accent); border-radius:14px; padding:22px 22px 18px; width:min(460px, 100%); max-height:90vh; overflow:auto; box-shadow:0 18px 60px rgba(0,0,0,.55); }
+  #g360Ask p { margin:0; font-size:1rem; line-height:1.6; white-space:pre-line; overflow-wrap:anywhere; }
+  #g360Ask input { display:block; width:100%; box-sizing:border-box; margin-top:14px; background:var(--bg); color:var(--ink); border:1px solid var(--line2); border-radius:8px; padding:8px 10px; font:inherit; }
+  #g360Ask input[hidden] { display:none; }
+  #g360Ask input:focus { outline:none; border-color:var(--accent); }
+  #g360Ask .row { display:flex; gap:8px; margin-top:18px; justify-content:flex-end; flex-wrap:wrap; }
+  #g360Ask button { min-width:96px; padding:8px 18px; border-radius:8px; font:inherit; font-weight:600; cursor:pointer; background:var(--btn); color:var(--ink); border:1px solid var(--line2); }
+  #g360Ask button.ok { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+  #g360Ask button:hover { border-color:var(--accent); } #g360Ask button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  @keyframes g360AskIn { from { opacity:0; } to { opacity:1; } }
 </style>
 </head>
 <body>
@@ -534,7 +546,7 @@ const I18N = {
     startE57: 'או בחר קובץ E57 (ענן נקודות). הקובץ נקרא מהמחשב בחלקים, ולכן אפשר לפתוח גם קבצים גדולים.',/*@/STUDIO*/
     quality: 'איכות ענן הנקודות (E57)',
     qFast: 'מהירה (2 מיליון נקודות)', qNormal: 'רגילה (4 מיליון)', qHigh: 'גבוהה (8 מיליון)',
-    helpBtn: 'עזרה', colorBtn: 'צבע', langBtn: 'English', homeBtn: 'פרויקט חדש', enhanceBtn: 'שיפור תמונה', helpTip: 'הנחיות שימוש (H)', colorTip: 'שינוי צבע המערכת', langTip: 'החלפת שפה', homeTip: 'פרויקט חדש: טעינת קובץ סריקה חדש (המדידות והשטחים מתאפסים)', measureTip: 'מדידת מרחק (M)', areaTip: 'מדידת שטח (P)', mUndoBtn: 'בטל אחרון', mUndoTip: 'ביטול הנקודה או המדידה האחרונה (Backspace)', mClearBtn: 'נקה הכל', mClearTip: 'מחיקת כל המדידות והשטחים (X)', mDoneBtn: 'סיום', mDoneTip: 'סגירת השטח (Enter)', enhanceTip: 'שיפור ניגודיות וצבע', overTip: 'מבט על (O)', b3dTip: 'מבט תלת-ממד (O)', confirmNew: 'לטעון את הקובץ החדש? המדידות הנוכחיות יימחקו.', cancel: 'ביטול', mpBtn: 'סיור Matterport', mpTip: 'קישור לסיור Matterport המקורי של המודל', mpHint: 'הדבק קישור לסיור ה-Matterport המקורי של המודל הזה. הוא יישמר במחשב וייפתח בלשונית חדשה.', mpPh: 'https://my.matterport.com/show/?m=...', /*@STUDIO*/pkgMpLinkPh: 'קישור לסיור Matterport (לא חובה)',/*@/STUDIO*/ mpSave: 'שמירה', mpOpen: 'פתיחת הסיור', mpRemove: 'הסרה', mpBad: 'הקישור חייב להתחיל ב-https://', mpSaved: 'הקישור נשמר', mpRemoved: 'הקישור הוסר',
+    helpBtn: 'עזרה', colorBtn: 'צבע', langBtn: 'English', homeBtn: 'פרויקט חדש', enhanceBtn: 'שיפור תמונה', helpTip: 'הנחיות שימוש (H)', colorTip: 'שינוי צבע המערכת', langTip: 'החלפת שפה', homeTip: 'פרויקט חדש: טעינת קובץ סריקה חדש (המדידות והשטחים מתאפסים)', measureTip: 'מדידת מרחק (M)', areaTip: 'מדידת שטח (P)', mUndoBtn: 'בטל אחרון', mUndoTip: 'ביטול הנקודה או המדידה האחרונה (Backspace)', mClearBtn: 'נקה הכל', mClearTip: 'מחיקת כל המדידות והשטחים (X)', mDoneBtn: 'סיום', mDoneTip: 'סגירת השטח (Enter)', enhanceTip: 'שיפור ניגודיות וצבע', overTip: 'מבט על (O)', b3dTip: 'מבט תלת-ממד (O)', confirmNew: 'לטעון את הקובץ החדש? המדידות הנוכחיות יימחקו.', cancel: 'ביטול', dlgOk: 'אישור', mpBtn: 'סיור Matterport', mpTip: 'קישור לסיור Matterport המקורי של המודל', mpHint: 'הדבק קישור לסיור ה-Matterport המקורי של המודל הזה. הוא יישמר במחשב וייפתח בלשונית חדשה.', mpPh: 'https://my.matterport.com/show/?m=...', /*@STUDIO*/pkgMpLinkPh: 'קישור לסיור Matterport (לא חובה)',/*@/STUDIO*/ mpSave: 'שמירה', mpOpen: 'פתיחת הסיור', mpRemove: 'הסרה', mpBad: 'הקישור חייב להתחיל ב-https://', mpSaved: 'הקישור נשמר', mpRemoved: 'הקישור הוסר',
     miniToggle: 'מיני מפה', miniToggleTip: 'הצגה או הסתרה של מיני המפה', /*@STUDIO*/miniHideTip: 'הסתרת מיני המפה (אפשר להחזיר מתפריט האפשרויות)',/*@/STUDIO*/
     miniSmall: 'הקטנת המפה', miniBig: 'הגדלת המפה', miniReset: 'חזרה לגודל ברירת המחדל', promoRec: n => 'מצלם סרטון… ' + n + '% · השאר את החלון פתוח וגלוי · Esc לביטול', promoDone: x => 'הסרטון נשמר (' + x + ') בתיקיית ההורדות', promoCancel: 'צילום הסרטון בוטל', promoNoRec: 'הדפדפן הזה לא תומך בצילום וידאו. השתמש ב-Chrome או Edge.', promoOptTitle: 'יצירת סרטון פרומו', promoOptTitleLbl: 'כותרת פתיחה (שם הפרויקט)', promoOptLogoLbl: 'לוגו וכרטיס סיום', promoOptGo: 'התחלת הקלטה', promoOptX: 'ביטול', startGoBtn: 'נקודת פתיחה', promoLiveBtn: 'סיור אוטומטי', promoLiveTip: 'סיור הליכה אוטומטי בבניין, כמו בסרטון הפרומו', promoGenBtn: 'יצירת סרטון', promoGenTip: 'יצירת סרטון פרומו של הסיור והורדה שלו למחשב', startGoTip: 'חזרה לנקודת הפתיחה של הסיור', miniZin: 'הגדלת התצוגה במפה (זום)', miniZout: 'הקטנת התצוגה במפה (זום)',
     /*@STUDIO*/pdfH: 'גובה', pdfRoomsNote: 'מידות פנים וגובה רצפה-תקרה (משוער) לכל חלל',/*@/STUDIO*/
@@ -694,7 +706,7 @@ const I18N = {
     startE57: 'Or choose an E57 file (point cloud). The file is read from your computer in pieces, so large files work too.',/*@/STUDIO*/
     quality: 'Point cloud quality (E57)',
     qFast: 'Fast (2 million points)', qNormal: 'Normal (4 million)', qHigh: 'High (8 million)',
-    helpBtn: 'Help', colorBtn: 'Color', langBtn: 'עברית', homeBtn: 'New project', enhanceBtn: 'Enhance image', helpTip: 'How to use (H)', colorTip: 'Change the interface color', langTip: 'Switch language', homeTip: 'New project: load a new scan file (measurements and areas are cleared)', measureTip: 'Measure distance (M)', areaTip: 'Measure area (P)', mUndoBtn: 'Undo', mUndoTip: 'Undo the last point or measurement (Backspace)', mClearBtn: 'Clear all', mClearTip: 'Delete all measurements and areas (X)', mDoneBtn: 'Finish', mDoneTip: 'Close the area (Enter)', enhanceTip: 'Boost contrast and color', overTip: 'Plan view (O)', b3dTip: '3D view (O)', confirmNew: 'Load the new file? Current measurements will be lost.', cancel: 'Cancel', mpBtn: 'Matterport tour', mpTip: 'Link to the original Matterport tour of this model', mpHint: 'Paste a link to the original Matterport tour of this model. It is saved on this computer and opens in a new tab.', mpPh: 'https://my.matterport.com/show/?m=...', /*@STUDIO*/pkgMpLinkPh: 'Matterport tour link (optional)',/*@/STUDIO*/ mpSave: 'Save', mpOpen: 'Open tour', mpRemove: 'Remove', mpBad: 'The link must start with https://', mpSaved: 'Link saved', mpRemoved: 'Link removed',
+    helpBtn: 'Help', colorBtn: 'Color', langBtn: 'עברית', homeBtn: 'New project', enhanceBtn: 'Enhance image', helpTip: 'How to use (H)', colorTip: 'Change the interface color', langTip: 'Switch language', homeTip: 'New project: load a new scan file (measurements and areas are cleared)', measureTip: 'Measure distance (M)', areaTip: 'Measure area (P)', mUndoBtn: 'Undo', mUndoTip: 'Undo the last point or measurement (Backspace)', mClearBtn: 'Clear all', mClearTip: 'Delete all measurements and areas (X)', mDoneBtn: 'Finish', mDoneTip: 'Close the area (Enter)', enhanceTip: 'Boost contrast and color', overTip: 'Plan view (O)', b3dTip: '3D view (O)', confirmNew: 'Load the new file? Current measurements will be lost.', cancel: 'Cancel', dlgOk: 'OK', mpBtn: 'Matterport tour', mpTip: 'Link to the original Matterport tour of this model', mpHint: 'Paste a link to the original Matterport tour of this model. It is saved on this computer and opens in a new tab.', mpPh: 'https://my.matterport.com/show/?m=...', /*@STUDIO*/pkgMpLinkPh: 'Matterport tour link (optional)',/*@/STUDIO*/ mpSave: 'Save', mpOpen: 'Open tour', mpRemove: 'Remove', mpBad: 'The link must start with https://', mpSaved: 'Link saved', mpRemoved: 'Link removed',
     miniToggle: 'Mini map', miniToggleTip: 'Show or hide the mini map', /*@STUDIO*/miniHideTip: 'Hide the mini map (bring it back from the Options menu)',/*@/STUDIO*/
     miniSmall: 'Smaller map', miniBig: 'Larger map', miniReset: 'Back to the default size', promoRec: n => 'Recording video… ' + n + '% · keep this window open and visible · Esc to cancel', promoDone: x => 'Video saved (' + x + ') to your Downloads folder', promoCancel: 'Video recording cancelled', promoNoRec: 'This browser cannot record video. Use Chrome or Edge.', promoOptTitle: 'Record the promo video', promoOptTitleLbl: 'Opening title (project name)', promoOptLogoLbl: 'Logo and closing card', promoOptGo: 'Start recording', promoOptX: 'Cancel', startGoBtn: 'Start point', promoLiveBtn: 'Auto tour', promoLiveTip: 'An automatic walk through the building, like the promo video', promoGenBtn: 'Make a video', promoGenTip: 'Create a promo video of the tour and download it', startGoTip: 'Back to the starting point of the tour', miniZin: 'Zoom in on the map', miniZout: 'Zoom out of the map',
     /*@STUDIO*/pdfH: 'H', pdfRoomsNote: 'Internal size and floor-to-ceiling height (approx.) of each space',/*@/STUDIO*/
@@ -1253,6 +1265,40 @@ const g360Pick = (() => {
   }
   return { open: o => pick('showOpenFilePicker', o), dir: o => pick('showDirectoryPicker', o), save: o => pick('showSaveFilePicker', o) };
 })();
+// ===== Questions in the middle of the screen (instead of the browser's own confirm / prompt box, which sits at the top) =====
+// g360Ask(text) -> Promise<true|false>.  g360Ask(text, { input:true, value }) -> Promise<string|null> (null = cancelled).
+// Other options: ok / cancel (button texts). Enter answers OK, Escape or a click outside answers Cancel.
+const g360Ask = (() => {
+  let box = null, done = null;
+  function build() {
+    box = document.createElement('div'); box.id = 'g360Ask'; box.hidden = true;
+    box.innerHTML = '<div class="box" role="dialog" aria-modal="true"><p dir="auto"></p><input type="text" dir="auto"><div class="row"><button type="button" class="ok"></button><button type="button" class="no"></button></div></div>';
+    document.body.appendChild(box);
+    box.querySelector('.ok').onclick = () => done(true);
+    box.querySelector('.no').onclick = () => done(false);
+    box.addEventListener('mousedown', e => { if (e.target === box) done(false); });
+  }
+  // while the question is up, keys belong to it alone (Escape must not also close the window behind it, letters must not run shortcuts)
+  addEventListener('keydown', e => {
+    if (!box || box.hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); done(false); }
+    else if (e.key === 'Enter') { e.preventDefault(); done(true); }
+    else if (e.key === 'Tab') { const b = [...box.querySelectorAll('input:not([hidden]), button')]; const i = b.indexOf(document.activeElement); e.preventDefault(); b[(i + (e.shiftKey ? b.length - 1 : 1)) % b.length].focus(); }
+    e.stopImmediatePropagation();
+  }, true);
+  return (text, o = {}) => new Promise(res => {
+    if (!box) build();
+    if (done) done(false);   // a question already up is answered Cancel
+    const inp = box.querySelector('input'), back = document.activeElement;
+    box.querySelector('p').textContent = text;
+    box.querySelector('.ok').textContent = o.ok || t('dlgOk');
+    box.querySelector('.no').textContent = o.cancel || t('cancel');
+    inp.hidden = !o.input; inp.value = o.value || '';
+    box.hidden = false;
+    setTimeout(() => { if (o.input) { inp.focus(); inp.select(); } else box.querySelector('.ok').focus(); }, 0);
+    done = yes => { done = null; box.hidden = true; try { if (back && back.focus) back.focus(); } catch (e) {} res(o.input ? (yes ? inp.value : null) : yes); };
+  });
+})();
 </script>
 <script src="lib/three.min.js"></script>
 <script src="lib/OBJLoader.js"></script>
@@ -1459,7 +1505,7 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
   function e57ModelName(file) { const b = file.name.replace(/\.e57$/i, ''); return GENERIC_E57.test(b) ? b + '_' + file.size : b; }
   const legacyOf = (oldName, name) => GENERIC_E57.test(oldName || '') && new RegExp('^' + oldName + '_\\d+$', 'i').test(name || '');   // a project saved before the size was added
   const shownName = name => { let tl = ''; try { tl = localStorage.getItem('tourViewerTitle:' + name) || ''; } catch (err) {} return tl || String(name || '').replace(/^(cloud_\d+)_\d+$/i, '$1'); };   // what a person recognises: the project title
-  const canLoadNow = () => !(started && (measures.length || areas.length) && !confirm(t('confirmNew')));
+  const canLoadNow = async () => !(started && (measures.length || areas.length) && !(await g360Ask(t('confirmNew'))));
 
   async function walkDir(dir, out, depth = 0) {
     for await (const [, h] of dir.entries()) {
@@ -1603,14 +1649,14 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
   $('picker').addEventListener('change', async e => {
     const files = [...e.target.files];
     if (!files.length) return;
-    if (!canLoadNow()) { e.target.value = ''; return; }
+    if (!(await canLoadNow())) { e.target.value = ''; return; }
     const nm = (files[0].webkitRelativePath || '').split('/')[0];
     if (!(await freshLoad(nm, () => loadObj(files, null, nm)))) e.target.value = '';   // cancelled: the same folder can be picked again
   });
   $('pickerE57').addEventListener('change', async e => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!canLoadNow()) { e.target.value = ''; return; }
+    if (!(await canLoadNow())) { e.target.value = ''; return; }
     if (!(await freshLoad(file.name.replace(/\.e57$/i, ''), () => loadE57(file, null, +$('quality').value)))) e.target.value = '';
   });
   if (hasFS) {
@@ -1619,7 +1665,7 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
       e.preventDefault();
       try {
         const dir = await g360Pick.dir({ id:'g360scan', mode:'read' });
-        if (!canLoadNow()) return;
+        if (!(await canLoadNow())) return;
         const fl = await walkDir(dir, []);
         await freshLoad(dir.name, () => loadObj(fl, dir, dir.name));
       } catch (err) {
@@ -1633,7 +1679,7 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
       e.preventDefault();
       try {
         const [h] = await g360Pick.open({ id:'g360scan', multiple:false, types:[{ description:'E57', accept:{ 'application/octet-stream':['.e57'] } }] });
-        if (!canLoadNow()) return;
+        if (!(await canLoadNow())) return;
         const fe = await h.getFile();
         await freshLoad(fe.name.replace(/\.e57$/i, ''), () => loadE57(fe, h, +$('quality').value));
       } catch (err) {
@@ -2353,7 +2399,7 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
     if (!d || d.g360project !== 1 || !d.model) { msg(t('projBad'), true); return false; }
     if (projHandle) projHandle.__for = d.model;
     if (started && d.model === currentName) { applyProject(d); closeImport(); return true; }
-    if (started && !canLoadNow()) return false;
+    if (started && !(await canLoadNow())) return false;
     pendingProject = d;
     let rec = null; if (!GENERIC_E57.test(d.model)) { try { rec = await idb.get('model:' + d.model); } catch (err) {} }   // an old "cloud_0" project cannot tell which file it was: the file is picked once
     if (rec && rec.handle) { if (rec.kind === 'e57' && d.quality) $('quality').value = String(d.quality); await doResume(rec); if (started && currentName === d.model) return true; if (!$('resumeBox').hidden) return false; }
@@ -2363,13 +2409,13 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
     msg(t('projPick', nm)); return false;   // the model has to be picked once: the start window stays open with the hint
   }
   async function swapCloud(file, h) {
-    if (!currentName || !canLoadNow()) return;
+    if (!currentName || !(await canLoadNow())) return;
     keepProjectName = currentName; let ok = false;
     try { ok = await loadE57(file, h || null, +$('quality').value); } finally { keepProjectName = ''; }
     if (ok) { const m = t('pkgSwapDone', file.name); pkgMsg(m); say(m); }
   }
   async function swapObj(dir) {
-    if (!currentName || !canLoadNow()) return;
+    if (!currentName || !(await canLoadNow())) return;
     keepProjectName = currentName; let ok = false;
     try { ok = await loadObj(await walkDir(dir, []), dir, currentName); } finally { keepProjectName = ''; }
     if (ok) { const m = t('pkgSwapDone', dir.name); pkgMsg(m); say(m); }
@@ -6691,7 +6737,7 @@ function g360_count($slug) {
     h.innerHTML = '<span class="fa">' + (trashOpen ? '\u25be' : '\u25b8') + '</span><span class="fi">\ud83d\uddd1</span><span class="fn"></span><span class="fc">' + trash.length + '</span><span class="sp"></span><button type="button" data-e></button>';
     h.querySelector('.fn').textContent = L('trash'); const eb = h.querySelector('[data-e]'); eb.textContent = L('emptyTrash'); eb.hidden = !trashOpen;
     h.onclick = e => { if (e.target.closest('button')) return; trashOpen = !trashOpen; renderList(); };
-    eb.onclick = async () => { if (!confirm(L('emptyAsk', trash.length))) return; for (const t of trash.slice()) await purge(t); bkSoon(); renderList(); };
+    eb.onclick = async () => { if (!(await g360Ask(L('emptyAsk', trash.length)))) return; for (const t of trash.slice()) await purge(t); bkSoon(); renderList(); };
     items.appendChild(h);
     if (!trashOpen) return;
     const fb = document.createElement('div'); fb.className = 'fbody';
@@ -6701,7 +6747,7 @@ function g360_count($slug) {
       b.innerHTML = '<div></div><small></small><div class="trb"><button type="button" data-r></button><button type="button" data-x></button></div>';
       b.firstChild.textContent = t.name || t.client || L('untitled'); b.querySelector('small').textContent = L('trashedAt', new Date(t.deleted).toLocaleDateString());
       b.querySelector('[data-r]').textContent = L('restoreT'); b.querySelector('[data-r]').onclick = () => restoreTour(t);
-      b.querySelector('[data-x]').textContent = L('delForever'); b.querySelector('[data-x]').onclick = async () => { if (!confirm(L('confirmDel', t.name || slugOf(t) || L('untitled')))) return; await purge(t); bkSoon(); renderList(); };
+      b.querySelector('[data-x]').textContent = L('delForever'); b.querySelector('[data-x]').onclick = async () => { if (!(await g360Ask(L('confirmDel', t.name || slugOf(t) || L('untitled'))))) return; await purge(t); bkSoon(); renderList(); };
       fb.appendChild(b);
     });
     items.appendChild(fb);
@@ -6747,7 +6793,7 @@ function g360_count($slug) {
     b.innerHTML = '<div>' + esc(t.name || t.client || L('untitled')) + '</div><small>' + esc(slugOf(t) || t.model || '\u2014') + '</small>';
     b.onclick = () => select(t);   // a locked tour (finished project) opens read-only
     { const lb = document.createElement('button'); lb.type = 'button'; lb.className = 'lk2'; lb.textContent = t.locked ? '\ud83d\udd12' : '\ud83d\udd13'; lb.title = L(t.locked ? 'tourUnlock' : 'tourLock'); b.appendChild(lb);
-      lb.onclick = e => { e.stopPropagation(); if (t.locked && !confirm(L('folderUnlockAsk', t.name || t.client || L('untitled')))) return; t.locked = !t.locked; db.put(t).catch(() => {}); bkSoon(); renderList(); if (cur === t) renderEdit(); }; }
+      lb.onclick = async e => { e.stopPropagation(); if (t.locked && !(await g360Ask(L('folderUnlockAsk', t.name || t.client || L('untitled'))))) return; t.locked = !t.locked; db.put(t).catch(() => {}); bkSoon(); renderList(); if (cur === t) renderEdit(); }; }
     b.draggable = true;
     b.ondragstart = e => { dragId = t.id; b.classList.add('drag'); try { e.dataTransfer.setData('text/plain', t.id); e.dataTransfer.effectAllowed = 'move'; } catch (x) {} };
     b.ondragend = () => { dragId = null; b.classList.remove('drag'); };
@@ -6773,7 +6819,7 @@ function g360_count($slug) {
       $('lvQ').oninput = () => renderList();
       $('lvSortSel').onchange = () => { settings.listSort = $('lvSortSel').value; saveSet(); renderList(); };
       bar.querySelector('[data-n]').onclick = () => { const t = newTour(); t.folder = settings.folders.indexOf(activeFolder) >= 0 && !settings.locked[activeFolder] ? activeFolder : ''; settings.foldOpen[t.folder] = true; saveSet(); tours.unshift(t); db.put(t).catch(() => {}); $('lvQ').value = ''; select(t); msg(t.folder ? L('newIn', t.folder) : L('newNoFolder')); };
-      bar.querySelector('[data-f]').onclick = () => { const n = (prompt(L('folderName')) || '').trim(); if (!n) return; if (settings.folders.indexOf(n) >= 0) { msg(L('folderExists'), true); return; } settings.folders.push(n); settings.foldOpen[n] = true; activeFolder = n; saveSet(); renderList(); };
+      bar.querySelector('[data-f]').onclick = async () => { const n = ((await g360Ask(L('folderName'), { input:true })) || '').trim(); if (!n) return; if (settings.folders.indexOf(n) >= 0) { msg(L('folderExists'), true); return; } settings.folders.push(n); settings.foldOpen[n] = true; activeFolder = n; saveSet(); renderList(); };
     }
     $('lvBar').querySelector('[data-n]').textContent = L('newTour'); $('lvBar').querySelector('[data-f]').textContent = L('newFolder'); $('lvQ').placeholder = L('searchPh');
     const sel = $('lvSortSel'); sel.innerHTML = ''; [['updated', 'sortUpd'], ['name', 'sortName'], ['client', 'sortClient']].forEach(([v, k]) => { const o = document.createElement('option'); o.value = v; o.textContent = L(k); sel.appendChild(o); }); sel.value = settings.listSort || 'updated';
@@ -6790,18 +6836,18 @@ function g360_count($slug) {
       const h = document.createElement('div'); h.className = 'fh' + (activeFolder === name ? ' act' : '') + (lk ? ' lk' : '');
       h.innerHTML = '<span class="fa">' + (open ? '\u25be' : '\u25b8') + '</span><span class="fi">' + (open ? '\ud83d\udcc2' : '\ud83d\udcc1') + '</span><span class="fn" title="' + esc(name) + '">' + esc(name) + '</span><span class="fc">' + list.length + '</span><span class="sp"></span><button type="button" data-l></button><button type="button" data-r></button><button type="button" data-x>\u2715</button>';
       { const lb = h.querySelector('[data-l]'); lb.className = 'lkb'; lb.textContent = lk ? '\ud83d\udd12' : '\ud83d\udd13'; lb.title = L(lk ? 'folderUnlock' : 'folderLock');
-        lb.onclick = () => { if (lk && !confirm(L('folderUnlockAsk', name))) return; if (lk) delete settings.locked[name]; else { settings.locked[name] = true; settings.foldOpen[name] = false; if (activeFolder === name) activeFolder = ''; } saveSet(); renderList(); }; }
+        lb.onclick = async () => { if (lk && !(await g360Ask(L('folderUnlockAsk', name)))) return; if (lk) delete settings.locked[name]; else { settings.locked[name] = true; settings.foldOpen[name] = false; if (activeFolder === name) activeFolder = ''; } saveSet(); renderList(); }; }
       h.querySelector('[data-r]').textContent = '\u270e'; h.querySelector('[data-r]').title = L('folderRen'); h.querySelector('[data-x]').title = L('folderDel');
       h.onclick = e => { if (e.target.closest('button')) return; if (lk) { msg(L('folderLocked', name)); return; } settings.foldOpen[name] = settings.foldOpen[name] === false; activeFolder = name; saveSet(); renderList(); };
-      h.querySelector('[data-r]').onclick = () => {
-        const n = (prompt(L('folderName'), name) || '').trim(); if (!n || n === name) return;
+      h.querySelector('[data-r]').onclick = async () => {
+        const n = ((await g360Ask(L('folderName'), { input:true, value:name })) || '').trim(); if (!n || n === name) return;
         if (settings.folders.indexOf(n) >= 0) { msg(L('folderExists'), true); return; }
         settings.folders[settings.folders.indexOf(name)] = n; settings.foldOpen[n] = settings.foldOpen[name]; delete settings.foldOpen[name]; if (settings.locked[name]) { settings.locked[n] = true; delete settings.locked[name]; }
         tours.forEach(t => { if (t.folder === name) { t.folder = n; db.put(t).catch(() => {}); } });
         if (activeFolder === name) activeFolder = n; saveSet(); renderList(); if (cur) renderEdit();
       };
-      h.querySelector('[data-x]').onclick = () => {
-        if (!confirm(L('folderDelAsk'))) return;
+      h.querySelector('[data-x]').onclick = async () => {
+        if (!(await g360Ask(L('folderDelAsk')))) return;
         tours.forEach(t => { if (t.folder === name) { t.folder = ''; db.put(t).catch(() => {}); } });
         settings.folders.splice(settings.folders.indexOf(name), 1); delete settings.foldOpen[name]; delete settings.locked[name];
         if (activeFolder === name) activeFolder = ''; saveSet(); renderList(); if (cur) renderEdit();
@@ -7248,7 +7294,7 @@ function g360_count($slug) {
     bDel.onclick = async () => {
       const others = tours.filter(o => o !== t), sl = t.upSlug, ml = String(t.model || '').toLowerCase();
       const onSrv = !!(sl && settings.upKey && settings.upOn !== false && !others.some(o => slugOf(o) === sl));   /* only a tour that was uploaded and whose address no other tour uses */
-      const rm = onSrv && confirm(L('delSrvAsk', settings.base.replace(/\/?$/, '/') + sl));
+      const rm = onSrv && await g360Ask(L('delSrvAsk', settings.base.replace(/\/?$/, '/') + sl));
       clearTimeout(saveT); t.deleted = t.updated = Date.now(); await db.put(t); bkSoon();
       tours = others; trash.unshift(t); cur = null; stopPrev(); renderList(); renderEdit(); preview(true); msg(L('trashed'));
       if (!rm) return;
@@ -7275,7 +7321,7 @@ function g360_count($slug) {
       secs.forEach(x => x.querySelectorAll('input, select, textarea, button').forEach(e => { e.disabled = true; }));
       bCpp.disabled = bDel.disabled = true;
       const rb = document.createElement('div'); rb.className = 'roBar'; rb.innerHTML = '<span></span><button type="button"></button>'; rb.firstChild.textContent = '\ud83d\udd12 ' + L('roNote'); rb.lastChild.textContent = L('roUnlock');
-      rb.lastChild.onclick = () => { if (!confirm(L('folderUnlockAsk', t.name || t.client || L('untitled')))) return; t.locked = false; db.put(t).catch(() => {}); bkSoon(); renderList(); renderEdit(); };
+      rb.lastChild.onclick = async () => { if (!(await g360Ask(L('folderUnlockAsk', t.name || t.client || L('untitled'))))) return; t.locked = false; db.put(t).catch(() => {}); bkSoon(); renderList(); renderEdit(); };
       box.insertBefore(rb, box.firstChild);
     }
   }
@@ -7591,7 +7637,7 @@ function g360_count($slug) {
   }
   function srvTexts() { $('lvSrvBkL').textContent = L('srvBkOn'); $('lvSrvRestore').textContent = L('srvRestore'); $('lvSrvPhp').textContent = L('srvPhp'); }
   async function srvSt() { let at = 0; try { at = await db.kget('srvBkAt'); } catch (e) {} $('lvSrvBkSt').textContent = at ? L('srvLast', new Date(at).toLocaleString()) : L('srvNone'); }
-  $('lvSrvRestore').onclick = () => { readSet(); if (confirm(L('srvRsConfirm'))) srvRestore(); };
+  $('lvSrvRestore').onclick = async () => { readSet(); if (await g360Ask(L('srvRsConfirm'))) srvRestore(); };
   $('lvSrvPhp').onclick = async () => {
     readSet(); if (!settings.upKey) { msg(L('srvNeed'), true); return; }
     try { const root = await outDir(false), dir = await exportDir(root, 'Live Tours', true); await writeFile(dir, 'upload.php', await uploadPhp()); msg(L('srvPhpDone')); }
@@ -7881,8 +7927,8 @@ function g360_count($slug) {
     };
   }
   async function cloudOut() {
-    if (!confirm(L('outAsk'))) return;
-    const wipe = confirm(L('outWipe'));
+    if (!(await g360Ask(L('outAsk')))) return;
+    const wipe = await g360Ask(L('outWipe'));
     if (HOSTED) { try { await upPost({ action: 'logout' }); } catch (e) {} }
     delete settings.upKey; srvInfo = null;
     if (wipe) { try { if (db.h) db.h.close(); } catch (e) {} db.h = null; await new Promise(res => { const r = indexedDB.deleteDatabase('gambit360live'); r.onsuccess = r.onerror = r.onblocked = () => res(); }); location.reload(); return; }
@@ -7941,7 +7987,7 @@ function g360_count($slug) {
     let b = $('lvBase').value.trim(); if (b && !/^https?:\/\//i.test(b)) b = 'https://' + b; settings.base = b ? b.replace(/\/?$/, '/') : 'https://studio.gambit360.co.il/';
   }
   $('lvKeyBtn').onclick = async () => {
-    if (settings.upKey && !confirm(L('keyConfirm'))) return;
+    if (settings.upKey && !(await g360Ask(L('keyConfirm')))) return;
     readSet(); const oldKey = settings.upKey;
     const a = new Uint8Array(24); crypto.getRandomValues(a); settings.upKey = [...a].map(x => x.toString(16).padStart(2, '0')).join('');
     try { await db.kset('settings', settings); } catch (e) {}

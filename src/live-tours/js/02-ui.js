@@ -19,7 +19,7 @@
     h.innerHTML = '<span class="fa">' + (trashOpen ? '\u25be' : '\u25b8') + '</span><span class="fi">\ud83d\uddd1</span><span class="fn"></span><span class="fc">' + trash.length + '</span><span class="sp"></span><button type="button" data-e></button>';
     h.querySelector('.fn').textContent = L('trash'); const eb = h.querySelector('[data-e]'); eb.textContent = L('emptyTrash'); eb.hidden = !trashOpen;
     h.onclick = e => { if (e.target.closest('button')) return; trashOpen = !trashOpen; renderList(); };
-    eb.onclick = async () => { if (!confirm(L('emptyAsk', trash.length))) return; for (const t of trash.slice()) await purge(t); bkSoon(); renderList(); };
+    eb.onclick = async () => { if (!(await g360Ask(L('emptyAsk', trash.length)))) return; for (const t of trash.slice()) await purge(t); bkSoon(); renderList(); };
     items.appendChild(h);
     if (!trashOpen) return;
     const fb = document.createElement('div'); fb.className = 'fbody';
@@ -29,7 +29,7 @@
       b.innerHTML = '<div></div><small></small><div class="trb"><button type="button" data-r></button><button type="button" data-x></button></div>';
       b.firstChild.textContent = t.name || t.client || L('untitled'); b.querySelector('small').textContent = L('trashedAt', new Date(t.deleted).toLocaleDateString());
       b.querySelector('[data-r]').textContent = L('restoreT'); b.querySelector('[data-r]').onclick = () => restoreTour(t);
-      b.querySelector('[data-x]').textContent = L('delForever'); b.querySelector('[data-x]').onclick = async () => { if (!confirm(L('confirmDel', t.name || slugOf(t) || L('untitled')))) return; await purge(t); bkSoon(); renderList(); };
+      b.querySelector('[data-x]').textContent = L('delForever'); b.querySelector('[data-x]').onclick = async () => { if (!(await g360Ask(L('confirmDel', t.name || slugOf(t) || L('untitled'))))) return; await purge(t); bkSoon(); renderList(); };
       fb.appendChild(b);
     });
     items.appendChild(fb);
@@ -75,7 +75,7 @@
     b.innerHTML = '<div>' + esc(t.name || t.client || L('untitled')) + '</div><small>' + esc(slugOf(t) || t.model || '\u2014') + '</small>';
     b.onclick = () => select(t);   // a locked tour (finished project) opens read-only
     { const lb = document.createElement('button'); lb.type = 'button'; lb.className = 'lk2'; lb.textContent = t.locked ? '\ud83d\udd12' : '\ud83d\udd13'; lb.title = L(t.locked ? 'tourUnlock' : 'tourLock'); b.appendChild(lb);
-      lb.onclick = e => { e.stopPropagation(); if (t.locked && !confirm(L('folderUnlockAsk', t.name || t.client || L('untitled')))) return; t.locked = !t.locked; db.put(t).catch(() => {}); bkSoon(); renderList(); if (cur === t) renderEdit(); }; }
+      lb.onclick = async e => { e.stopPropagation(); if (t.locked && !(await g360Ask(L('folderUnlockAsk', t.name || t.client || L('untitled'))))) return; t.locked = !t.locked; db.put(t).catch(() => {}); bkSoon(); renderList(); if (cur === t) renderEdit(); }; }
     b.draggable = true;
     b.ondragstart = e => { dragId = t.id; b.classList.add('drag'); try { e.dataTransfer.setData('text/plain', t.id); e.dataTransfer.effectAllowed = 'move'; } catch (x) {} };
     b.ondragend = () => { dragId = null; b.classList.remove('drag'); };
@@ -101,7 +101,7 @@
       $('lvQ').oninput = () => renderList();
       $('lvSortSel').onchange = () => { settings.listSort = $('lvSortSel').value; saveSet(); renderList(); };
       bar.querySelector('[data-n]').onclick = () => { const t = newTour(); t.folder = settings.folders.indexOf(activeFolder) >= 0 && !settings.locked[activeFolder] ? activeFolder : ''; settings.foldOpen[t.folder] = true; saveSet(); tours.unshift(t); db.put(t).catch(() => {}); $('lvQ').value = ''; select(t); msg(t.folder ? L('newIn', t.folder) : L('newNoFolder')); };
-      bar.querySelector('[data-f]').onclick = () => { const n = (prompt(L('folderName')) || '').trim(); if (!n) return; if (settings.folders.indexOf(n) >= 0) { msg(L('folderExists'), true); return; } settings.folders.push(n); settings.foldOpen[n] = true; activeFolder = n; saveSet(); renderList(); };
+      bar.querySelector('[data-f]').onclick = async () => { const n = ((await g360Ask(L('folderName'), { input:true })) || '').trim(); if (!n) return; if (settings.folders.indexOf(n) >= 0) { msg(L('folderExists'), true); return; } settings.folders.push(n); settings.foldOpen[n] = true; activeFolder = n; saveSet(); renderList(); };
     }
     $('lvBar').querySelector('[data-n]').textContent = L('newTour'); $('lvBar').querySelector('[data-f]').textContent = L('newFolder'); $('lvQ').placeholder = L('searchPh');
     const sel = $('lvSortSel'); sel.innerHTML = ''; [['updated', 'sortUpd'], ['name', 'sortName'], ['client', 'sortClient']].forEach(([v, k]) => { const o = document.createElement('option'); o.value = v; o.textContent = L(k); sel.appendChild(o); }); sel.value = settings.listSort || 'updated';
@@ -118,18 +118,18 @@
       const h = document.createElement('div'); h.className = 'fh' + (activeFolder === name ? ' act' : '') + (lk ? ' lk' : '');
       h.innerHTML = '<span class="fa">' + (open ? '\u25be' : '\u25b8') + '</span><span class="fi">' + (open ? '\ud83d\udcc2' : '\ud83d\udcc1') + '</span><span class="fn" title="' + esc(name) + '">' + esc(name) + '</span><span class="fc">' + list.length + '</span><span class="sp"></span><button type="button" data-l></button><button type="button" data-r></button><button type="button" data-x>\u2715</button>';
       { const lb = h.querySelector('[data-l]'); lb.className = 'lkb'; lb.textContent = lk ? '\ud83d\udd12' : '\ud83d\udd13'; lb.title = L(lk ? 'folderUnlock' : 'folderLock');
-        lb.onclick = () => { if (lk && !confirm(L('folderUnlockAsk', name))) return; if (lk) delete settings.locked[name]; else { settings.locked[name] = true; settings.foldOpen[name] = false; if (activeFolder === name) activeFolder = ''; } saveSet(); renderList(); }; }
+        lb.onclick = async () => { if (lk && !(await g360Ask(L('folderUnlockAsk', name)))) return; if (lk) delete settings.locked[name]; else { settings.locked[name] = true; settings.foldOpen[name] = false; if (activeFolder === name) activeFolder = ''; } saveSet(); renderList(); }; }
       h.querySelector('[data-r]').textContent = '\u270e'; h.querySelector('[data-r]').title = L('folderRen'); h.querySelector('[data-x]').title = L('folderDel');
       h.onclick = e => { if (e.target.closest('button')) return; if (lk) { msg(L('folderLocked', name)); return; } settings.foldOpen[name] = settings.foldOpen[name] === false; activeFolder = name; saveSet(); renderList(); };
-      h.querySelector('[data-r]').onclick = () => {
-        const n = (prompt(L('folderName'), name) || '').trim(); if (!n || n === name) return;
+      h.querySelector('[data-r]').onclick = async () => {
+        const n = ((await g360Ask(L('folderName'), { input:true, value:name })) || '').trim(); if (!n || n === name) return;
         if (settings.folders.indexOf(n) >= 0) { msg(L('folderExists'), true); return; }
         settings.folders[settings.folders.indexOf(name)] = n; settings.foldOpen[n] = settings.foldOpen[name]; delete settings.foldOpen[name]; if (settings.locked[name]) { settings.locked[n] = true; delete settings.locked[name]; }
         tours.forEach(t => { if (t.folder === name) { t.folder = n; db.put(t).catch(() => {}); } });
         if (activeFolder === name) activeFolder = n; saveSet(); renderList(); if (cur) renderEdit();
       };
-      h.querySelector('[data-x]').onclick = () => {
-        if (!confirm(L('folderDelAsk'))) return;
+      h.querySelector('[data-x]').onclick = async () => {
+        if (!(await g360Ask(L('folderDelAsk')))) return;
         tours.forEach(t => { if (t.folder === name) { t.folder = ''; db.put(t).catch(() => {}); } });
         settings.folders.splice(settings.folders.indexOf(name), 1); delete settings.foldOpen[name]; delete settings.locked[name];
         if (activeFolder === name) activeFolder = ''; saveSet(); renderList(); if (cur) renderEdit();

@@ -102,6 +102,17 @@
   #lvPOv { position:absolute; inset:0; z-index:7; background:rgba(0,0,0,.72); display:none; align-items:center; justify-content:center; padding:12px; }
   #lvPOv .b { position:relative; background:#14181b; color:#e8ecee; border:1px solid #3a464d; border-radius:14px; padding:16px; width:min(520px,100%); max-height:100%; overflow:auto; line-height:1.6; }
   #lvPOv .x { position:absolute; top:6px; right:6px; width:30px; height:30px; padding:0 !important; }
+  #lvPOv h3 { margin:0 40px 10px 0; font-size:1.05rem; }   /* the details card, as on the published page */
+  #lvPOv .ovLinks { display:flex; flex-wrap:wrap; gap:8px; }
+  #lvPOv .ovLinks a { background:#2a3338; color:#5ec4b6; border:1px solid #3a464d; border-radius:8px; padding:7px 12px; text-decoration:none; direction:ltr; }
+  #lvPOv .ovImg { display:block; width:100%; max-height:46vh; object-fit:cover; border-radius:8px; margin:0 0 12px; }
+  #lvPOv .ovCta { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:14px; padding:11px 16px; border-radius:12px; color:#fff; font-weight:600; text-decoration:none; }
+  #lvPOv .ovCta svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+  #lvPOv .cardTabs { display:flex; gap:4px; margin:0 0 12px; border-bottom:1px solid #3a464d; }
+  #lvPOv .cardTabs button { background:transparent !important; color:#b8c3c9 !important; border:0 !important; border-bottom:2px solid transparent !important; border-radius:0; padding:8px 14px; font:inherit; cursor:pointer; }
+  #lvPOv .cardTabs button.on { color:#fff !important; border-bottom-color:#5ec4b6 !important; }
+  #lvPOv .photoMsg { opacity:.75; padding:18px 4px; text-align:center; }
+  #lvPOv [hidden] { display:none !important; }
   #lvPOv video { width:100%; max-height:60vh; background:#000; border-radius:8px; display:block; }
   #lvPOv .tabs { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; } #lvPOv .tabs button { width:auto; border:1px solid #3a464d !important; }
   #lvEdit .icoRow { display:grid; grid-template-columns:repeat(10,1fr); gap:3px; } #lvEdit .icoRow button { width:100%; min-width:0; height:30px; padding:0 !important; } #lvEdit .icoRow svg { width:21px; height:21px; }

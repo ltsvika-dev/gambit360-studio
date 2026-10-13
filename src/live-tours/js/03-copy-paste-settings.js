@@ -166,10 +166,11 @@
     const mkChk = (parent, label, get, set, rerender) => { const c = document.createElement('label'); c.className = 'tgl'; c.style.display = 'flex'; c.style.marginTop = '6px'; c.innerHTML = '<input type="checkbox"> ' + esc(label); parent.appendChild(c); const i = c.querySelector('input'); i.checked = !!get(); i.onchange = () => { set(i.checked); save(t); if (rerender) { preview(true); renderEdit(); } else preview(); }; return c; };
     mkChk(s, L('infoHideMp'), () => !(+t.mp.title) && !(+t.mp.brand), v => { t.mp.title = v ? 0 : 1; t.mp.brand = 0; }, true);
     const iw = document.createElement('div'); iw.style.display = t.info.on ? '' : 'none';
-    mkChk(s, L('infoCustom'), () => t.info.on, v => { t.info.on = v; iw.style.display = v ? '' : 'none'; }, false);
+    mkChk(s, L('infoCustom'), () => t.info.on, v => { t.info.on = v; iw.style.display = v ? '' : 'none'; if (v) wantCard = true; }, false);
     s.appendChild(iw);
+    iw.addEventListener('focusin', () => { const o = $('lvPOv'); if (o.style.display !== 'flex' || o.dataset.k !== 'info') openInfoCard(); });   // while the card is being filled in, the preview shows it as the visitor will
     iconRow(iw, 'info', t);
-    const fi = (key, lbl, html) => { const e = field(iw, lbl, html); e.value = t.info[key] || ''; e.oninput = () => { t.info[key] = e.value; save(t); }; return e; };
+    const fi = (key, lbl, html) => { const e = field(iw, lbl, html); e.value = t.info[key] || ''; e.oninput = () => { t.info[key] = e.value; save(t); preview(); }; return e; };
     fi('title', L('infoTitleL'), '<input type="text">');
     const itx = fi('text', L('infoTextL'), '<textarea></textarea>'); itx.style.cssText = 'direction:rtl;font-family:inherit;font-size:.88rem;height:90px';
     fi('phone', L('infoPhoneL'), '<input type="text" dir="ltr">');
@@ -385,7 +386,7 @@
     secs.forEach(x => {
       const h = x.querySelector('h4'); if (!h) return;
       const c = document.createElement('span'); c.className = 'chev'; h.insertBefore(c, h.firstChild);
-      h.onclick = e => { if (e.target.closest('label, input')) return; setOpen(x.id === openSec ? '' : x.id); };
+      h.onclick = e => { if (e.target.closest('label, input')) return; setOpen(x.id === openSec ? '' : x.id); if (openSec === 'lvSecI') openInfoCard(); };
       const sw = h.querySelector('input[data-k=on]'); if (sw) sw.addEventListener('change', () => { if (sw.checked) setOpen(x.id); });
     });
     setOpen(secs.some(x => x.id === openSec) || openSec === '' ? openSec : 'lvSecD');

@@ -1,5 +1,6 @@
   // ---- preview: the real tour with the layer drawn on top (nadir and the live map position need the SDK, so they show on the site) ----
-  let lastSrc = '';
+  let lastSrc = '', wantCard = false;
+  function openInfoCard() { wantCard = true; preview(); }   // the details card opens in the preview while it is being filled in
   function mpSrc(t) {
     const p = new URLSearchParams(); p.set('m', pvModel || t.model); Object.keys(t.mp).forEach(k => p.set(k, String(t.mp[k])));
     if (t.extra) new URLSearchParams(t.extra.replace(/^[?&]/, '')).forEach((v, k) => p.set(k, v));
@@ -53,14 +54,25 @@
       if (k === 'contact' && !/^#[0-9a-f]{6}$/i.test(st.bg || '')) { const h = CONTACT_COL[t.contact.type] || CONTACT_COL.link; e.style.setProperty('background', st.tr == null || +st.tr === 28 ? h : btnLook({ bg: h, tr: st.tr }).bg, 'important'); e.style.setProperty('color', '#fff', 'important'); }   // in the colour of its kind unless one was chosen
     });
     { const bpp = t.btnPos || {}; const pid = { title: 'lvPTitle', info: 'lvPInfo', video: 'lvPVid', tours: 'lvPTour', music: 'lvPMusic', spots: 'lvPSpot', contact: 'lvPCt' }; (t.btnOrder || ['title', 'info', 'tours', 'music', 'video', 'spots', 'contact']).forEach(k => { $(bpp[k] === 'r' ? 'lvPCtl' : 'lvPLctl').appendChild($(pid[k])); }); const bo2 = t.btnOff || { top: -1, side: 14 }; let tp = 12 + (+t.mp.brand !== 0 ? 34 : 0) + (+t.mp.title !== 0 ? 30 : 0); if (bo2.top >= 0) tp = bo2.top; $('lvPLctl').style.top = tp + 'px'; $('lvPLctl').style.left = bo2.side + 'px'; $('lvPCtl').style.top = (bo2.top >= 0 ? bo2.top : 14) + 'px'; $('lvPCtl').style.right = bo2.side + 'px'; }
-    const openOv = html => { oc.innerHTML = html; ov.style.display = 'flex'; };
-    ov.querySelector('.x').onclick = () => { ov.style.display = 'none'; oc.innerHTML = ''; };
-    bi.onclick = async () => {
-      const i = t.info, ch = cOk ? contactHref(t.contact) : '', iu = await fileUrl(t.id + ':infoimg');
-      openOv('<h3 style="margin:0 34px 8px 0">' + esc(i.title || t.title || t.name) + '</h3>' + (iu ? '<img src="' + iu + '" style="width:100%;max-height:40%;object-fit:cover;border-radius:8px;margin:0 0 10px;display:block">' : '') + (i.text ? '<p style="white-space:pre-wrap;margin:0 0 10px">' + esc(i.text) + '</p>' : '') + [i.phone, i.mail, i.address, i.link && (i.linkTxt || i.link)].filter(Boolean).map(x => '<div>' + esc(x) + '</div>').join('') +
-        (ch ? '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;padding:10px 14px;border-radius:10px;color:#fff;font-weight:600;background:' + (CONTACT_COL[t.contact.type] || CONTACT_COL.link) + '"><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round">' + (t.contact.type === 'wa' ? WA_ICON : ICONS[CONTACT_IC[t.contact.type] || 'star']) + '</svg>' + esc(t.contact.label || L('cD_' + t.contact.type)) + '</div>' : '') +
-        (t.photos.on ? '<div style="margin-top:12px;opacity:.7;font-size:.8rem">' + esc(L('photosPrevNote')) + '</div>' : ''));
+    const openOv = html => { oc.innerHTML = html; ov.style.display = 'flex'; ov.dataset.k = ''; };
+    ov.querySelector('.x').onclick = () => { ov.style.display = 'none'; oc.innerHTML = ''; ov.dataset.k = ''; };
+    // the details card, built like the published page builds it: the same links as buttons, the contact button and the Photos tab
+    const infoCard = async () => {
+      const i = t.info, en = tourLang(t) === 'en', ch = cOk ? contactHref(t.contact) : '', iu = await fileUrl(t.id + ':infoimg');
+      if (cur !== t) return;
+      const ph = String(i.phone || '').replace(/[^0-9+]/g, ''), ln = /^https?:\/\//i.test(i.link || '') ? i.link : '', tb = ' target="_blank" rel="noopener"';
+      const cta = ch ? '<a class="ovCta" style="background:' + (CONTACT_COL[t.contact.type] || CONTACT_COL.link) + '" href="' + esc(ch) + '"' + tb + '><svg viewBox="0 0 24 24">' + (t.contact.type === 'wa' ? WA_ICON : ICONS[CONTACT_IC[t.contact.type] || 'star']) + '</svg><span>' + esc(t.contact.label || (en ? { wa: 'Send a message', tel: 'Call us', mail: 'Send an email', link: 'Contact us' } : { wa: 'שלחו הודעה', tel: 'התקשרו אלינו', mail: 'שלחו מייל', link: 'צרו קשר' })[t.contact.type] || (en ? 'Contact us' : 'צרו קשר')) + '</span></a>' : '';
+      const hasDet = !!(i.title || i.text || i.phone || i.mail || i.link || i.address || iu || cta), pho = !!t.photos.on;
+      const det = (iu ? '<img class="ovImg" alt="" src="' + iu + '">' : '') + (i.text ? '<p style="white-space:pre-wrap;margin:0 0 12px">' + esc(i.text) + '</p>' : '') +
+        '<div class="ovLinks">' + (ph ? '<a href="tel:' + ph + '">' + esc(i.phone) + '</a>' : '') + (i.mail ? '<a href="mailto:' + esc(i.mail) + '">' + esc(i.mail) + '</a>' : '') + (i.address ? '<a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(i.address) + '"' + tb + '><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-inline-end:6px">' + ICONS.pin + '</svg>' + esc(i.address) + '</a>' : '') + (ln ? '<a href="' + esc(ln) + '"' + tb + '>' + esc(i.linkTxt || ln) + '</a>' : '') + '</div>' + cta;
+      openOv('<h3 dir="auto">' + esc(i.title || t.title || t.name || '') + '</h3>' + (pho && hasDet ? '<div class="cardTabs"><button type="button" data-p="d">' + (en ? 'Details' : 'פרטים') + '</button><button type="button" data-p="p">' + (en ? 'Photos' : 'תמונות') + '</button></div>' : '') + (hasDet ? '<div data-pane="d">' + det + '</div>' : '') + (pho ? '<div data-pane="p" hidden><div class="photoMsg" dir="auto">' + esc(L('photosPrevNote')) + '</div></div>' : ''));
+      ov.dataset.k = 'info';
+      const show = k => { oc.querySelectorAll('[data-pane]').forEach(e => { e.hidden = e.dataset.pane !== k; }); oc.querySelectorAll('.cardTabs button').forEach(b => b.classList.toggle('on', b.dataset.p === k)); ov.dataset.pane = k; };
+      oc.querySelectorAll('.cardTabs button').forEach(b => { b.onclick = () => show(b.dataset.p); });
+      show(hasDet ? (ov.dataset.pane === 'p' && pho ? 'p' : 'd') : 'p');
     };
+    bi.onclick = () => { ov.dataset.pane = ''; infoCard(); };
+    if (wantCard || (ov.style.display === 'flex' && ov.dataset.k === 'info')) { wantCard = false; if (hasInfo) infoCard(); else if (ov.dataset.k === 'info') { ov.style.display = 'none'; oc.innerHTML = ''; ov.dataset.k = ''; } }   // an open card follows the edits
     bv.onclick = async () => {
       if (!t.videos.length) return;
       if (prevAudio) stopPrev();

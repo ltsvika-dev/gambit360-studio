@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Gambit360</title>
+<style>
+  html,body { margin:0; height:100%; background:#0d1013; overflow:hidden; font-family:"Heebo","Segoe UI",system-ui,sans-serif; color:#e8ecee; }
+  #mp { position:fixed; inset:0; width:100%; height:100%; border:0; }
+  #mpTap { position:fixed; inset:0; z-index:1; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  #logo { position:fixed; z-index:5; display:none; max-width:34vw; text-decoration:none; }
+  @media (max-width:640px) { #logo { max-width:var(--mw, 34vw); } }
+  #logo img { display:block; width:100%; height:auto; }
+  #logo.card { background:#fff; border-radius:10px; padding:7px 11px; box-shadow:0 2px 12px rgba(0,0,0,.35); }
+  .tc { top:14px; left:50%; transform:translateX(-50%); }
+  .tl { top:14px; left:14px; } .tr { top:14px; right:14px; } .bl { bottom:70px; left:14px; } .br { bottom:70px; right:14px; }
+  #ctl { position:fixed; z-index:7; top:14px; right:14px; display:flex; gap:8px; align-items:center; }
+  .cb { flex:none; height:40px; min-width:40px; border-radius:20px; border:0; background:rgba(20,24,27,.72); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; padding:0 10px; font:inherit; font-size:.85rem; box-shadow:0 2px 10px rgba(0,0,0,.35); }
+  .cb[hidden] { display:none; }
+  #ttlBtn { padding:0 16px; font-weight:600; font-size:.9rem; text-decoration:none; } #ttlBtn > span { max-width:46vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } #ttlBtn.nolink { cursor:default; } .lblOff #ttlBtn { width:auto !important; padding:0 16px !important; } .lblOff #ttlBtn span { display:inline; }
+  .cb svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  #music { padding:0; width:40px; }
+  #tourBtn > span { max-width:38vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cb > span { display:inline-block; vertical-align:middle; } .cb > span:has(> .mqw) { text-overflow:clip; } #infoBtn > span { max-width:46vw; overflow:hidden; }
+  .cb { -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); transition:background .15s; } .cb:hover { background:rgba(36,42,46,.88); } .cb.cst:hover { filter:brightness(1.15); }
+  .lblOff .cb { padding:0 !important; width:40px; } .lblOff .cb span { display:none; }
+  #infoBtn { padding:0 15px 0 11px; font-size:.9rem; font-weight:500; } #infoBtn span { white-space:nowrap; }
+  #vidBtn { padding:0 15px 0 11px; font-size:.9rem; font-weight:500; } #vidBtn > span { max-width:38vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #spotBtn, #ctBtn { padding:0 15px 0 11px; font-size:.9rem; font-weight:500; text-decoration:none; } #spotBtn > span, #ctBtn > span { max-width:38vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #tpick { position:fixed; z-index:7; left:14px; top:76px; direction:ltr; display:flex; flex-direction:column; align-items:flex-start; gap:8px; }
+  #tmenu, #vmenu, #smenu { position:fixed; z-index:8; top:122px; left:14px; min-width:200px; max-width:86vw; background:rgba(20,24,27,.94); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border:1px solid #3a464d; border-radius:16px; padding:8px; box-shadow:0 10px 32px rgba(0,0,0,.55); }
+  #tmenu button, #vmenu button, #smenu button { border-radius:10px !important; padding:10px 14px !important; }
+  #vmenu button::before, #tmenu button::before, #smenu button::before { content:'\25B6'; font-size:.6em; margin-inline-end:10px; opacity:.65; vertical-align:middle; }
+  #tmenu button.on, #vmenu button.on { background:var(--hl, #5ec4b6); color:var(--hlFg, #0b1412); font-weight:600; } #tmenu button.on::before, #vmenu button.on::before { opacity:1; }   /* the current tour / video, in the colour chosen for its button */
+  #tmenu[hidden], #vmenu[hidden], #smenu[hidden] { display:none; }
+  @media (max-width:640px) { #vmenu, #tmenu, #smenu { max-height:56vh; overflow-y:auto; min-width:min(260px,86vw); } body #vmenu button, body #tmenu button, body #smenu button { display:flex; align-items:center; } body #vmenu button::before, body #tmenu button::before, body #smenu button::before { flex:none; } .ovTabs button { max-width:100%; } #ov:has(#ovBox.wide) { align-items:flex-start; padding-top:33.3vh; } #ovBox.wide { max-height:64vh; } }   /* phone: the video window's top edge a third of the way down, like the video list */
+  .mqw { display:block; flex:1; min-width:0; overflow:hidden; white-space:nowrap; } .mq { display:inline-block; white-space:nowrap; } .mq.run { animation:g360mq var(--t,6s) ease-in-out infinite alternate; }
+  @keyframes g360mq { 0%, 12% { transform:translateX(0); } 88%, 100% { transform:translateX(var(--d,0)); } }
+  #splash { position:fixed; z-index:4; left:50%; top:66%; transform:translate(-50%,-50%); max-width:min(60vw,260px); max-height:22vh; pointer-events:none; }
+  #splash[hidden] { display:none; }
+  #wel { position:fixed; z-index:6; bottom:64px; left:0; direction:ltr; display:flex; align-items:stretch; max-width:min(440px, calc(100vw - 16px)); filter:drop-shadow(0 4px 14px rgba(0,0,0,.4)); }
+  #wel[hidden] { display:none; }
+  #wel.r { left:auto; right:0; flex-direction:row-reverse; }
+  #wel .wb { background:rgba(20,24,27,.84); color:#fff; padding:11px 18px; border-radius:0; line-height:1.45; min-width:0; }
+  #wel .wb b { display:block; font-size:1.12rem; font-weight:600; }
+  #wel .wb div { font-size:.9rem; opacity:.92; white-space:pre-line; margin-top:3px; } #wel .wb div:empty { display:none; }
+  #welT { flex:none; width:24px; min-height:46px; border:0; padding:0; background:rgba(20,24,27,.84); color:#fff; font-size:.62rem; cursor:pointer; border-radius:0 8px 8px 0; }
+  #wel:not(.shut) #welT { background:rgba(20,24,27,.6); }
+  #wel.r #welT { border-radius:8px 0 0 8px; }
+  #wel.shut .wb { display:none; }
+  @media (max-width:640px) { #wel { bottom:58px; max-width:none; } #wel:not(.shut) { width:calc(100vw - 24px); } #wel .wb { flex:1; } #wel .wb { padding:9px 14px; } #wel .wb b { font-size:1rem; } }
+  #contact { position:fixed; z-index:6; bottom:20px; display:flex; align-items:center; gap:8px; padding:11px 18px; border-radius:28px; color:#fff; text-decoration:none; font-weight:600; font-size:.92rem; box-shadow:0 4px 16px rgba(0,0,0,.45); }
+  #contact[hidden] { display:none; }
+  #contact svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  #tmenu button, #vmenu button, #smenu button, .ovTabs button { display:block; width:100%; text-align:start; background:transparent; color:#e8ecee; border:0; border-radius:6px; padding:8px 10px; font:inherit; cursor:pointer; }
+  #tmenu button:hover, #vmenu button:hover, #smenu button:hover { background:var(--hov, #2a3338); } .ovTabs button:hover { background:#2a3338; }
+  #tmenu button.on, #vmenu button.on, .ovTabs button.on { background:var(--hl, #5ec4b6); color:var(--hlFg, #0b1412); font-weight:600; }
+  #ov { position:fixed; inset:0; z-index:25; background:rgba(0,0,0,.72); display:flex; align-items:center; justify-content:center; padding:16px; }
+  #ov[hidden] { display:none; }
+  #ovBox { position:relative; background:#14181b; color:#e8ecee; border:1px solid #3a464d; border-radius:14px; padding:18px; width:min(560px,100%); max-height:92vh; overflow:auto; line-height:1.65; }
+  #ovBox.wide { width:min(960px,100%); }
+  #ovBox h3 { margin:0 44px 10px 0; font-size:1.1rem; }
+  #ovX { position:absolute; top:8px; right:8px; padding:0; width:32px; height:32px; min-width:0; border-radius:8px; }
+  #ovBox video { width:100%; max-height:68vh; background:#000; border-radius:8px; display:block; }
+  .ovTabs { display:flex; flex-wrap:wrap; gap:4px; margin-top:10px; }
+  .ovTabs button { width:auto; border:1px solid #3a464d; }
+  .ovLinks { display:flex; flex-wrap:wrap; gap:8px; }
+  .ovLinks a { background:#2a3338; color:#5ec4b6; border:1px solid #3a464d; border-radius:8px; padding:7px 12px; text-decoration:none; direction:ltr; }
+  .ovImg { display:block; width:100%; max-height:46vh; object-fit:cover; border-radius:8px; margin:0 0 12px; }
+  .ovCta { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:14px; padding:11px 16px; border-radius:12px; color:#fff; font-weight:600; text-decoration:none; }
+  .ovCta svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+  .cardTabs { display:flex; gap:4px; margin:0 0 12px; border-bottom:1px solid #3a464d; }
+  .cardTabs button { background:transparent; color:#b8c3c9; border:0; border-bottom:2px solid transparent; padding:8px 14px; font:inherit; cursor:pointer; }
+  .cardTabs button.on { color:#fff; border-bottom-color:#5ec4b6; }
+  .photoGrid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+  .photoGrid button { position:relative; padding:0; border:0; border-radius:8px; overflow:hidden; background:#000; cursor:pointer; aspect-ratio:4/3; }
+  .photoGrid img { width:100%; height:100%; object-fit:cover; display:block; }
+  .photoGrid span { position:absolute; left:0; right:0; bottom:0; padding:14px 8px 6px; font-size:.78rem; color:#fff; text-align:start; background:linear-gradient(transparent,rgba(0,0,0,.7)); }
+  .photoMsg { color:#b8c3c9; padding:18px 4px; text-align:center; }
+  #music svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  #music .off { display:none; } #music.muted .on { display:none; } #music.muted .off { display:block; }
+  #mini { position:fixed; z-index:6; background:rgba(20,24,27,.82); border-radius:12px; padding:6px; box-shadow:0 4px 18px rgba(0,0,0,.45); max-width:calc(100vw - 28px); }
+  #mini[hidden], #music[hidden] { display:none; }
+  #mini.closed #miniBody { display:none; }
+  #miniHead { display:flex; align-items:center; gap:4px; }
+  #miniHead .sp { flex:1; }
+  #miniHead button { background:transparent; color:#e8ecee; border:1px solid rgba(255,255,255,.18); border-radius:6px; padding:3px 8px; font:inherit; font-size:.8rem; cursor:pointer; }
+  #miniHead button.on { background:#e8ecee; color:#14181b; }
+  #miniToggle { border:0 !important; padding:3px 6px !important; }
+  #miniToggle svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; display:block; }
+  #miniBody { position:relative; margin-top:6px; }
+  #miniImg { display:block; width:100%; height:auto; border-radius:6px; cursor:crosshair; user-select:none; -webkit-user-drag:none; }
+  #you { position:absolute; width:0; height:0; pointer-events:none; display:none; }
+  #you .cone { position:absolute; left:0; top:-22px; width:44px; height:44px; transform-origin:0 50%; background:conic-gradient(from 60deg at 0 50%, transparent 0deg, rgba(94,196,182,.55) 0deg 60deg, transparent 60deg); clip-path:polygon(0 50%,100% 0,100% 100%); }
+  #you .dot { position:absolute; left:-7px; top:-7px; width:14px; height:14px; border-radius:50%; background:#5ec4b6; border:2px solid #fff; box-shadow:0 0 0 3px rgba(94,196,182,.35); }
+  #err { position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center; padding:24px; text-align:center; background:#0d1013; line-height:1.7; }
+  #err[hidden] { display:none; }
+  #err a { color:#5ec4b6; }
+  #calib { position:fixed; z-index:30; top:12px; bottom:12px; left:12px; width:min(460px, calc(100vw - 24px)); overflow:auto; background:rgba(20,24,27,.95); border:1px solid #3a464d; border-radius:12px; padding:14px; font-size:.9rem; line-height:1.55; }
+  #calib[hidden] { display:none; }
+  #calib h3 { margin:0 0 6px; font-size:1.05rem; }
+  #calib p { margin:0 0 8px; color:#b8c3c9; }
+  #calib .tabs { display:flex; flex-wrap:wrap; gap:4px; margin:8px 0; }
+  #calib button { background:#2a3338; color:#e8ecee; border:1px solid #3a464d; border-radius:6px; padding:5px 10px; font:inherit; cursor:pointer; }
+  #calib button.on { background:#5ec4b6; color:#0b1412; border-color:#5ec4b6; font-weight:600; }
+  #cWrap { position:relative; margin:8px 0; }
+  #cImg { display:block; width:100%; height:auto; border-radius:6px; cursor:crosshair; }
+  .cpt { position:absolute; width:22px; height:22px; margin:-11px 0 0 -11px; border-radius:50%; background:#ff8f3d; color:#111; font-weight:700; font-size:.75rem; display:flex; align-items:center; justify-content:center; pointer-events:none; border:2px solid #fff; }
+  #cCode { width:100%; height:90px; direction:ltr; font-family:Consolas,monospace; font-size:.75rem; background:#0d1013; color:#e8ecee; border:1px solid #3a464d; border-radius:6px; }
+  #cPos { font-family:Consolas,monospace; direction:ltr; text-align:left; color:#5ec4b6; }
+</style>
+</head>
+<body>
+<iframe id="mp" title="Virtual tour" allow="fullscreen; autoplay; xr-spatial-tracking; web-share" allowfullscreen></iframe>
+<a id="logo" target="_blank" rel="noopener"><img alt=""></a>
+<div id="ctl"><button id="infoBtn" class="cb" hidden aria-label="פרטים" title="פרטים"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg><span>פרטים</span></button><button id="vidBtn" class="cb" hidden aria-label="וידאו" title="וידאו"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg><span></span></button><button id="music" class="cb" hidden aria-label="Music" title="מוסיקה"><svg class="on" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg><svg class="off" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg></button></div>
+<div id="tpick"><a id="ttlBtn" class="cb" hidden target="_blank" rel="noopener"><span></span></a><button id="tourBtn" class="cb" hidden aria-label="סיורים" title="סיורים"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span></span></button><button id="spotBtn" class="cb" hidden><svg viewBox="0 0 24 24"></svg><span></span></button><a id="ctBtn" class="cb" hidden rel="noopener"><svg viewBox="0 0 24 24"></svg><span></span></a></div>
+<div id="tmenu" hidden></div><div id="smenu" hidden></div>
+<div id="wel" hidden><button id="welT" type="button" dir="ltr" aria-label="caption"></button><div class="wb"><b dir="auto"></b><div dir="auto"></div></div></div><img id="splash" hidden alt=""><a id="contact" hidden></a>
+<div id="ov" hidden><div id="ovBox"><button id="ovX" class="cb" aria-label="סגירה">✕</button><div id="ovBody"></div></div></div>
+<div id="mini" hidden><div id="miniHead"><span id="miniFloors"></span><span class="sp"></span><button id="miniToggle" aria-label="Map" title="מפה"><svg viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg></button></div><div id="miniBody"><img id="miniImg" alt="" draggable="false"><div id="you"><div class="cone"></div><div class="dot"></div></div></div></div>
+<div id="calib" hidden></div>
+<div id="err" hidden></div>
+<script>
+(async function () {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const q = new URLSearchParams(location.search);
+  function fail(msg) { const e = $('err'); e.innerHTML = '<div>' + msg + '<br><br><a href="https://gambit360.co.il/">gambit360.co.il</a></div>'; /* one block, so every line is centred */ e.hidden = false; }
+
+  // ---- which tour: ?t=slug, or the last part of the address (/slug or /slug/) ----
+  let slug = q.get('t'), root;
+  const path = location.pathname;
+  if (slug) root = path.replace(/[^\/]*$/, '');
+  else {
+    const m = path.match(/^(.*\/)([^\/]+?)\/?$/);
+    if (m && !/\.(html?|php)$/i.test(m[2])) { slug = m[2]; root = m[1]; } else root = path.replace(/[^\/]*$/, '');
+  }
+  let oldMp = false;   // the old MPEmbed address /show/?m=...: the server names the tour; without it, the tour published under the model's own ID
+  { const fm = document.querySelector('meta[name="g360-tour"]'); const mm = q.get('m') || '';
+    if (fm && fm.content) slug = fm.content; else if (slug === 'show' && /^[A-Za-z0-9]{6,20}$/.test(mm)) { slug = mm.toLowerCase(); oldMp = true; } }
+  if (!slug || !/^[a-z0-9][a-z0-9_-]*$/i.test(slug)) return fail('לא נמצא סיור בכתובת הזו.');
+  let base = root + 'tours/' + slug.toLowerCase() + '/';
+  let cfg;
+  try { const r = await fetch(base + 'config.json', { cache: 'no-cache' }); if (!r.ok) throw new Error(r.status); cfg = await r.json(); }
+  catch (e) { if (oldMp) { location.replace('https://my.matterport.com/show/' + location.search); return; } return fail('הסיור לא נמצא.'); }   // no tour of ours yet for that old link: the plain Matterport tour
+  if (cfg.alias && /^[a-z0-9][a-z0-9_-]*$/i.test(cfg.alias)) {   /* a pointer left for the old MPEmbed link: the tour itself is published under another name */
+    slug = cfg.alias; base = root + 'tours/' + slug.toLowerCase() + '/';
+    try { const r = await fetch(base + 'config.json', { cache: 'no-cache' }); if (!r.ok) throw new Error(r.status); cfg = await r.json(); }
+    catch (e) { if (oldMp) { location.replace('https://my.matterport.com/show/' + location.search); return; } return fail('הסיור לא נמצא.'); }
+  }
+  if (!cfg.model) return fail('הסיור לא הוגדר.');
+  document.title = cfg.title || cfg.name || 'Gambit360';
+  // language and direction of the page: set in the Studio, or by the tour name (Hebrew letters = Hebrew)
+  const EN = cfg.uiLang === 'en' || (cfg.uiLang !== 'he' && !/[\u0590-\u05FF]/.test((cfg.mainName || '') + (cfg.name || '') + (cfg.title || '')));
+  const TX = EN ? { info: 'Details', video: 'Video', videos: 'Videos', tours: 'Tours', tour: 'Tour', music: 'Music', close: 'Close', map: 'Map', photos: 'Photos', ph1: 'Loading photos…', ph2: 'The photos are not available right now.', ph3: 'No photos to show.', wa: 'Send a message', tel: 'Call us', mail: 'Send an email', link: 'Contact us', spots: 'Places' }
+    : { info: 'פרטים', video: 'וידאו', videos: 'סרטונים', tours: 'סיורים', tour: 'סיור', music: 'מוסיקה', close: 'סגירה', map: 'מפה', photos: 'תמונות', ph1: 'טוען תמונות…', ph2: 'התמונות אינן זמינות כרגע.', ph3: 'אין תמונות להצגה.', wa: 'שלחו הודעה', tel: 'התקשרו אלינו', mail: 'שלחו מייל', link: 'צרו קשר', spots: 'מקומות' };
+  if (EN) {
+    document.documentElement.dir = 'ltr'; document.documentElement.lang = 'en';
+    const lb = (id, t) => { const e = $(id); if (!e) return; e.title = t; e.setAttribute('aria-label', t); };
+    lb('infoBtn', TX.info); lb('vidBtn', TX.video); lb('music', TX.music); lb('tourBtn', TX.tours); lb('ovX', TX.close); lb('miniToggle', TX.map);
+    $('infoBtn').querySelector('span').textContent = TX.info;
+  }
+  const tourList = [{ name: cfg.mainName || cfg.name || TX.tour, model: cfg.model }].concat((cfg.tours || []).filter(x => x && x.model));
+  let ti = parseInt(q.get('tour'), 10); if (!(ti >= 0 && ti < tourList.length)) ti = 0;
+
+  const calibMode = q.get('calib') === '1';
+  const mini = ti === 0 && cfg.mini && cfg.mini.floors && cfg.mini.floors.some(f => f && f.file) ? cfg.mini : null;
+  const wantSdk = !!cfg.sdkKey && (calibMode || !!cfg.nadir || !!(cfg.photos && cfg.info) || (mini && mini.floors.some(f => f && f.calib && f.calib.length >= 3)));
+
+  // ---- the Matterport tour ----
+  const p = new URLSearchParams();
+  p.set('m', tourList[ti].model);
+  Object.keys(cfg.mp || {}).forEach(k => p.set(k, String(cfg.mp[k])));
+  if (cfg.extra) new URLSearchParams(cfg.extra.replace(/^[?&]/, '')).forEach((v, k) => p.set(k, v));
+  q.forEach((v, k) => { if (k !== 't' && k !== 'calib' && k !== 'm' && k !== 'tour') p.set(k, v); });   // e.g. ?start=… or ?ss=… from the visitor's link reach Matterport
+  if (wantSdk) p.set('applicationKey', cfg.sdkKey);
+  const iframe = $('mp');
+  iframe.src = 'https://my.matterport.com/show/?' + p.toString();
+  let tapWait = null;   /* phones and tablets: Matterport's own Play opens the tour in Matterport's page, so the first tap is caught here and the tour restarts inside this page with play=1 */
+  if (!+p.get('play') && matchMedia('(pointer: coarse)').matches) tapWait = new Promise(res => {
+    const sh = document.createElement('div'); sh.id = 'mpTap'; document.body.appendChild(sh);
+    sh.addEventListener('click', () => { sh.remove(); p.set('play', '1'); iframe.src = 'https://my.matterport.com/show/?' + p.toString(); dispatchEvent(new Event('g360play')); res(); }, { once: true });
+  });
+
+  // ---- the round buttons (details, videos, tours, music): left under Matterport's logo and title, or right ----
+  if (cfg.btnLbl === 'icon') document.body.classList.add('lblOff');   // buttons with an icon only
+  const bp = Object.assign({ title: 'l', info: 'l', video: 'l', tours: 'l', music: 'l', spots: 'l', contact: 'l' }, cfg.btnPos || {}), bo = Object.assign({ top: -1, side: 14 }, cfg.btnOff || {});
+  { const bid = { title: 'ttlBtn', info: 'infoBtn', video: 'vidBtn', tours: 'tourBtn', music: 'music', spots: 'spotBtn', contact: 'ctBtn' }, ord = (Array.isArray(cfg.btnOrder) ? cfg.btnOrder : []).filter(k => bid[k]);
+    if (ord.indexOf('title') < 0) ord.unshift('title'); ['info', 'tours', 'music', 'video', 'spots', 'contact'].forEach(k => { if (ord.indexOf(k) < 0) ord.push(k); });
+    ord.forEach(k => { $(bp[k] === 'r' ? 'ctl' : 'tpick').appendChild($(bid[k])); }); }   // in the order chosen in the Studio
+  // each button's own name, background colour and transparency (chosen in the Studio); text turns dark on a light background
+  const bsty = cfg.btnSty || {}, bLbl = k => bsty[k] && bsty[k].lbl ? String(bsty[k].lbl) : '';
+  { const ts = bsty.title, a = $('ttlBtn');   // the title button: only the tour's name, optionally a link
+    if (ts && ts.on) { a.hidden = false; a.querySelector('span').textContent = ts.lbl || cfg.title || cfg.name || ''; a.dir = 'auto'; if (/^https?:\/\//i.test(ts.link || '')) a.href = ts.link; else { a.removeAttribute('href'); a.classList.add('nolink'); } } }
+  [['ttlBtn', 'title'], ['infoBtn', 'info'], ['vidBtn', 'video'], ['tourBtn', 'tours'], ['music', 'music'], ['spotBtn', 'spots'], ['ctBtn', 'contact']].forEach(([id, k]) => {
+    const st = bsty[k]; if (!st) return;
+    if (k !== 'music' && +st.w > 0 && cfg.btnLbl !== 'icon') $(id).style.minWidth = Math.min(+st.w, innerWidth * .8) + 'px';   // its own width (with text)
+    if (k !== 'music' && st.r != null && +st.r < 20) $(id).style.borderRadius = (+st.r) + 'px';   // its own corner radius (20 = round)
+    if (!st.bg && (st.tr == null || +st.tr === 28)) return;
+    const h = /^#[0-9a-f]{6}$/i.test(st.bg || '') ? st.bg : '#14181b', r = parseInt(h.slice(1, 3), 16), g = parseInt(h.slice(3, 5), 16), b = parseInt(h.slice(5, 7), 16);
+    const a = Math.max(.1, Math.min(1, 1 - (Number.isFinite(+st.tr) ? +st.tr : 28) / 100)), lum = (.299 * r + .587 * g + .114 * b) / 255, e = $(id);
+    e.style.background = 'rgba(' + r + ',' + g + ',' + b + ',' + a.toFixed(2) + ')'; e.style.color = lum > .62 && a >= .45 ? '#14181b' : '#fff'; e.classList.add('cst');
+  });
+  const hlOf = k => { const st = bsty[k] || {}; if (!/^#[0-9a-f]{6}$/i.test(st.bg || '')) return null; const h = st.bg, r = parseInt(h.slice(1, 3), 16), g = parseInt(h.slice(3, 5), 16), b = parseInt(h.slice(5, 7), 16); return { bg: h, fg: (.299 * r + .587 * g + .114 * b) / 255 > .62 ? '#14181b' : '#fff' }; };
+  const tint = (el, k) => { const c = hlOf(k); if (!el || !c) return; const h = c.bg, m = (i, d) => Math.round(parseInt(h.slice(i, i + 2), 16) * .25 + d * .75); el.style.setProperty('--hov', 'rgb(' + m(1, 20) + ',' + m(3, 24) + ',' + m(5, 27) + ')'); };   // the hover mark in a list: 25% of its button's colour mixed into the dark grey
+  const setHl = (el, k) => { const c = hlOf(k); if (el && c) { el.style.setProperty('--hl', c.bg); el.style.setProperty('--hlFg', c.fg); } };   // the menus mark the current item in the button's own colour
+  if (bLbl('info')) { $('infoBtn').querySelector('span').textContent = bLbl('info'); $('infoBtn').title = bLbl('info'); $('infoBtn').setAttribute('aria-label', bLbl('info')); }
+  const placeLeft = () => { const mpp = cfg.mp || {}; let top = 12 + (+mpp.brand !== 0 ? 34 : 0) + (+mpp.title !== 0 ? 30 : 0); const a = $('logo'); if (a.style.display === 'block' && a.classList.contains('tl')) top = Math.max(top, a.getBoundingClientRect().bottom + 10); if (bo.top >= 0) top = bo.top; $('tpick').style.top = top + 'px'; $('tpick').style.left = bo.side + 'px'; $('ctl').style.top = (bo.top >= 0 ? bo.top : 14) + 'px'; $('ctl').style.right = bo.side + 'px'; };   // under Matterport's logo / title (and under a client logo at the top left)
+  placeLeft(); addEventListener('resize', placeLeft); $('logo').querySelector('img').addEventListener('load', placeLeft);
+
+  // ---- client logo ----
+  if (cfg.logo && cfg.logo.file) {
+    const a = $('logo'), img = a.querySelector('img');
+    img.src = base + cfg.logo.file;
+    a.className = (['tl', 'tc', 'tr'].indexOf(cfg.logo.pos) >= 0 ? cfg.logo.pos : 'tl') + (cfg.logo.card ? ' card' : '');
+    a.style.width = (cfg.logo.w || 160) + 'px'; if (+cfg.logo.mw > 0) a.style.setProperty('--mw', Math.min(+cfg.logo.mw, innerWidth - 20) + 'px');   // its own maximum on a phone
+    if (+cfg.logo.tr > 0) a.style.opacity = Math.max(.1, 1 - cfg.logo.tr / 100);
+    { const lt = Number.isFinite(+cfg.logo.top) && cfg.logo.top != null ? +cfg.logo.top : 14, ls = Number.isFinite(+cfg.logo.side) && cfg.logo.side != null ? +cfg.logo.side : 14; a.style.top = lt + 'px'; if (a.classList.contains('tl')) a.style.left = ls + 'px'; else if (a.classList.contains('tr')) a.style.right = ls + 'px'; }
+    if (cfg.logo.link) a.href = cfg.logo.link; else { a.removeAttribute('href'); a.style.pointerEvents = 'none'; }
+    a.style.display = 'block';
+  }
+
+  // ---- opening caption: in a bottom corner from the start, closes a few seconds after Play (a small tab opens it again) ----
+  if (cfg.welcome && (cfg.welcome.title || cfg.welcome.text)) {
+    const w = $('wel'), tg = $('welT'), r = cfg.welcome.pos === 'r';
+    w.classList.toggle('r', r); if (cfg.welcome.bottom != null && Number.isFinite(+cfg.welcome.bottom)) w.style.bottom = Math.max(0, Math.min(+cfg.welcome.bottom, innerHeight - 120)) + 'px'; /* its distance from the bottom */ w.querySelector('b').textContent = cfg.welcome.title || ''; w.querySelector('.wb div').textContent = cfg.welcome.text || '';
+    if (!cfg.welcome.title) w.querySelector('b').hidden = true;
+    const arrow = () => { const shut = w.classList.contains('shut'); tg.textContent = (shut !== r) ? '\u25B6' : '\u25C0'; };   /* triangles: unlike the angle quotes they never flip in a right-to-left page */   // the arrow points the way the caption will move
+    tg.onclick = e => { e.stopPropagation(); w.classList.toggle('shut'); arrow(); };
+    arrow();   /* stays hidden until the visitor presses Play */
+    let played = false; const fr = $('mp');
+    const onPlay = () => { if (played) return; played = true; w.classList.remove('shut'); w.hidden = false; arrow(); setTimeout(() => { w.classList.add('shut'); arrow(); }, Math.max(1, +cfg.welcome.secs || 6) * 1000); };
+    addEventListener('g360play', onPlay);
+    addEventListener('blur', () => setTimeout(() => { if (document.activeElement === fr) onPlay(); }, 50));   // Play inside the tour moves the focus into it
+    const pl = setInterval(() => { if (played) { clearInterval(pl); return; } if (document.activeElement === fr) onPlay(); }, 700);
+    if (cfg.mp && +cfg.mp.play) { if (fr) fr.addEventListener('load', onPlay); setTimeout(onPlay, 4000); }   /* autoplay: no Play button, so the count starts when the tour has loaded */
+  }
+
+  // ---- background music: browsers allow sound only after the visitor interacts, so it starts at the first click (also a click inside the tour) ----
+  let bgAudio = null, noBg = false, bgResume = false;
+  if (cfg.music && cfg.music.file) {
+    const audio = new Audio(base + cfg.music.file), btn = $('music'); bgAudio = audio;
+    audio.loop = true; audio.volume = Math.max(0, Math.min(1, cfg.music.vol == null ? .35 : cfg.music.vol)); audio.preload = 'auto';
+    let muted = false;
+    try { muted = sessionStorage.getItem('g360mute') === '1'; } catch (e) {}   // a mute lasts for this visit only: on the next visit the music plays again by default
+    const show = () => btn.classList.toggle('muted', muted || audio.paused);
+    const tryPlay = () => { if (muted || noBg || !audio.paused) return; audio.play().then(show, show); };
+    btn.onclick = e => { e.stopPropagation(); muted = !(muted || audio.paused) ; try { sessionStorage.setItem('g360mute', muted ? '1' : '0'); } catch (x) {} if (muted) audio.pause(); else audio.play().then(show, show); show(); };
+    ['pointerdown', 'keydown', 'touchstart'].forEach(ev => addEventListener(ev, tryPlay, { passive: true }));
+    addEventListener('blur', () => [60, 500, 1500].forEach(ms => setTimeout(tryPlay, ms)));   // Play inside the tour moves the focus into it: the music starts then
+    { const fr = $('mp'), poll = setInterval(() => { if (!audio.paused || muted) { if (!audio.paused) clearInterval(poll); return; } if (document.activeElement === fr || (navigator.userActivation && navigator.userActivation.hasBeenActive)) tryPlay(); }, 700); }   // phones do not always report that move
+    audio.addEventListener('play', show); audio.addEventListener('pause', show);
+    btn.hidden = false; show(); tryPlay();
+  } else if (cfg.music) { $('music').hidden = false; $('music').classList.add('muted'); }   // switched on but no file yet: the button still shows
+
+  // ---- top-right controls: details card, videos, tour selector (the mute button sits in the same row) ----
+  const ICONS = {"list": "<path d=\"M4 7h16M4 12h16M4 17h16\"/>", "grid": "<rect x=\"4\" y=\"4\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"13\" y=\"4\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"4\" y=\"13\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"13\" y=\"13\" width=\"7\" height=\"7\" rx=\"1\"/>", "layers": "<path d=\"M12 3l9 5-9 5-9-5z\"/><path d=\"M3 13l9 5 9-5\"/>", "home": "<path d=\"M4 11l8-7 8 7\"/><path d=\"M6 10v10h12V10\"/>", "map": "<path d=\"M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z\"/><path d=\"M9 4v14M15 6v14\"/>", "pin": "<path d=\"M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z\"/><circle cx=\"12\" cy=\"10\" r=\"2.5\"/>", "compass": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M15.5 8.5l-2 5-5 2 2-5z\"/>", "dots": "<circle cx=\"5\" cy=\"12\" r=\"1.4\" fill=\"currentColor\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\" fill=\"currentColor\"/><circle cx=\"19\" cy=\"12\" r=\"1.4\" fill=\"currentColor\"/>", "video": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"3\"/><path d=\"M10 9.5v5l4.5-2.5z\" fill=\"currentColor\"/>", "play": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M10 8.5v7l6-3.5z\" fill=\"currentColor\"/>", "film": "<rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M8 4v16M16 4v16M4 9h4M4 15h4M16 9h4M16 15h4\"/>", "camera": "<path d=\"M4 8h3l2-3h6l2 3h3v11H4z\"/><circle cx=\"12\" cy=\"13\" r=\"3.5\"/>", "image": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><circle cx=\"9\" cy=\"10\" r=\"1.6\"/><path d=\"M4 18l5-5 4 4 3-3 4 4\"/>", "info": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 11v6\"/><circle cx=\"12\" cy=\"7.6\" r=\".6\" fill=\"currentColor\"/>", "card": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"M7 10h5M7 14h10\"/>", "user": "<circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 20c1-4 4-6 8-6s7 2 8 6\"/>", "phone": "<path d=\"M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z\"/>", "chat": "<path d=\"M4 5h16v11H9l-5 4z\"/>", "mail": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"M3 7l9 6 9-6\"/>", "star": "<path d=\"M12 4l2.4 5 5.6.7-4.1 3.9 1 5.6L12 16.5 7.1 19.2l1-5.6L4 9.7 9.6 9z\"/>", "building": "<path d=\"M5 21V4h9v17M14 9h5v12M3 21h18\"/><path d=\"M8 8h3M8 12h3M8 16h3\"/>", "key": "<circle cx=\"8\" cy=\"15\" r=\"4\"/><path d=\"M11 12l9-9M17 6l3 3M14.5 8.5l2 2\"/>", "help": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M9.5 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.4v.6\"/><circle cx=\"12\" cy=\"17\" r=\".6\" fill=\"currentColor\"/>", "globe": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18\"/>"};
+  { const ic = cfg.icons || {}; [['infoBtn', 'info', 'list'], ['vidBtn', 'video', 'video'], ['tourBtn', 'tours', 'list']].forEach(([id, k, d]) => { const sv = $(id).querySelector('svg'); if (sv) sv.innerHTML = ICONS[ICONS[ic[k]] ? ic[k] : d]; }); }
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const ov = $('ov'), ovBody = $('ovBody'), ovBox = $('ovBox');
+  const closeOv = () => { ov.hidden = true; ovBody.innerHTML = ''; ovBox.classList.remove('wide'); if (noBg) { noBg = false; if (bgAudio && bgResume) bgAudio.play().catch(() => {}); } };
+  $('ovX').onclick = closeOv;
+  ov.addEventListener('mousedown', e => { if (e.target === ov) closeOv(); });
+  addEventListener('keydown', e => { if (e.key === 'Escape' && !ov.hidden) closeOv(); });
+  // contact button: it lives inside the details card now (a floating one covered Matterport's own buttons)
+  const WA_SVG = '<path d="M4 20l1.2-4A8.5 8.5 0 1 1 8 18.9z"/><path d="M9.2 8.6c.2 2.4 2.6 4.8 5 5l1.3-1.3-1.7-1.1-.9.7c-.8-.3-1.7-1.2-2-2l.7-.9-1.1-1.7z" fill="currentColor" stroke="none"/>';
+  const ct = cfg.contact; let cta = '';
+  if (ct && ct.value) {
+    const v = String(ct.value).trim(), dg = v.replace(/[^0-9]/g, ''), COL = { wa: '#25a85a', tel: '#1f8a70', mail: '#3b6fd8', link: '#4a5560' }, DEF = { wa: TX.wa, tel: TX.tel, mail: TX.mail, link: TX.link };
+    let href = '';
+    if (ct.type === 'wa' && dg) href = 'https://wa.me/' + (dg[0] === '0' ? '972' + dg.slice(1) : dg) + (ct.msg ? '?text=' + encodeURIComponent(ct.msg) : '');
+    else if (ct.type === 'tel' && dg) href = 'tel:' + (v[0] === '+' ? '+' : '') + dg;
+    else if (ct.type === 'mail' && v.indexOf('@') > 0) href = 'mailto:' + v;
+    else if (ct.type === 'link' && /^https?:\/\//i.test(v)) href = v;
+    if (href && bsty.contact && bsty.contact.on) {   // a round button in the row, in the colour of its kind unless one was chosen
+      const b = $('ctBtn'), lb = bLbl('contact') || ct.label || DEF[ct.type] || DEF.link; b.href = href; if (ct.type === 'wa' || ct.type === 'link') b.target = '_blank';
+      b.querySelector('svg').innerHTML = ct.type === 'wa' ? WA_SVG : ICONS[{ tel: 'phone', mail: 'mail', link: 'star' }[ct.type] || 'star']; b.querySelector('span').textContent = lb; b.title = lb; b.setAttribute('aria-label', lb); b.dir = 'auto';
+      if (!/^#[0-9a-f]{6}$/i.test(bsty.contact.bg || '')) { const h = COL[ct.type] || COL.link, tr = bsty.contact.tr, a = tr == null || +tr === 28 ? 1 : Math.max(.1, Math.min(1, 1 - (+tr || 0) / 100)); b.style.background = 'rgba(' + parseInt(h.slice(1, 3), 16) + ',' + parseInt(h.slice(3, 5), 16) + ',' + parseInt(h.slice(5, 7), 16) + ',' + a.toFixed(2) + ')'; b.style.color = '#fff'; b.classList.add('cst'); }
+      b.hidden = false;
+    }
+    if (href && cfg.contactCard !== false) cta = '<a class="ovCta" style="background:' + (COL[ct.type] || COL.link) + '" href="' + esc(href) + '" rel="noopener"' + (ct.type === 'wa' || ct.type === 'link' ? ' target="_blank"' : '') + '><svg viewBox="0 0 24 24">' + (ct.type === 'wa' ? WA_SVG : ICONS[{ tel: 'phone', mail: 'mail', link: 'star' }[ct.type] || 'star']) + '</svg><span>' + esc(ct.label || DEF[ct.type] || DEF.link) + '</span></a>';
+  }
+  // Highlight Reel pictures for the "Photos" tab: loaded through the SDK once it is connected
+  let reel = [], reelState = wantSdk ? 'loading' : 'fail', sdkRef = null;
+  const fillPhotos = el => {
+    if (!el) return;
+    if (reelState === 'loading') { el.innerHTML = '<div class="photoMsg">' + TX.ph1 + '</div>'; return; }
+    if (reelState === 'fail') { el.innerHTML = '<div class="photoMsg">' + TX.ph2 + '</div>'; return; }
+    if (!reel.length) { el.innerHTML = '<div class="photoMsg">' + TX.ph3 + '</div>'; return; }
+    el.innerHTML = '<div class="photoGrid"></div>';
+    const g = el.firstChild;
+    reel.forEach(x => { const b = document.createElement('button'); b.type = 'button'; b.innerHTML = '<img alt="" loading="lazy"><span></span>'; b.firstChild.src = x.thumb; b.lastChild.textContent = x.name; b.onclick = () => { closeOv(); try { sdkRef.Tour.step(x.i); } catch (e) { console.warn('Gambit360: could not open the picture', e); } }; g.appendChild(b); });
+  };
+  function reelDone() { const pn = ovBody.querySelector('[data-pane=p]'); if (pn && !pn.hidden) fillPhotos(pn); }
+  async function loadReel(s) {
+    try {
+      const data = (await s.Tour.getData()) || [], only = !!(cfg.photos && cfg.photos.only360);
+      const tag = x => { if (x.is360 != null) return !!x.is360; const k = String(x.classification || x.type || x.kind || x.mode || '').toLowerCase(); return k ? /360|pano|sweep/.test(k) : null; };
+      let out = data.map((x, i) => ({ i, name: x.name || '', thumb: x.thumbnail || x.thumb || '', t: tag(x) })).filter(x => x.thumb);
+      if (only) { if (out.some(x => x.t !== null)) out = out.filter(x => x.t === true); else console.warn('Gambit360: the tour data does not say which pictures are 360, so all are shown'); }
+      reel = out; reelState = 'ready'; sdkRef = s;
+    } catch (e) { reelState = 'fail'; console.warn('Gambit360: Highlight Reel pictures are not available', e); }
+    reelDone();
+  }
+  const info = cfg.info || {}, phCfg = cfg.photos || null;
+  const hasDet = !!(info.title || info.text || info.phone || info.mail || info.link || info.address || info.image || cta);
+  if (hasDet || phCfg || cfg.info) {
+    $('infoBtn').hidden = false;
+    $('infoBtn').onclick = () => {
+      const ph = String(info.phone || '').replace(/[^0-9+]/g, ''), ln = /^https?:\/\//i.test(info.link || '') ? info.link : '';
+      const det = (info.image ? '<img class="ovImg" alt="" src="' + esc(base + info.image) + '">' : '') + (info.text ? '<p style="white-space:pre-wrap;margin:0 0 12px">' + esc(info.text) + '</p>' : '') +
+        '<div class="ovLinks">' + (ph ? '<a href="tel:' + ph + '">' + esc(info.phone) + '</a>' : '') + (info.mail ? '<a href="mailto:' + esc(info.mail) + '">' + esc(info.mail) + '</a>' : '') + (info.address ? '<a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(info.address) + '" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-inline-end:6px">' + ICONS.pin + '</svg>' + esc(info.address) + '</a>' : '') + (ln ? '<a href="' + esc(ln) + '" target="_blank" rel="noopener">' + esc(info.linkTxt || ln) + '</a>' : '') + '</div>' + cta;
+      ovBody.innerHTML = '<h3 dir="auto">' + esc(info.title || cfg.title || cfg.name || '') + '</h3>' + (phCfg && hasDet ? '<div class="cardTabs"><button type="button" data-p="d">' + TX.info + '</button><button type="button" data-p="p">' + TX.photos + '</button></div>' : '') + (hasDet ? '<div data-pane="d">' + det + '</div>' : '') + (phCfg ? '<div data-pane="p" hidden></div>' : '');
+      const show = k => { ovBody.querySelectorAll('[data-pane]').forEach(e => { e.hidden = e.dataset.pane !== k; }); ovBody.querySelectorAll('.cardTabs button').forEach(b => b.classList.toggle('on', b.dataset.p === k)); if (k === 'p') fillPhotos(ovBody.querySelector('[data-pane=p]')); };
+      ovBody.querySelectorAll('.cardTabs button').forEach(b => { b.onclick = () => show(b.dataset.p); });
+      show(hasDet ? 'd' : 'p'); ov.hidden = false;
+    };
+  }
+
+
+
+
+
+
+
+
+
+  // phone: a long name stays on one line and slides slowly back and forth so it can be read
+  const mq = (el, any) => {
+    if (!el || (!any && !matchMedia('(max-width: 640px)').matches)) return;
+    let w = el.querySelector(':scope > .mqw'), s; if (!w) { w = document.createElement('span'); w.className = 'mqw'; s = document.createElement('span'); s.className = 'mq'; while (el.firstChild) s.appendChild(el.firstChild); w.appendChild(s); el.appendChild(w); } else s = w.firstChild;
+    s.classList.remove('run'); const over = s.offsetWidth - w.clientWidth;   // the outer span clips, the inner one slides
+    if (over > 2) { s.style.setProperty('--d', (getComputedStyle(s).direction === 'rtl' ? over : -over) + 'px'); s.style.setProperty('--t', (2 + over / 28).toFixed(1) + 's'); s.classList.add('run'); }
+  };
+  const mqAll = box => setTimeout(() => { if (box) box.querySelectorAll('button, h3').forEach(b => mq(b)); }, 60);
+  // the round buttons too, on every screen: a name longer than its button slides instead of being cut
+  const mqBtns = () => ['ttlBtn', 'infoBtn', 'vidBtn', 'tourBtn', 'spotBtn', 'ctBtn'].forEach(id => { const b = $(id), sp = b && b.querySelector(':scope > span'); if (sp && !b.hidden) mq(sp, true); });
+  setTimeout(mqBtns, 400); addEventListener('resize', () => { clearTimeout(window.__mqT); window.__mqT = setTimeout(mqBtns, 250); });
+  const vids = (cfg.videos || []).filter(v => v && v.file);
+  const vmenu = cfg.vidMode === 'menu' && vids.length > 1;   // the video button opens a list, like the tour picker
+  if (vids.length || cfg.vidOn) {
+    const playVid = i => {
+      const vtabs = vids.length > 1 && !vmenu ? '<div class="ovTabs"></div>' : '';
+      ovBody.innerHTML = '<h3 dir="auto">' + esc(vids[i].name || TX.video) + '</h3><video controls playsinline autoplay preload="metadata"></video>' + vtabs;
+      ovBody.querySelector('video').src = base + vids[i].file;
+      const tb = ovBody.querySelector('.ovTabs');
+      if (tb) vids.forEach((x, k) => { const bt = document.createElement('button'); bt.type = 'button'; bt.textContent = x.name || (TX.video + ' ' + (k + 1)); bt.dir = 'auto'; if (k === i) bt.className = 'on'; bt.onclick = () => playVid(k); tb.appendChild(bt); });
+      if (tb) setHl(tb, 'video'); mqAll(ovBody);
+    };
+    $('vidBtn').hidden = false; $('vidBtn').querySelector('span').textContent = bLbl('video') || (vids.length > 1 ? TX.videos : ((vids[0] && vids[0].name) || TX.video));   // one video: its name on the button, like the tour name on Matterport's menu button
+    const openVid = k => { if (!noBg) bgResume = !!bgAudio && !bgAudio.paused; noBg = true; if (bgAudio) bgAudio.pause(); ovBox.classList.add('wide'); playVid(k); ov.hidden = false; };   // the music rests while a video plays
+    if (vmenu) {
+      const vm = document.createElement('div'); vm.id = 'vmenu'; vm.hidden = true; document.body.appendChild(vm); const vb = $('vidBtn'); setHl(vm, 'video'); tint(vm, 'video');
+      vids.forEach((x, k) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = x.name || (TX.video + ' ' + (k + 1)); b.dir = 'auto'; b.onclick = () => { vm.hidden = true; vm.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); openVid(k); }; vm.appendChild(b); });
+      vb.onclick = e => { e.stopPropagation(); $('tmenu').hidden = true; $('smenu').hidden = true; vm.hidden = !vm.hidden; if (vm.hidden) return; vm.style.transform = '';
+        if (matchMedia('(max-width: 640px)').matches) { vm.style.right = 'auto'; vm.style.left = '50%'; vm.style.transform = 'translateX(-50%)'; vm.style.top = Math.round(innerHeight / 3) + 'px'; mqAll(vm); return; }   // phone: centred, its top edge a third of the way down the screen
+        const r = vb.getBoundingClientRect(); if (bp.video === 'r') { vm.style.left = 'auto'; vm.style.right = bo.side + 'px'; vm.style.top = (r.bottom + 8) + 'px'; } else { vm.style.right = 'auto'; vm.style.left = (r.right + 8) + 'px'; vm.style.top = r.top + 'px'; } };
+      addEventListener('pointerdown', e => { if (!vm.hidden && !vm.contains(e.target) && !vb.contains(e.target)) vm.hidden = true; });
+      addEventListener('blur', () => { vm.hidden = true; });
+    } else $('vidBtn').onclick = () => { if (vids.length) openVid(0); };
+  }
+  if (tourList.length > 1 || cfg.tourOn) {
+    const tb = $('tourBtn'), tm = $('tmenu'); tint(tm, 'tours'); tb.hidden = false; tb.querySelector('span').textContent = bLbl('tours') || tourList[ti].name;
+    tourList.forEach((x, i) => { const bt = document.createElement('button'); bt.type = 'button'; bt.textContent = x.name; bt.dir = 'auto'; bt.onclick = () => { const u = new URL(location.href); if (i) u.searchParams.set('tour', String(i)); else u.searchParams.delete('tour'); location.href = u.toString(); }; tm.appendChild(bt); });
+    const placeMenu = () => { const r = tb.getBoundingClientRect(); tm.style.transform = '';
+      if (matchMedia('(max-width: 640px)').matches) { tm.style.right = 'auto'; tm.style.left = '50%'; tm.style.transform = 'translateX(-50%)'; tm.style.top = Math.round(Math.max(r.bottom + 12, innerHeight * .28) + 2 * 40 + 8) + 'px'; mqAll(tm); return; }   // phone: centred, lower down the screen (two buttons and their gap below the earlier place)
+      if (bp.tours === 'r') { tm.style.left = 'auto'; tm.style.right = bo.side + 'px'; tm.style.top = (r.bottom + 8) + 'px'; } else { tm.style.right = 'auto'; tm.style.left = (r.right + 8) + 'px'; tm.style.top = r.top + 'px'; } };
+    tb.onclick = e => { e.stopPropagation(); const vm = $('vmenu'); if (vm) vm.hidden = true; $('smenu').hidden = true; tm.hidden = !tm.hidden; if (!tm.hidden) placeMenu(); };
+    addEventListener('pointerdown', e => { if (!tm.hidden && !tm.contains(e.target) && !tb.contains(e.target)) tm.hidden = true; });
+    addEventListener('blur', () => { tm.hidden = true; });
+  }
+  // ---- jump points: places in the tour (a Matterport "link to this location": ss = the scan point, sr = the view direction) ----
+  const spots = (cfg.spots || []).filter(x => x && /^\d{1,4}$/.test(String(x.ss)));
+  if (spots.length || cfg.spotOn) {
+    const sb = $('spotBtn'), sm = $('smenu'), ic = (cfg.icons || {}).spots; tint(sm, 'spots');
+    sb.querySelector('svg').innerHTML = ICONS[ICONS[ic] ? ic : 'pin']; const lb = bLbl('spots') || TX.spots; sb.querySelector('span').textContent = lb; sb.title = lb; sb.setAttribute('aria-label', lb); sb.hidden = false;
+    const go = x => {
+      let j = x.m ? tourList.findIndex(o => o.model === x.m) : 0; if (j < 0) j = ti;   // the point's own tour (a point without a model belongs to the main tour)
+      if (j === ti && !wantSdk) {   // the same tour: only the tour reloads at that place (logo, music and buttons stay)
+        p.set('ss', String(x.ss)); if (x.sr) p.set('sr', x.sr); else p.delete('sr'); p.set('play', '1'); p.set('qs', '1');
+        const sh = $('mpTap'); if (sh) sh.remove();
+        iframe.src = 'https://my.matterport.com/show/?' + p.toString(); dispatchEvent(new Event('g360play')); return;
+      }
+      const u = new URL(location.href);   // another tour, or the SDK is connected (nadir, map): the page opens again at that place
+      if (j) u.searchParams.set('tour', String(j)); else u.searchParams.delete('tour');
+      u.searchParams.set('ss', String(x.ss)); if (x.sr) u.searchParams.set('sr', x.sr); else u.searchParams.delete('sr'); u.searchParams.set('play', '1'); u.searchParams.set('qs', '1');
+      location.href = u.toString();
+    };
+    spots.forEach(x => { const b = document.createElement('button'); b.type = 'button'; b.textContent = x.name || ('#' + x.ss); b.dir = 'auto'; b.onclick = () => { sm.hidden = true; go(x); }; sm.appendChild(b); });
+    const placeS = () => { const r = sb.getBoundingClientRect(); sm.style.transform = '';
+      if (matchMedia('(max-width: 640px)').matches) { sm.style.right = 'auto'; sm.style.left = '50%'; sm.style.transform = 'translateX(-50%)'; sm.style.top = Math.round(innerHeight / 3) + 'px'; mqAll(sm); return; }   // phone: centred, like the video list
+      if (bp.spots === 'r') { sm.style.left = 'auto'; sm.style.right = bo.side + 'px'; sm.style.top = (r.bottom + 8) + 'px'; } else { sm.style.right = 'auto'; sm.style.left = (r.right + 8) + 'px'; sm.style.top = r.top + 'px'; } };
+    sb.onclick = e => { e.stopPropagation(); ['tmenu', 'vmenu'].forEach(id => { const m = $(id); if (m) m.hidden = true; }); sm.hidden = !sm.hidden || !spots.length; if (!sm.hidden) placeS(); };
+    addEventListener('pointerdown', e => { if (!sm.hidden && !sm.contains(e.target) && !sb.contains(e.target)) sm.hidden = true; });
+    addEventListener('blur', () => { sm.hidden = true; });
+  }
+  const placeLogo = () => { const a = $('logo'); if (a.style.display === 'block' && a.classList.contains('tr')) { const w = $('ctl').offsetWidth; const ls = cfg.logo && Number.isFinite(+cfg.logo.side) && cfg.logo.side != null ? +cfg.logo.side : 14; a.style.right = (w ? w + bo.side + 8 : ls) + 'px'; } };   // a logo at the top right steps aside for the buttons
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  placeLogo(); addEventListener('resize', placeLogo);
+  // loading-screen logo: centred below the Play button / above Matterport's logo, gone once the visitor starts the tour (a click inside the tour moves focus to it)
+  if (cfg.splash) {
+    const sp = $('splash'); sp.src = base + cfg.splash; sp.hidden = false;
+    { const w = +cfg.splashW; if (w > 0 && w !== 260) { sp.style.maxWidth = 'min(86vw,' + w + 'px)'; sp.style.maxHeight = Math.round(Math.max(22, Math.min(40, w / 260 * 22))) + 'vh'; } }   // its size, chosen in the Studio
+    let fr = null, t0 = Date.now(), loaded = false;
+    const hide = () => { sp.hidden = true; clearInterval(iv); };
+    const iv = setInterval(() => {
+      fr = fr || document.querySelector('iframe');
+      if (fr && !loaded) { loaded = true; if (+(cfg.mp && cfg.mp.play)) fr.addEventListener('load', () => setTimeout(hide, 3000), { once: true }); }
+      if ((fr && document.activeElement === fr) || Date.now() - t0 > 600000) hide();
+    }, 250);
+    addEventListener('blur', () => setTimeout(() => { if (fr && document.activeElement === fr) hide(); }, 0));
+  }
+
+  const sweeps = {}, listeners = [];
+  let pose = null;
+  const floorOf = ps => { const s = ps && sweeps[ps.sweep]; return s && s.floorInfo ? s.floorInfo.sequence : (s && s.floor != null ? s.floor : -1); };
+  const inside = ps => !!ps && String(ps.mode).indexOf('inside') >= 0;
+
+  if (!wantSdk) {
+    if (mini) setupMini(null);   // without the SDK the map is shown as a plain picture
+    return;
+  }
+
+  // ---- Showcase SDK ----
+  let sdk;
+  try {
+    await new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://static.matterport.com/showcase-sdk/latest.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+    if (tapWait) await tapWait;   /* connect to the tour that actually plays */
+    sdk = await window.MP_SDK.connect(iframe, cfg.sdkKey, '');
+  } catch (e) {
+    console.warn('Gambit360: SDK connect failed', e); reelState = 'fail'; reelDone();
+    if (mini) setupMini(null);
+    return;
+  }
+
+  try {
+    sdk.Sweep.data.subscribe({
+      onAdded(k, s) { sweeps[k] = s; if (s && s.sid) sweeps[s.sid] = s; if (s && s.id) sweeps[s.id] = s; },
+      onUpdated(k, s) { sweeps[k] = s; if (s && s.sid) sweeps[s.sid] = s; if (s && s.id) sweeps[s.id] = s; },
+      onCollectionUpdated(c) { Object.keys(c).forEach(k => { const s = c[k]; sweeps[k] = s; if (s && s.sid) sweeps[s.sid] = s; if (s && s.id) sweeps[s.id] = s; }); }
+    });
+  } catch (e) {}
+  sdk.Camera.pose.subscribe(ps => { pose = ps; listeners.forEach(f => { try { f(ps); } catch (e) {} }); });
+
+  // ---- nadir: a round logo on the floor under the camera (covers the tripod) ----
+  if (cfg.nadir && cfg.nadir.file && !calibMode) {
+    try {
+      const url = base + cfg.nadir.file, size = cfg.nadir.size || .9, op = cfg.nadir.opacity == null ? 1 : cfg.nadir.opacity;
+      function Nadir() {
+        this.inputs = {};
+        this.onInit = function () {
+          const T = this.context.three;
+          const tex = new T.TextureLoader().load(url);
+          const mat = new T.MeshBasicMaterial({ map: tex, transparent: true, opacity: op, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+          const mesh = new T.Mesh(new T.CircleGeometry(size / 2, 64), mat);
+          mesh.rotation.x = -Math.PI / 2; mesh.renderOrder = 10;
+          this.outputs.objectRoot = mesh;
+        };
+      }
+      await sdk.Scene.register('g360nadir', () => new Nadir());
+      let node;
+      if (sdk.Scene.createObjects) { const [o] = await sdk.Scene.createObjects(1); node = o.addNode(); node.addComponent('g360nadir'); o.start(); }
+      else { node = await sdk.Scene.createNode(); node.addComponent('g360nadir'); node.start(); }
+      const place = ps => {
+        const s = sweeps[ps.sweep], fp = s && (s.floorPosition || null);
+        const ok = inside(ps) && !!fp;
+        node.obj3D.visible = ok;
+        if (ok) node.obj3D.position.set(fp.x, fp.y + .015, fp.z);
+      };
+      listeners.push(place); if (pose) place(pose);
+    } catch (e) { console.warn('Gambit360: nadir is not available', e); }
+  }
+
+  loadReel(sdk); if (mini) setupMini(sdk);
+  if (calibMode) setupCalib();
+
+  // ===== mini map =====
+  function affine(c) {   // three pairs [u, v, x, z] → u = a·x + b·z + c, v = d·x + e·z + f
+    if (!c || c.length < 3) return null;
+    const [p1, p2, p3] = c, det = p1[2] * (p2[3] - p3[3]) - p1[3] * (p2[2] - p3[2]) + (p2[2] * p3[3] - p3[2] * p2[3]);
+    if (Math.abs(det) < 1e-9) return null;
+    const solve = i => {
+      const r1 = p1[i], r2 = p2[i], r3 = p3[i];
+      const a = (r1 * (p2[3] - p3[3]) - p1[3] * (r2 - r3) + (r2 * p3[3] - r3 * p2[3])) / det;
+      const b = (p1[2] * (r2 - r3) - r1 * (p2[2] - p3[2]) + (p2[2] * r3 - p3[2] * r2)) / det;
+      const cc = (p1[2] * (p2[3] * r3 - p3[3] * r2) - p1[3] * (p2[2] * r3 - p3[2] * r2) + r1 * (p2[2] * p3[3] - p3[2] * p2[3])) / det;
+      return [a, b, cc];
+    };
+    const [a, b, c0] = solve(0), [d, e, f] = solve(1);
+    return {
+      fwd: (x, z) => [a * x + b * z + c0, d * x + e * z + f],
+      vec: (x, z) => [a * x + b * z, d * x + e * z],
+      inv: (u, v) => { const k = a * e - b * d; if (Math.abs(k) < 1e-12) return null; const uu = u - c0, vv = v - f; return [(e * uu - b * vv) / k, (a * vv - d * uu) / k]; }
+    };
+  }
+  function setupMini(sdk) {
+    const box = $('mini'), img = $('miniImg'), you = $('you'), cone = you.querySelector('.cone'), tabs = $('miniFloors');
+    const floors = mini.floors.map((f, i) => f && f.file ? { i, label: f.label || String(i + 1), src: base + f.file, tf: affine(f.calib) } : null);
+    const list = floors.filter(Boolean);
+    const pos = mini.pos || 'br';
+    box.style[pos[0] === 't' ? 'top' : 'bottom'] = pos[0] === 't' ? '14px' : '70px';
+    box.style[pos[1] === 'l' ? 'left' : 'right'] = '14px';
+    box.style.width = Math.min(mini.w || 240, innerWidth - 28) + 'px';
+    let open = mini.open !== false && innerWidth > 640;
+    try { const s = sessionStorage.getItem('g360mini'); if (s) open = s === '1'; } catch (e) {}
+    box.classList.toggle('closed', !open);
+    $('miniToggle').onclick = () => { open = !open; box.classList.toggle('closed', !open); try { sessionStorage.setItem('g360mini', open ? '1' : '0'); } catch (e) {} };
+    let shown = list[0].i, pinned = false, lastFloor = null;
+    function draw() {
+      const f = floors[shown];
+      if (img.dataset.src !== f.src) { img.src = f.src; img.dataset.src = f.src; }
+      [...tabs.children].forEach(b => b.classList.toggle('on', +b.dataset.i === shown));
+      const ps = pose;
+      if (!ps || !f.tf || floorOf(ps) !== shown || !inside(ps)) { you.style.display = 'none'; return; }
+      const [u, v] = f.tf.fwd(ps.position.x, ps.position.z);
+      const yaw = (ps.rotation.y || 0) * Math.PI / 180, dx = -Math.sin(yaw), dz = -Math.cos(yaw);
+      const [du, dv] = f.tf.vec(dx, dz), W = img.clientWidth || 1, H = img.clientHeight || 1;
+      const ang = Math.atan2(dv * H, du * W);
+      you.style.left = (u * 100) + '%'; you.style.top = (v * 100) + '%';
+      cone.style.transform = 'rotate(' + ang + 'rad)';
+      you.style.display = u >= -.05 && u <= 1.05 && v >= -.05 && v <= 1.05 ? 'block' : 'none';
+    }
+    if (list.length > 1) list.forEach(f => { const b = document.createElement('button'); b.textContent = f.label; b.dataset.i = f.i; b.onclick = () => { shown = f.i; pinned = true; draw(); }; tabs.appendChild(b); });
+    img.addEventListener('load', draw);
+    listeners.push(ps => { const fl = floorOf(ps); if (fl !== lastFloor) { lastFloor = fl; if (floors[fl]) { shown = fl; pinned = false; } } draw(); });
+    if (sdk) img.addEventListener('click', e => {   // a click on the map moves to the nearest scan point on that floor
+      const f = floors[shown]; if (!f || !f.tf) return;
+      const r = img.getBoundingClientRect(), w = f.tf.inv((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
+      if (!w) return;
+      let best = null, bd = Infinity;
+      const seen = new Set();
+      Object.keys(sweeps).forEach(k => {
+        const s = sweeps[k]; if (!s || seen.has(s) || s.enabled === false || !s.position) return; seen.add(s);
+        const fl = s.floorInfo ? s.floorInfo.sequence : s.floor; if (fl !== shown) return;
+        const d = (s.position.x - w[0]) ** 2 + (s.position.z - w[1]) ** 2; if (d < bd) { bd = d; best = s; }
+      });
+      if (best) sdk.Sweep.moveTo(best.sid || best.id, { transition: sdk.Sweep.Transition ? sdk.Sweep.Transition.FLY : undefined, transitionTime: 1200 }).catch(() => {});
+    });
+    box.hidden = false; draw();
+  }
+
+  // ===== calibration (owner only: …?calib=1) =====
+  function setupCalib() {
+    const box = $('calib');
+    const fl = (mini ? mini.floors : []).map((f, i) => f && f.file ? { i, label: f.label || String(i + 1), src: base + f.file } : null).filter(Boolean);
+    if (!fl.length) { box.innerHTML = '<h3>כיול מיני-מפה</h3><p>לא הועלו תמונות קומה לסיור הזה. הוסף אותן בסטודיו ופרסם שוב.</p>'; box.hidden = false; return; }
+    const pts = {}; fl.forEach(f => { pts[f.i] = []; });
+    let cur = fl[0].i;
+    box.innerHTML = '<h3>כיול מיני-מפה</h3><p>1. בסיור, עמוד בנקודת סריקה (בתוך הבית, לא במבט-על).<br>2. לחץ במפה על אותה נקודה בדיוק.<br>3. חזור על כך ב-3 נקודות רחוקות זו מזו בכל קומה.<br>4. העתק את הקוד והדבק אותו בסטודיו.</p>'
+      + '<div class="tabs" id="cTabs"></div><div id="cPos">—</div><div id="cWrap"><img id="cImg" alt=""></div>'
+      + '<div class="tabs"><button id="cUndo">ביטול נקודה אחרונה</button><button id="cClear">איפוס הקומה</button></div>'
+      + '<p id="cSt"></p><textarea id="cCode" readonly></textarea><div class="tabs"><button id="cCopy">העתקת הקוד</button></div>';
+    const tabs = $('cTabs'), img = $('cImg'), wrap = $('cWrap');
+    fl.forEach(f => { const b = document.createElement('button'); b.textContent = f.label; b.dataset.i = f.i; b.onclick = () => { cur = f.i; draw(); }; tabs.appendChild(b); });
+    function draw() {
+      const f = fl.find(x => x.i === cur);
+      if (img.dataset.src !== f.src) { img.src = f.src; img.dataset.src = f.src; }
+      [...tabs.children].forEach(b => b.classList.toggle('on', +b.dataset.i === cur));
+      wrap.querySelectorAll('.cpt').forEach(n => n.remove());
+      pts[cur].forEach((p, k) => { const d = document.createElement('div'); d.className = 'cpt'; d.textContent = k + 1; d.style.left = (p[0] * 100) + '%'; d.style.top = (p[1] * 100) + '%'; wrap.appendChild(d); });
+      const out = {}; Object.keys(pts).forEach(k => { if (pts[k].length >= 3) out[k] = pts[k].map(p => p.map(n => Math.round(n * 10000) / 10000)); });
+      $('cCode').value = Object.keys(out).length ? 'G360CAL:' + JSON.stringify(out) : '';
+      $('cSt').textContent = 'בקומה הזו: ' + pts[cur].length + ' נקודות' + (pts[cur].length >= 3 ? ' ✓' : ' (צריך 3)');
+    }
+    img.addEventListener('click', e => {
+      if (!pose || !inside(pose)) { $('cSt').textContent = 'קודם היכנס לתוך הסיור ועמוד בנקודת סריקה.'; return; }
+      const r = img.getBoundingClientRect();
+      pts[cur].push([(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height, pose.position.x, pose.position.z]);
+      if (pts[cur].length > 3) pts[cur].shift();
+      draw();
+    });
+    $('cUndo').onclick = () => { pts[cur].pop(); draw(); };
+    $('cClear').onclick = () => { pts[cur] = []; draw(); };
+    $('cCopy').onclick = () => { const t = $('cCode'); t.select(); try { navigator.clipboard.writeText(t.value); } catch (e) { document.execCommand('copy'); } $('cCopy').textContent = 'הועתק ✓'; setTimeout(() => { $('cCopy').textContent = 'העתקת הקוד'; }, 1500); };
+    listeners.push(ps => { $('cPos').textContent = inside(ps) ? 'x ' + ps.position.x.toFixed(2) + '   z ' + ps.position.z.toFixed(2) + '   floor ' + floorOf(ps) : 'not inside'; });
+    box.hidden = false; draw();
+  }
+})();
+<\/script>
+</body>
+</html>

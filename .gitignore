@@ -1,0 +1,7 @@
+_backup/
+screens/
+lib/
+Export/
+*.e57
+*.g360
+__pycache__/

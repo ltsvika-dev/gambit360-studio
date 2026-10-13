@@ -3,12 +3,12 @@
     $('lvSdk').value = settings.sdk || ''; $('lvBase').value = settings.base || '';
     let d = null; try { d = await db.kget('outDir'); } catch (e) {} if (!d) d = await studioDirHandle();
     $('lvOutP').textContent = d ? d.name + '\\Export\\Live Tours' : L('outNone');
-    $('lvUpOn').checked = settings.upOn !== false; $('lvTopIco').checked = !!settings.topIco; texts(); srvTexts(); cloudTexts(); srvSt(); $('lvSrvBk').checked = settings.srvBk !== false; refreshBk(); refreshSplash();
+    $('lvUpOn').checked = settings.upOn !== false; $('lvTopIco').checked = !!settings.topIco; texts(); srvTexts(); cloudTexts(); srvSt(); $('lvSrvBk').checked = settings.srvBk !== false; refreshBk(); refreshSplash(); sdkSetNote(); srvCheck(false).then(() => { if (!$('lvSet').hidden) sdkSetNote(); }).catch(() => {});
     $('lvSet').hidden = false;
   }
   $('lvOutBtn').onclick = async () => { try { const d = await outDir(true); $('lvOutP').textContent = d.name + '\\Export\\Live Tours'; } catch (e) {} };
   function readSet() {
-    settings.sdk = $('lvSdk').value.trim(); settings.upOn = $('lvUpOn').checked; settings.srvBk = $('lvSrvBk').checked;
+    const nk = $('lvSdk').value.trim(); if (nk !== (settings.sdk || '')) settings.sdkAt = Date.now(); settings.sdk = nk; settings.upOn = $('lvUpOn').checked; settings.srvBk = $('lvSrvBk').checked;
     let b = $('lvBase').value.trim(); if (b && !/^https?:\/\//i.test(b)) b = 'https://' + b; settings.base = b ? b.replace(/\/?$/, '/') : 'https://studio.gambit360.co.il/';
   }
   $('lvKeyBtn').onclick = async () => {

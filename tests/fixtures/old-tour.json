@@ -1,0 +1,20 @@
+{
+  "_note": "A tour as an older Studio (early October 2026) stored it: no jump points, opening caption, button styles or order, Photos tab or card migration. The Studio must open, edit and publish it.",
+  "id": "toldfixture1",
+  "name": "בית בדיקה",
+  "client": "לקוח בדיקה",
+  "model": "AbCdEf12345",
+  "slug": "test-house",
+  "title": "בית בדיקה ברחוב הדקל",
+  "mp": { "brand": 0, "title": 1, "help": 0, "qs": 1, "play": 0, "hl": 0, "dh": 1, "mt": 1, "vr": 1 },
+  "extra": "",
+  "logo": { "on": true, "pos": "tl", "w": 160, "card": true, "link": "" },
+  "music": { "on": false, "vol": 35 },
+  "nadir": { "on": false, "size": 0.9, "opacity": 100 },
+  "mini": { "on": false, "pos": "br", "w": 240, "open": true, "floors": [] },
+  "videos": [],
+  "tours": [],
+  "contact": { "on": true, "type": "wa", "value": "050-1234567", "msg": "שלום", "label": "", "pos": "br" },
+  "info": { "on": true, "title": "פרטי הפרויקט", "text": "שלד ותשתיות לפני טיח", "phone": "050-1234567", "mail": "test@example.com", "link": "https://example.com", "linkTxt": "האתר" },
+  "updated": 1760000000000
+}

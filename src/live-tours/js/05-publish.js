@@ -22,7 +22,8 @@
   const INDEX_PHP = () => $('g360IndexTpl').textContent;   // live-tours/index.php
   const README = 'Gambit360 – סיורים חיים\r\n\r\nהעלה את כל התוכן של התיקייה הזו (index.html, .htaccess, upload.php והתיקייה tours) לתיקיית השורש של הסאב-דומיין,\r\nאו לתיקיית בדיקה כמו gambit360.co.il/vr-test/.\r\n\r\nכל סיור נפתח בכתובת: <כתובת האתר>/<הכתובת של הסיור>\r\nמצב כיול מיני-מפה: <כתובת האתר>/<הכתובת של הסיור>?calib=1\r\n\r\nעדכון של סיור קיים: מספיק להעלות מחדש את התיקייה tours/<הכתובת של הסיור>.\r\n';
   async function sha256hex(s) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); }
-  async function uploadPhp() { return $('g360UploadTpl').textContent.replace('@@KEYHASH@@', settings.upKey ? await sha256hex(settings.upKey) : ''); }
+  const G360_LOGO = (document.querySelector('#logo img') || {}).src || '';   // read now, before a client logo can take its place
+  async function uploadPhp() { return $('g360UploadTpl').textContent.replace('@@KEYHASH@@', settings.upKey ? await sha256hex(settings.upKey) : '').replace('@@LOGO@@', () => /^data:image\/[a-z+]+;base64,[A-Za-z0-9+/=]+$/.test(G360_LOGO) ? G360_LOGO : ''); }
   const upUrl = () => settings.base.replace(/\/?$/, '/') + 'upload.php';
   async function upPost(fields, blob) {
     const fd = new FormData(); Object.keys(fields).forEach(k => fd.append(k, fields[k])); if (blob) fd.append('file', blob, (fields.path || 'f').split('/').pop());

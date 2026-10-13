@@ -63,8 +63,9 @@
       const ph = String(i.phone || '').replace(/[^0-9+]/g, ''), ln = /^https?:\/\//i.test(i.link || '') ? i.link : '', tb = ' target="_blank" rel="noopener"';
       const cta = ch ? '<a class="ovCta" style="background:' + (CONTACT_COL[t.contact.type] || CONTACT_COL.link) + '" href="' + esc(ch) + '"' + tb + '><svg viewBox="0 0 24 24">' + (t.contact.type === 'wa' ? WA_ICON : ICONS[CONTACT_IC[t.contact.type] || 'star']) + '</svg><span>' + esc(t.contact.label || (en ? { wa: 'Send a message', tel: 'Call us', mail: 'Send an email', link: 'Contact us' } : { wa: 'שלחו הודעה', tel: 'התקשרו אלינו', mail: 'שלחו מייל', link: 'צרו קשר' })[t.contact.type] || (en ? 'Contact us' : 'צרו קשר')) + '</span></a>' : '';
       const hasDet = !!(i.title || i.text || i.phone || i.mail || i.link || i.address || iu || cta), pho = !!t.photos.on;
-      const det = (iu ? '<img class="ovImg" alt="" src="' + iu + '">' : '') + (i.text ? '<p style="white-space:pre-wrap;margin:0 0 12px">' + esc(i.text) + '</p>' : '') +
-        '<div class="ovLinks">' + (ph ? '<a href="tel:' + ph + '">' + esc(i.phone) + '</a>' : '') + (i.mail ? '<a href="mailto:' + esc(i.mail) + '">' + esc(i.mail) + '</a>' : '') + (i.address ? '<a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(i.address) + '"' + tb + '><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-inline-end:6px">' + ICONS.pin + '</svg>' + esc(i.address) + '</a>' : '') + (ln ? '<a href="' + esc(ln) + '"' + tb + '>' + esc(i.linkTxt || ln) + '</a>' : '') + '</div>' + cta;
+      const row = (href, ic, txt, ltr) => '<a href="' + esc(href) + '"' + tb + '><span class="ic"><svg viewBox="0 0 24 24">' + ICONS[ic] + '</svg></span><span class="tx" dir="' + (ltr ? 'ltr' : 'auto') + '">' + esc(txt) + '</span></a>';
+      const rows = (ph ? row('tel:' + ph, 'phone', i.phone, true) : '') + (i.mail ? row('mailto:' + i.mail, 'mail', i.mail, true) : '') + (i.address ? row('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(i.address), 'pin', i.address) : '') + (ln ? row(ln, 'globe', i.linkTxt || ln.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/$/, ''), !i.linkTxt) : '');
+      const det = (iu ? '<img class="ovImg" alt="" src="' + iu + '">' : '') + (i.text ? '<p class="ovTxt" dir="auto">' + esc(i.text) + '</p>' : '') + (rows ? '<div class="ovLinks">' + rows + '</div>' : '') + cta;
       openOv('<h3 dir="auto">' + esc(i.title || t.title || t.name || '') + '</h3>' + (pho && hasDet ? '<div class="cardTabs"><button type="button" data-p="d">' + (en ? 'Details' : 'פרטים') + '</button><button type="button" data-p="p">' + (en ? 'Photos' : 'תמונות') + '</button></div>' : '') + (hasDet ? '<div data-pane="d">' + det + '</div>' : '') + (pho ? '<div data-pane="p" hidden><div class="photoMsg" dir="auto">' + esc(L('photosPrevNote')) + '</div></div>' : ''));
       ov.dataset.k = 'info';
       const show = k => { oc.querySelectorAll('[data-pane]').forEach(e => { e.hidden = e.dataset.pane !== k; }); oc.querySelectorAll('.cardTabs button').forEach(b => b.classList.toggle('on', b.dataset.p === k)); ov.dataset.pane = k; };
@@ -80,7 +81,7 @@
       const menu = t.vidMode === 'menu' && t.videos.length > 1;
       const show = k => {
         const vtabs = t.videos.length > 1 && !menu ? '<div class="tabs"></div>' : '';
-        openOv('<h3 dir="auto" style="margin:0 34px 8px 0">' + esc(t.videos[k].name) + '</h3><video controls autoplay playsinline></video>' + vtabs);
+        openOv('<h3 dir="auto" style="margin:0 0 8px;margin-inline-end:34px">' + esc(t.videos[k].name) + '</h3><video controls autoplay playsinline></video>' + vtabs);
         oc.querySelector('video').src = urls[k];
         const tb = oc.querySelector('.tabs'); if (tb) t.videos.forEach((v, j) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = v.name || ('#' + (j + 1)); b.dir = 'auto'; if (j === k) b.className = 'on'; b.onclick = () => show(j); tb.appendChild(b); });
       };

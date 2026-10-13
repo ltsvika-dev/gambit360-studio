@@ -245,8 +245,8 @@
     };
   }
   async function cloudOut() {
-    if (!confirm(L('outAsk'))) return;
-    const wipe = confirm(L('outWipe'));
+    if (!(await g360Ask(L('outAsk')))) return;
+    const wipe = await g360Ask(L('outWipe'));
     if (HOSTED) { try { await upPost({ action: 'logout' }); } catch (e) {} }
     delete settings.upKey; srvInfo = null;
     if (wipe) { try { if (db.h) db.h.close(); } catch (e) {} db.h = null; await new Promise(res => { const r = indexedDB.deleteDatabase('gambit360live'); r.onsuccess = r.onerror = r.onblocked = () => res(); }); location.reload(); return; }

@@ -61,7 +61,7 @@
     if (!d || d.g360project !== 1 || !d.model) { msg(t('projBad'), true); return false; }
     if (projHandle) projHandle.__for = d.model;
     if (started && d.model === currentName) { applyProject(d); closeImport(); return true; }
-    if (started && !canLoadNow()) return false;
+    if (started && !(await canLoadNow())) return false;
     pendingProject = d;
     let rec = null; if (!GENERIC_E57.test(d.model)) { try { rec = await idb.get('model:' + d.model); } catch (err) {} }   // an old "cloud_0" project cannot tell which file it was: the file is picked once
     if (rec && rec.handle) { if (rec.kind === 'e57' && d.quality) $('quality').value = String(d.quality); await doResume(rec); if (started && currentName === d.model) return true; if (!$('resumeBox').hidden) return false; }
@@ -71,13 +71,13 @@
     msg(t('projPick', nm)); return false;   // the model has to be picked once: the start window stays open with the hint
   }
   async function swapCloud(file, h) {
-    if (!currentName || !canLoadNow()) return;
+    if (!currentName || !(await canLoadNow())) return;
     keepProjectName = currentName; let ok = false;
     try { ok = await loadE57(file, h || null, +$('quality').value); } finally { keepProjectName = ''; }
     if (ok) { const m = t('pkgSwapDone', file.name); pkgMsg(m); say(m); }
   }
   async function swapObj(dir) {
-    if (!currentName || !canLoadNow()) return;
+    if (!currentName || !(await canLoadNow())) return;
     keepProjectName = currentName; let ok = false;
     try { ok = await loadObj(await walkDir(dir, []), dir, currentName); } finally { keepProjectName = ''; }
     if (ok) { const m = t('pkgSwapDone', dir.name); pkgMsg(m); say(m); }

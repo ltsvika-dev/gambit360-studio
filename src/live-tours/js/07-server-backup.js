@@ -26,7 +26,7 @@
   }
   function srvTexts() { $('lvSrvBkL').textContent = L('srvBkOn'); $('lvSrvRestore').textContent = L('srvRestore'); $('lvSrvPhp').textContent = L('srvPhp'); }
   async function srvSt() { let at = 0; try { at = await db.kget('srvBkAt'); } catch (e) {} $('lvSrvBkSt').textContent = at ? L('srvLast', new Date(at).toLocaleString()) : L('srvNone'); }
-  $('lvSrvRestore').onclick = () => { readSet(); if (confirm(L('srvRsConfirm'))) srvRestore(); };
+  $('lvSrvRestore').onclick = async () => { readSet(); if (await g360Ask(L('srvRsConfirm'))) srvRestore(); };
   $('lvSrvPhp').onclick = async () => {
     readSet(); if (!settings.upKey) { msg(L('srvNeed'), true); return; }
     try { const root = await outDir(false), dir = await exportDir(root, 'Live Tours', true); await writeFile(dir, 'upload.php', await uploadPhp()); msg(L('srvPhpDone')); }

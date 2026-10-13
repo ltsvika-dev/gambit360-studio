@@ -29,7 +29,7 @@
   function e57ModelName(file) { const b = file.name.replace(/\.e57$/i, ''); return GENERIC_E57.test(b) ? b + '_' + file.size : b; }
   const legacyOf = (oldName, name) => GENERIC_E57.test(oldName || '') && new RegExp('^' + oldName + '_\\d+$', 'i').test(name || '');   // a project saved before the size was added
   const shownName = name => { let tl = ''; try { tl = localStorage.getItem('tourViewerTitle:' + name) || ''; } catch (err) {} return tl || String(name || '').replace(/^(cloud_\d+)_\d+$/i, '$1'); };   // what a person recognises: the project title
-  const canLoadNow = () => !(started && (measures.length || areas.length) && !confirm(t('confirmNew')));
+  const canLoadNow = async () => !(started && (measures.length || areas.length) && !(await g360Ask(t('confirmNew'))));
 
   async function walkDir(dir, out, depth = 0) {
     for await (const [, h] of dir.entries()) {
@@ -173,14 +173,14 @@
   $('picker').addEventListener('change', async e => {
     const files = [...e.target.files];
     if (!files.length) return;
-    if (!canLoadNow()) { e.target.value = ''; return; }
+    if (!(await canLoadNow())) { e.target.value = ''; return; }
     const nm = (files[0].webkitRelativePath || '').split('/')[0];
     if (!(await freshLoad(nm, () => loadObj(files, null, nm)))) e.target.value = '';   // cancelled: the same folder can be picked again
   });
   $('pickerE57').addEventListener('change', async e => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!canLoadNow()) { e.target.value = ''; return; }
+    if (!(await canLoadNow())) { e.target.value = ''; return; }
     if (!(await freshLoad(file.name.replace(/\.e57$/i, ''), () => loadE57(file, null, +$('quality').value)))) e.target.value = '';
   });
   if (hasFS) {
@@ -189,7 +189,7 @@
       e.preventDefault();
       try {
         const dir = await g360Pick.dir({ id:'g360scan', mode:'read' });
-        if (!canLoadNow()) return;
+        if (!(await canLoadNow())) return;
         const fl = await walkDir(dir, []);
         await freshLoad(dir.name, () => loadObj(fl, dir, dir.name));
       } catch (err) {
@@ -203,7 +203,7 @@
       e.preventDefault();
       try {
         const [h] = await g360Pick.open({ id:'g360scan', multiple:false, types:[{ description:'E57', accept:{ 'application/octet-stream':['.e57'] } }] });
-        if (!canLoadNow()) return;
+        if (!(await canLoadNow())) return;
         const fe = await h.getFile();
         await freshLoad(fe.name.replace(/\.e57$/i, ''), () => loadE57(fe, h, +$('quality').value));
       } catch (err) {

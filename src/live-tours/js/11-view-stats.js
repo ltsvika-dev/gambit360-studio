@@ -93,7 +93,12 @@
     tours.forEach(o => { const sl = o.upSlug; if (sl && !st[sl]) rows.push({ slug: sl, t: o, s: null }); });   // uploaded tours with no visits yet
     rows.sort((a, c) => ((c.s && c.s.d30) || 0) - ((a.s && a.s.d30) || 0) || ((c.s && c.s.n) || 0) - ((a.s && a.s.n) || 0));
     const nm = r => r.t ? (r.t.name || r.t.client || r.slug) : r.slug;
-    if (!rows.some(r => r.s)) { say(L('stNone')); b.insertAdjacentHTML('beforeend', '<div class="note">' + esc(L('stNote')) + '</div>'); return; }
+    if (!rows.some(r => r.s)) {   // no visits yet: the email reports can still be set for the chosen tour
+      say(L('stNone')); b.insertAdjacentHTML('beforeend', '<div class="note">' + esc(L('stNote')) + '</div>');
+      const r0 = rows.find(r => r.slug === stCur) || rows[0] || (t && t.upSlug ? { slug: t.upSlug, t, s: null } : null);
+      if (r0) { b.insertAdjacentHTML('beforeend', '<h4 dir="auto"></h4><div class="stRep"></div>'); b.querySelector('h4').textContent = nm(r0); repUi(b.querySelector('.stRep'), r0); }
+      return;
+    }
     if (!rows.some(r => r.slug === stCur)) stCur = (rows.find(r => r.s) || rows[0]).slug;
     b.innerHTML = '<div class="stWrap"><table class="stT"><thead><tr><th>' + esc(L('stTour')) + '</th><th class="n">' + esc(L('st7')) + '</th><th class="n">' + esc(L('st30')) + '</th><th class="n">' + esc(L('stAll')) + '</th><th class="n">' + esc(L('stNew')) + '</th><th>' + esc(L('stLast')) + '</th></tr></thead><tbody></tbody></table></div><div data-d></div><div class="row"><button type="button" data-r></button></div><div class="note"></div>';
     const tb = b.querySelector('tbody'), det = b.querySelector('[data-d]');
@@ -109,7 +114,7 @@
     function show() {
       tb.querySelectorAll('tr').forEach(x => x.classList.toggle('sel', x.dataset.slug === stCur));
       const r = rows.find(x => x.slug === stCur), s = r && r.s;
-      if (!s) { det.innerHTML = '<div class="stMsg"></div>'; det.firstChild.textContent = L('stNone'); return; }
+      if (!s) { det.innerHTML = '<div class="stMsg"></div><div class="stRep"></div>'; det.firstChild.textContent = L('stNone'); repUi(det.lastChild, r); return; }
       const days = []; { const d0 = new Date(today + 'T12:00:00Z'); for (let i = 29; i >= 0; i--) { const d = new Date(d0 - i * 864e5).toISOString().slice(0, 10); days.push([d, (s.day || {})[d] || 0]); } }
       const mx = Math.max(1, ...days.map(x => x[1])), dv = s.dev || {}, dn = (dv.d || 0) + (dv.m || 0) + (dv.t || 0) || 1;
       const pct = n => Math.round(100 * (n || 0) / dn) + '%';

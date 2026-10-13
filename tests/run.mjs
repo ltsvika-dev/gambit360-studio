@@ -1,0 +1,147 @@
+// Checks the Studio in a real browser (Chromium through Playwright), the way it was checked by hand so far:
+//  1. a tour made by an older Studio opens, every section of its editor opens, and nothing throws;
+//  2. a new tour has every field from the start (the same as a tour that was loaded again);
+//  3. publishing uploads it to a local PHP site, and the published page's details card is the card the preview shows;
+//  4. a second computer with the same key gets the tour from the server (cloud sync).
+// Needs node, php and the built "Gambit360 Studio.html". Run:  npm install  then  npm test   (in this folder)
+import { chromium } from 'playwright';
+import { spawn, execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+
+const HERE = path.dirname(fileURLToPath(import.meta.url)), REPO = path.join(HERE, '..');
+const HTML = process.argv[2] || path.join(REPO, 'Gambit360 Studio.html');
+const KEY = 'test-upload-key-0123456789', STUDIO_PORT = 8091, SITE_PORT = 8092;
+const SITE = `http://127.0.0.1:${SITE_PORT}/`, STUDIO = `http://127.0.0.1:${STUDIO_PORT}/studio.html`;
+const OLD_TOUR = JSON.parse(fs.readFileSync(path.join(HERE, 'fixtures', 'old-tour.json'), 'utf8')); delete OLD_TOUR._note;
+
+let failed = 0;
+const ok = (cond, what, detail) => { console.log((cond ? 'ok    ' : 'FAIL  ') + what); if (!cond) { failed++; if (detail) console.log('      ' + String(detail).replace(/\n/g, '\n      ')); } };
+
+// ---- the two local "servers": the Studio's folder and the live tours site (with the rewrite .htaccess does on the real site) ----
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'g360test-')), studioDir = path.join(tmp, 'studio'), siteDir = path.join(tmp, 'site');
+fs.mkdirSync(studioDir); fs.mkdirSync(siteDir);
+fs.copyFileSync(HTML, path.join(studioDir, 'studio.html'));
+libs(path.join(studioDir, 'lib'));
+const html = fs.readFileSync(HTML, 'utf8'), tpl = id => html.match(new RegExp('<script type="text/plain" id="' + id + '">([\\s\\S]*?)</script>'))[1];
+fs.writeFileSync(path.join(siteDir, 'upload.php'), tpl('g360UploadTpl').replace('@@KEYHASH@@', crypto.createHash('sha256').update(KEY).digest('hex')).replace('@@LOGO@@', ''));
+fs.writeFileSync(path.join(tmp, 'router.php'), `<?php
+$p = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+if ($p !== '/' && is_file(__DIR__ . '/site' . $p)) return false;
+if (preg_match('#^/([A-Za-z0-9][A-Za-z0-9_-]*)/?$#', $p, $m)) { $_GET['t'] = $m[1]; chdir(__DIR__ . '/site'); require __DIR__ . '/site/index.php'; return true; }
+return false;
+`);
+const servers = [spawn('php', ['-S', '127.0.0.1:' + STUDIO_PORT, '-t', studioDir], { stdio: 'ignore' }), spawn('php', ['-S', '127.0.0.1:' + SITE_PORT, '-t', siteDir, path.join(tmp, 'router.php')], { stdio: 'ignore' })];
+
+// three.js and its loaders: from lib/ next to the built HTML when it is there (as on the PC), otherwise from npm
+function libs(dest) {
+  const own = path.join(path.dirname(HTML), 'lib');
+  if (fs.existsSync(path.join(own, 'three.min.js'))) { fs.cpSync(own, dest, { recursive: true }); return; }
+  const cache = path.join(HERE, '.cache', 'three');
+  if (!fs.existsSync(path.join(cache, 'package'))) {
+    fs.mkdirSync(cache, { recursive: true });
+    const tgz = execFileSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', ['pack', 'three@0.128.0', '--silent'], { cwd: cache, shell: process.platform === 'win32' }).toString().trim().split('\n').pop();
+    execFileSync('tar', ['-xzf', tgz], { cwd: cache });
+  }
+  fs.mkdirSync(dest, { recursive: true });
+  fs.copyFileSync(path.join(cache, 'package/build/three.min.js'), path.join(dest, 'three.min.js'));
+  for (const f of ['OBJLoader.js', 'MTLLoader.js']) fs.copyFileSync(path.join(cache, 'package/examples/js/loaders', f), path.join(dest, f));
+}
+
+const wait = ms => new Promise(r => setTimeout(r, ms));
+async function up(url) { for (let i = 0; i < 50; i++) { try { await fetch(url); return; } catch (e) { await wait(100); } } throw new Error('server did not start: ' + url); }
+
+// one "computer": its own browser storage, with the upload key and the site address already in the live tours settings
+async function computer(browser, name) {
+  const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 } });
+  const page = await ctx.newPage(), errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  page.on('dialog', d => d.dismiss());
+  await page.goto(STUDIO);
+  await page.evaluate(async ([key, site]) => {
+    const d = await new Promise((res, rej) => { const r = indexedDB.open('gambit360live', 1); r.onupgradeneeded = () => { const x = r.result; x.createObjectStore('tours', { keyPath: 'id' }); x.createObjectStore('files'); x.createObjectStore('kv'); }; r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+    await new Promise(res => { const q = d.transaction('kv', 'readwrite').objectStore('kv').put({ upKey: key, upOn: true, base: site, sdk: '', folders: [], foldOpen: {}, locked: {} }, 'settings'); q.onsuccess = res; });
+    d.close();
+  }, [KEY, SITE]);
+  await page.reload();
+  return { ctx, page, errors, name };
+}
+const putTour = (page, t) => page.evaluate(async t => {
+  const d = await new Promise(res => { const r = indexedDB.open('gambit360live', 1); r.onsuccess = () => res(r.result); });
+  await new Promise(res => { const q = d.transaction('tours', 'readwrite').objectStore('tours').put(t); q.onsuccess = res; }); d.close();
+}, t);
+const getTours = page => page.evaluate(async () => {
+  const d = await new Promise(res => { const r = indexedDB.open('gambit360live', 1); r.onsuccess = () => res(r.result); });
+  const all = await new Promise(res => { const q = d.transaction('tours', 'readonly').objectStore('tours').getAll(); q.onsuccess = () => res(q.result); }); d.close(); return all;
+});
+const openLive = async page => { await page.evaluate(() => window.G360_openLive()); await page.waitForSelector('#live:not([hidden])'); await page.waitForTimeout(500); };
+const clean = s => s.replace(/\s+/g, ' ').trim();
+
+let browser;
+try {
+  await up(STUDIO); await up(SITE + 'upload.php');
+  browser = await chromium.launch(fs.existsSync('/opt/pw-browsers/chromium') ? { executablePath: '/opt/pw-browsers/chromium' } : {});
+
+  // ---- 1. a tour from an older Studio ----
+  const a = await computer(browser, 'computer A');
+  const startErrors = a.errors.length;
+  ok(startErrors === 0, 'the Studio opens without errors', a.errors.join('\n'));
+  await putTour(a.page, OLD_TOUR);
+  await openLive(a.page);
+  await a.page.locator('#lvList').getByText(OLD_TOUR.name).first().click();
+  await a.page.waitForTimeout(300);
+  const heads = a.page.locator('#lvEdit .sec h4');
+  const n = await heads.count();
+  for (let i = 0; i < n; i++) { await heads.nth(i).click({ position: { x: 30, y: 8 } }); await a.page.waitForTimeout(80); }
+  ok(n >= 8 && a.errors.length === 0, `the older tour opens and all ${n} editor sections open without errors`, a.errors.join('\n'));
+
+  // ---- 2. a new tour has every field from the start ----
+  const before = (await getTours(a.page)).map(t => t.id);
+  await a.page.locator('#lvBar [data-n]').click();
+  await a.page.waitForTimeout(600);
+  const fresh = (await getTours(a.page)).find(t => !before.includes(t.id));
+  const want = { vidMode: 'player', btnLbl: 'both', uiLang: 'auto' };
+  ok(!!fresh && Object.keys(want).every(k => fresh[k] === want[k]) && fresh.btnSty.info.w === 0 && fresh.btnSty.info.r === 20 && fresh.btnPos.title === 'l' && Array.isArray(fresh.spots.list),
+    'a new tour is stored with every field (as after loading it again)', JSON.stringify(fresh));
+  ok(a.errors.length === 0, 'the new tour opens in the editor without errors', a.errors.join('\n'));
+
+  // ---- 3. publish to the local site; the published details card is the preview's card ----
+  await a.page.locator('#lvList').getByText(OLD_TOUR.name).first().click();
+  await a.page.waitForTimeout(300);
+  if (!(await a.page.evaluate(() => getComputedStyle(document.getElementById('lvPOv')).display === 'flex' && document.getElementById('lvPOv').dataset.k === 'info'))) await a.page.locator('#lvPInfo').click();   // the card may already be open (the details section opens it)
+  await a.page.waitForSelector('#lvPOv .c h3');
+  await a.page.waitForTimeout(300);
+  const preview = clean(await a.page.locator('#lvPOv .c').innerHTML());
+  await a.page.evaluate(() => document.querySelector('#lvPOv .x').click());
+  await a.page.locator('#lvEdit button', { hasText: /^(פרסום|Publish)/ }).first().click();
+  await a.page.waitForFunction(() => /הועל|upload/i.test(document.getElementById('lvMsg').textContent || '') && !/\d+\s*\/\s*\d+/.test(document.getElementById('lvMsg').textContent || ''), null, { timeout: 30000 }).catch(() => {});
+  const cfgPath = path.join(siteDir, 'tours', OLD_TOUR.slug, 'config.json');
+  ok(fs.existsSync(cfgPath) && fs.existsSync(path.join(siteDir, 'index.html')), 'publishing uploads index.html and the tour to the site', await a.page.locator('#lvMsg').textContent());
+  const v = await computer(browser, 'visitor');
+  await v.page.goto(SITE + OLD_TOUR.slug);
+  await v.page.waitForSelector('#infoBtn:not([hidden])', { timeout: 10000 }).catch(() => {});
+  await v.page.locator('#infoBtn').click();
+  const published = clean(await v.page.locator('#ovBody').innerHTML());
+  ok(published === preview, 'the published details card is exactly the card the preview shows', 'preview:   ' + preview + '\npublished: ' + published);
+  ok(v.errors.length === 0, 'the published page runs without errors', v.errors.join('\n'));
+
+  // ---- 4. another computer with the same key gets the tour from the server ----
+  await openLive(a.page);   // syncs again, now with the published tour
+  await a.page.waitForTimeout(2500);
+  ok(fs.readdirSync(siteDir).some(f => f.startsWith('_bk_')), 'computer A keeps its tours on the server (cloud)');
+  const b = await computer(browser, 'computer B');
+  await openLive(b.page);
+  await b.page.waitForFunction(name => (document.getElementById('lvList').textContent || '').includes(name), OLD_TOUR.name, { timeout: 15000 }).catch(() => {});
+  ok((await b.page.locator('#lvList').textContent()).includes(OLD_TOUR.name), 'computer B gets the tour from the server');
+  ok(b.errors.length === 0 && a.errors.length === 0, 'no errors on either computer', a.errors.concat(b.errors).join('\n'));
+} catch (e) { ok(false, 'the test itself ran to the end', e.stack || e); }
+finally {
+  if (browser) await browser.close();
+  servers.forEach(s => s.kill());
+  try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (e) {}
+}
+console.log(failed ? failed + ' check(s) failed' : 'all browser checks passed');
+process.exit(failed ? 1 : 0);

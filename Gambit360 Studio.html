@@ -5582,15 +5582,16 @@ renderer.domElement.addEventListener('mousedown', e => {
   #lvPOv .b { position:relative; background:#14181b; color:#e8ecee; border:1px solid #3a464d; border-radius:14px; padding:16px; width:min(520px,100%); max-height:100%; overflow:auto; line-height:1.6; }
   #lvPOv .x { position:absolute; top:6px; right:6px; width:30px; height:30px; padding:0 !important; }
   #lvPOv h3 { margin:0 40px 10px 0; font-size:1.05rem; }   /* the details card, as on the published page */
-  #lvPOv .ovLinks { display:flex; flex-wrap:wrap; gap:8px; }
-  #lvPOv .ovLinks a { background:#2a3338; color:#5ec4b6; border:1px solid #3a464d; border-radius:8px; padding:7px 12px; text-decoration:none; direction:ltr; }
-  #lvPOv .ovImg { display:block; width:100%; max-height:46vh; object-fit:cover; border-radius:8px; margin:0 0 12px; }
-  #lvPOv .ovCta { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:14px; padding:11px 16px; border-radius:12px; color:#fff; font-weight:600; text-decoration:none; }
-  #lvPOv .ovCta svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none; }
-  #lvPOv .cardTabs { display:flex; gap:4px; margin:0 0 12px; border-bottom:1px solid #3a464d; }
-  #lvPOv .cardTabs button { background:transparent !important; color:#b8c3c9 !important; border:0 !important; border-bottom:2px solid transparent !important; border-radius:0; padding:8px 14px; font:inherit; cursor:pointer; }
-  #lvPOv .cardTabs button.on { color:#fff !important; border-bottom-color:#5ec4b6 !important; }
-  #lvPOv .photoMsg { opacity:.75; padding:18px 4px; text-align:center; }
+  /* the tour's details card: the published page (#ovBody) and the Studio's preview (#lvPOv) both include this file (card.js builds the card) */
+  #ovBody .ovLinks, #lvPOv .ovLinks { display:flex; flex-wrap:wrap; gap:8px; }
+  #ovBody .ovLinks a, #lvPOv .ovLinks a { background:#2a3338; color:#5ec4b6; border:1px solid #3a464d; border-radius:8px; padding:7px 12px; text-decoration:none; direction:ltr; }
+  #ovBody .ovImg, #lvPOv .ovImg { display:block; width:100%; max-height:46vh; object-fit:cover; border-radius:8px; margin:0 0 12px; }
+  #ovBody .ovCta, #lvPOv .ovCta { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:14px; padding:11px 16px; border-radius:12px; color:#fff; font-weight:600; text-decoration:none; }
+  #ovBody .ovCta svg, #lvPOv .ovCta svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+  #ovBody .cardTabs, #lvPOv .cardTabs { display:flex; gap:4px; margin:0 0 12px; border-bottom:1px solid #3a464d; }
+  #ovBody .cardTabs button, #lvPOv .cardTabs button { background:transparent !important; color:#b8c3c9 !important; border:0 !important; border-bottom:2px solid transparent !important; border-radius:0; padding:8px 14px; font:inherit; cursor:pointer; }
+  #ovBody .cardTabs button.on, #lvPOv .cardTabs button.on { color:#fff !important; border-bottom-color:#5ec4b6 !important; }
+  #ovBody .photoMsg, #lvPOv .photoMsg { color:#b8c3c9; padding:18px 4px; text-align:center; }
   #lvPOv [hidden] { display:none !important; }
   #lvPOv video { width:100%; max-height:60vh; background:#000; border-radius:8px; display:block; }
   #lvPOv .tabs { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; } #lvPOv .tabs button { width:auto; border:1px solid #3a464d !important; }
@@ -5771,19 +5772,20 @@ renderer.domElement.addEventListener('mousedown', e => {
   #ovBox video { width:100%; max-height:68vh; background:#000; border-radius:8px; display:block; }
   .ovTabs { display:flex; flex-wrap:wrap; gap:4px; margin-top:10px; }
   .ovTabs button { width:auto; border:1px solid #3a464d; }
-  .ovLinks { display:flex; flex-wrap:wrap; gap:8px; }
-  .ovLinks a { background:#2a3338; color:#5ec4b6; border:1px solid #3a464d; border-radius:8px; padding:7px 12px; text-decoration:none; direction:ltr; }
-  .ovImg { display:block; width:100%; max-height:46vh; object-fit:cover; border-radius:8px; margin:0 0 12px; }
-  .ovCta { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:14px; padding:11px 16px; border-radius:12px; color:#fff; font-weight:600; text-decoration:none; }
-  .ovCta svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none; }
-  .cardTabs { display:flex; gap:4px; margin:0 0 12px; border-bottom:1px solid #3a464d; }
-  .cardTabs button { background:transparent; color:#b8c3c9; border:0; border-bottom:2px solid transparent; padding:8px 14px; font:inherit; cursor:pointer; }
-  .cardTabs button.on { color:#fff; border-bottom-color:#5ec4b6; }
+  /* the tour's details card: the published page (#ovBody) and the Studio's preview (#lvPOv) both include this file (card.js builds the card) */
+  #ovBody .ovLinks, #lvPOv .ovLinks { display:flex; flex-wrap:wrap; gap:8px; }
+  #ovBody .ovLinks a, #lvPOv .ovLinks a { background:#2a3338; color:#5ec4b6; border:1px solid #3a464d; border-radius:8px; padding:7px 12px; text-decoration:none; direction:ltr; }
+  #ovBody .ovImg, #lvPOv .ovImg { display:block; width:100%; max-height:46vh; object-fit:cover; border-radius:8px; margin:0 0 12px; }
+  #ovBody .ovCta, #lvPOv .ovCta { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:14px; padding:11px 16px; border-radius:12px; color:#fff; font-weight:600; text-decoration:none; }
+  #ovBody .ovCta svg, #lvPOv .ovCta svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+  #ovBody .cardTabs, #lvPOv .cardTabs { display:flex; gap:4px; margin:0 0 12px; border-bottom:1px solid #3a464d; }
+  #ovBody .cardTabs button, #lvPOv .cardTabs button { background:transparent !important; color:#b8c3c9 !important; border:0 !important; border-bottom:2px solid transparent !important; border-radius:0; padding:8px 14px; font:inherit; cursor:pointer; }
+  #ovBody .cardTabs button.on, #lvPOv .cardTabs button.on { color:#fff !important; border-bottom-color:#5ec4b6 !important; }
+  #ovBody .photoMsg, #lvPOv .photoMsg { color:#b8c3c9; padding:18px 4px; text-align:center; }
   .photoGrid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
   .photoGrid button { position:relative; padding:0; border:0; border-radius:8px; overflow:hidden; background:#000; cursor:pointer; aspect-ratio:4/3; }
   .photoGrid img { width:100%; height:100%; object-fit:cover; display:block; }
   .photoGrid span { position:absolute; left:0; right:0; bottom:0; padding:14px 8px 6px; font-size:.78rem; color:#fff; text-align:start; background:linear-gradient(transparent,rgba(0,0,0,.7)); }
-  .photoMsg { color:#b8c3c9; padding:18px 4px; text-align:center; }
   #music svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
   #music .off { display:none; } #music.muted .on { display:none; } #music.muted .off { display:block; }
   #mini { position:fixed; z-index:6; background:rgba(20,24,27,.82); border-radius:12px; padding:6px; box-shadow:0 4px 18px rgba(0,0,0,.45); max-width:calc(100vw - 28px); }
@@ -5829,6 +5831,29 @@ renderer.domElement.addEventListener('mousedown', e => {
 <div id="calib" hidden></div>
 <div id="err" hidden></div>
 <script>
+// ===== The tour's details card. The published page and the Studio's preview both include this file, so the preview shows the card exactly as a visitor sees it. =====
+const G360Card = (() => {
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const COL = { wa: '#25a85a', tel: '#1f8a70', mail: '#3b6fd8', link: '#4a5560' }, IC = { tel: 'phone', mail: 'mail', link: 'star' };   // the contact button's colour and icon for each kind
+  const WA = '<path d="M4 20l1.2-4A8.5 8.5 0 1 1 8 18.9z"/><path d="M9.2 8.6c.2 2.4 2.6 4.8 5 5l1.3-1.3-1.7-1.1-.9.7c-.8-.3-1.7-1.2-2-2l.7-.9-1.1-1.7z" fill="currentColor" stroke="none"/>';
+  const TX = { he: { wa: 'שלחו הודעה', tel: 'התקשרו אלינו', mail: 'שלחו מייל', link: 'צרו קשר', info: 'פרטים', photos: 'תמונות' }, en: { wa: 'Send a message', tel: 'Call us', mail: 'Send an email', link: 'Contact us', info: 'Details', photos: 'Photos' } };
+  // the contact link: WhatsApp, phone, email or a web address ('' when the value does not fit its kind)
+  function href(c) { const v = String(c && c.value || '').trim(), dg = v.replace(/[^0-9]/g, ''); if (!v) return ''; if (c.type === 'wa' && dg) return 'https://wa.me/' + (dg[0] === '0' ? '972' + dg.slice(1) : dg) + (c.msg ? '?text=' + encodeURIComponent(c.msg) : ''); if (c.type === 'tel' && dg) return 'tel:' + (v[0] === '+' ? '+' : '') + dg; if (c.type === 'mail' && v.indexOf('@') > 0) return 'mailto:' + v; if (c.type === 'link' && /^https?:\/\//i.test(v)) return v; return ''; }
+  const label = (c, lang) => c.label || TX[lang][c.type] || TX[lang].link;   // the contact button's text: its own, or the default of its kind
+  // the contact button at the bottom of the card; icon(name) gives the svg paths of one of the page's icons
+  function cta(c, link, lang, icon) { if (!link) return ''; return '<a class="ovCta" style="background:' + (COL[c.type] || COL.link) + '" href="' + esc(link) + '" rel="noopener"' + (c.type === 'wa' || c.type === 'link' ? ' target="_blank"' : '') + '><svg viewBox="0 0 24 24">' + (c.type === 'wa' ? WA : icon(IC[c.type] || 'star')) + '</svg><span>' + esc(label(c, lang)) + '</span></a>'; }
+  // o: { info, title (the tour's), img (url or ''), cta (from cta()), photos (true: a Photos tab), photosHtml, lang ('he'/'en'), icon }
+  const hasDetails = o => { const i = o.info || {}; return !!(i.title || i.text || i.phone || i.mail || i.link || i.address || o.img || o.cta); };
+  function html(o) {
+    const i = o.info || {}, tx = TX[o.lang] || TX.he, ph = String(i.phone || '').replace(/[^0-9+]/g, ''), ln = /^https?:\/\//i.test(i.link || '') ? i.link : '', tb = ' target="_blank" rel="noopener"', det = hasDetails(o);
+    const body = (o.img ? '<img class="ovImg" alt="" src="' + esc(o.img) + '">' : '') + (i.text ? '<p style="white-space:pre-wrap;margin:0 0 12px">' + esc(i.text) + '</p>' : '') +
+      '<div class="ovLinks">' + (ph ? '<a href="tel:' + ph + '">' + esc(i.phone) + '</a>' : '') + (i.mail ? '<a href="mailto:' + esc(i.mail) + '">' + esc(i.mail) + '</a>' : '') + (i.address ? '<a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(i.address) + '"' + tb + '><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-inline-end:6px">' + o.icon('pin') + '</svg>' + esc(i.address) + '</a>' : '') + (ln ? '<a href="' + esc(ln) + '"' + tb + '>' + esc(i.linkTxt || ln) + '</a>' : '') + '</div>' + (o.cta || '');
+    return '<h3 dir="auto">' + esc(i.title || o.title || '') + '</h3>' + (o.photos && det ? '<div class="cardTabs"><button type="button" data-p="d">' + tx.info + '</button><button type="button" data-p="p">' + tx.photos + '</button></div>' : '') + (det ? '<div data-pane="d">' + body + '</div>' : '') + (o.photos ? '<div data-pane="p" hidden>' + (o.photosHtml || '') + '</div>' : '');
+  }
+  // shows one part of the card (d: details, p: photos) and marks its tab
+  function show(box, k) { box.querySelectorAll('[data-pane]').forEach(e => { e.hidden = e.dataset.pane !== k; }); box.querySelectorAll('.cardTabs button').forEach(b => b.classList.toggle('on', b.dataset.p === k)); }
+  return { COL, IC, WA, href, label, cta, hasDetails, html, show };
+})();
 (async function () {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -5971,22 +5996,16 @@ renderer.domElement.addEventListener('mousedown', e => {
   ov.addEventListener('mousedown', e => { if (e.target === ov) closeOv(); });
   addEventListener('keydown', e => { if (e.key === 'Escape' && !ov.hidden) closeOv(); });
   // contact button: it lives inside the details card now (a floating one covered Matterport's own buttons)
-  const WA_SVG = '<path d="M4 20l1.2-4A8.5 8.5 0 1 1 8 18.9z"/><path d="M9.2 8.6c.2 2.4 2.6 4.8 5 5l1.3-1.3-1.7-1.1-.9.7c-.8-.3-1.7-1.2-2-2l.7-.9-1.1-1.7z" fill="currentColor" stroke="none"/>';
   const ct = cfg.contact; let cta = '';
   if (ct && ct.value) {
-    const v = String(ct.value).trim(), dg = v.replace(/[^0-9]/g, ''), COL = { wa: '#25a85a', tel: '#1f8a70', mail: '#3b6fd8', link: '#4a5560' }, DEF = { wa: TX.wa, tel: TX.tel, mail: TX.mail, link: TX.link };
-    let href = '';
-    if (ct.type === 'wa' && dg) href = 'https://wa.me/' + (dg[0] === '0' ? '972' + dg.slice(1) : dg) + (ct.msg ? '?text=' + encodeURIComponent(ct.msg) : '');
-    else if (ct.type === 'tel' && dg) href = 'tel:' + (v[0] === '+' ? '+' : '') + dg;
-    else if (ct.type === 'mail' && v.indexOf('@') > 0) href = 'mailto:' + v;
-    else if (ct.type === 'link' && /^https?:\/\//i.test(v)) href = v;
+    const COL = G360Card.COL, href = G360Card.href(ct), lang = EN ? 'en' : 'he', icon = k => ICONS[k];
     if (href && bsty.contact && bsty.contact.on) {   // a round button in the row, in the colour of its kind unless one was chosen
-      const b = $('ctBtn'), lb = bLbl('contact') || ct.label || DEF[ct.type] || DEF.link; b.href = href; if (ct.type === 'wa' || ct.type === 'link') b.target = '_blank';
-      b.querySelector('svg').innerHTML = ct.type === 'wa' ? WA_SVG : ICONS[{ tel: 'phone', mail: 'mail', link: 'star' }[ct.type] || 'star']; b.querySelector('span').textContent = lb; b.title = lb; b.setAttribute('aria-label', lb); b.dir = 'auto';
+      const b = $('ctBtn'), lb = bLbl('contact') || G360Card.label(ct, lang); b.href = href; if (ct.type === 'wa' || ct.type === 'link') b.target = '_blank';
+      b.querySelector('svg').innerHTML = ct.type === 'wa' ? G360Card.WA : icon(G360Card.IC[ct.type] || 'star'); b.querySelector('span').textContent = lb; b.title = lb; b.setAttribute('aria-label', lb); b.dir = 'auto';
       if (!/^#[0-9a-f]{6}$/i.test(bsty.contact.bg || '')) { const h = COL[ct.type] || COL.link, tr = bsty.contact.tr, a = tr == null || +tr === 28 ? 1 : Math.max(.1, Math.min(1, 1 - (+tr || 0) / 100)); b.style.background = 'rgba(' + parseInt(h.slice(1, 3), 16) + ',' + parseInt(h.slice(3, 5), 16) + ',' + parseInt(h.slice(5, 7), 16) + ',' + a.toFixed(2) + ')'; b.style.color = '#fff'; b.classList.add('cst'); }
       b.hidden = false;
     }
-    if (href && cfg.contactCard !== false) cta = '<a class="ovCta" style="background:' + (COL[ct.type] || COL.link) + '" href="' + esc(href) + '" rel="noopener"' + (ct.type === 'wa' || ct.type === 'link' ? ' target="_blank"' : '') + '><svg viewBox="0 0 24 24">' + (ct.type === 'wa' ? WA_SVG : ICONS[{ tel: 'phone', mail: 'mail', link: 'star' }[ct.type] || 'star']) + '</svg><span>' + esc(ct.label || DEF[ct.type] || DEF.link) + '</span></a>';
+    if (cfg.contactCard !== false) cta = G360Card.cta(ct, href, lang, icon);
   }
   // Highlight Reel pictures for the "Photos" tab: loaded through the SDK once it is connected
   let reel = [], reelState = wantSdk ? 'loading' : 'fail', sdkRef = null;
@@ -6011,15 +6030,12 @@ renderer.domElement.addEventListener('mousedown', e => {
     reelDone();
   }
   const info = cfg.info || {}, phCfg = cfg.photos || null;
-  const hasDet = !!(info.title || info.text || info.phone || info.mail || info.link || info.address || info.image || cta);
+  const cardOpt = { info, title: cfg.title || cfg.name || '', img: info.image ? base + info.image : '', cta, photos: !!phCfg, lang: EN ? 'en' : 'he', icon: k => ICONS[k] }, hasDet = G360Card.hasDetails(cardOpt);
   if (hasDet || phCfg || cfg.info) {
     $('infoBtn').hidden = false;
     $('infoBtn').onclick = () => {
-      const ph = String(info.phone || '').replace(/[^0-9+]/g, ''), ln = /^https?:\/\//i.test(info.link || '') ? info.link : '';
-      const det = (info.image ? '<img class="ovImg" alt="" src="' + esc(base + info.image) + '">' : '') + (info.text ? '<p style="white-space:pre-wrap;margin:0 0 12px">' + esc(info.text) + '</p>' : '') +
-        '<div class="ovLinks">' + (ph ? '<a href="tel:' + ph + '">' + esc(info.phone) + '</a>' : '') + (info.mail ? '<a href="mailto:' + esc(info.mail) + '">' + esc(info.mail) + '</a>' : '') + (info.address ? '<a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(info.address) + '" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-inline-end:6px">' + ICONS.pin + '</svg>' + esc(info.address) + '</a>' : '') + (ln ? '<a href="' + esc(ln) + '" target="_blank" rel="noopener">' + esc(info.linkTxt || ln) + '</a>' : '') + '</div>' + cta;
-      ovBody.innerHTML = '<h3 dir="auto">' + esc(info.title || cfg.title || cfg.name || '') + '</h3>' + (phCfg && hasDet ? '<div class="cardTabs"><button type="button" data-p="d">' + TX.info + '</button><button type="button" data-p="p">' + TX.photos + '</button></div>' : '') + (hasDet ? '<div data-pane="d">' + det + '</div>' : '') + (phCfg ? '<div data-pane="p" hidden></div>' : '');
-      const show = k => { ovBody.querySelectorAll('[data-pane]').forEach(e => { e.hidden = e.dataset.pane !== k; }); ovBody.querySelectorAll('.cardTabs button').forEach(b => b.classList.toggle('on', b.dataset.p === k)); if (k === 'p') fillPhotos(ovBody.querySelector('[data-pane=p]')); };
+      ovBody.innerHTML = G360Card.html(cardOpt);
+      const show = k => { G360Card.show(ovBody, k); if (k === 'p') fillPhotos(ovBody.querySelector('[data-pane=p]')); };
       ovBody.querySelectorAll('.cardTabs button').forEach(b => { b.onclick = () => show(b.dataset.p); });
       show(hasDet ? 'd' : 'p'); ov.hidden = false;
     };
@@ -6797,6 +6813,29 @@ function g360_count($slug) {
 }
 </script>
 <script>
+// ===== The tour's details card. The published page and the Studio's preview both include this file, so the preview shows the card exactly as a visitor sees it. =====
+const G360Card = (() => {
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const COL = { wa: '#25a85a', tel: '#1f8a70', mail: '#3b6fd8', link: '#4a5560' }, IC = { tel: 'phone', mail: 'mail', link: 'star' };   // the contact button's colour and icon for each kind
+  const WA = '<path d="M4 20l1.2-4A8.5 8.5 0 1 1 8 18.9z"/><path d="M9.2 8.6c.2 2.4 2.6 4.8 5 5l1.3-1.3-1.7-1.1-.9.7c-.8-.3-1.7-1.2-2-2l.7-.9-1.1-1.7z" fill="currentColor" stroke="none"/>';
+  const TX = { he: { wa: 'שלחו הודעה', tel: 'התקשרו אלינו', mail: 'שלחו מייל', link: 'צרו קשר', info: 'פרטים', photos: 'תמונות' }, en: { wa: 'Send a message', tel: 'Call us', mail: 'Send an email', link: 'Contact us', info: 'Details', photos: 'Photos' } };
+  // the contact link: WhatsApp, phone, email or a web address ('' when the value does not fit its kind)
+  function href(c) { const v = String(c && c.value || '').trim(), dg = v.replace(/[^0-9]/g, ''); if (!v) return ''; if (c.type === 'wa' && dg) return 'https://wa.me/' + (dg[0] === '0' ? '972' + dg.slice(1) : dg) + (c.msg ? '?text=' + encodeURIComponent(c.msg) : ''); if (c.type === 'tel' && dg) return 'tel:' + (v[0] === '+' ? '+' : '') + dg; if (c.type === 'mail' && v.indexOf('@') > 0) return 'mailto:' + v; if (c.type === 'link' && /^https?:\/\//i.test(v)) return v; return ''; }
+  const label = (c, lang) => c.label || TX[lang][c.type] || TX[lang].link;   // the contact button's text: its own, or the default of its kind
+  // the contact button at the bottom of the card; icon(name) gives the svg paths of one of the page's icons
+  function cta(c, link, lang, icon) { if (!link) return ''; return '<a class="ovCta" style="background:' + (COL[c.type] || COL.link) + '" href="' + esc(link) + '" rel="noopener"' + (c.type === 'wa' || c.type === 'link' ? ' target="_blank"' : '') + '><svg viewBox="0 0 24 24">' + (c.type === 'wa' ? WA : icon(IC[c.type] || 'star')) + '</svg><span>' + esc(label(c, lang)) + '</span></a>'; }
+  // o: { info, title (the tour's), img (url or ''), cta (from cta()), photos (true: a Photos tab), photosHtml, lang ('he'/'en'), icon }
+  const hasDetails = o => { const i = o.info || {}; return !!(i.title || i.text || i.phone || i.mail || i.link || i.address || o.img || o.cta); };
+  function html(o) {
+    const i = o.info || {}, tx = TX[o.lang] || TX.he, ph = String(i.phone || '').replace(/[^0-9+]/g, ''), ln = /^https?:\/\//i.test(i.link || '') ? i.link : '', tb = ' target="_blank" rel="noopener"', det = hasDetails(o);
+    const body = (o.img ? '<img class="ovImg" alt="" src="' + esc(o.img) + '">' : '') + (i.text ? '<p style="white-space:pre-wrap;margin:0 0 12px">' + esc(i.text) + '</p>' : '') +
+      '<div class="ovLinks">' + (ph ? '<a href="tel:' + ph + '">' + esc(i.phone) + '</a>' : '') + (i.mail ? '<a href="mailto:' + esc(i.mail) + '">' + esc(i.mail) + '</a>' : '') + (i.address ? '<a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(i.address) + '"' + tb + '><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-inline-end:6px">' + o.icon('pin') + '</svg>' + esc(i.address) + '</a>' : '') + (ln ? '<a href="' + esc(ln) + '"' + tb + '>' + esc(i.linkTxt || ln) + '</a>' : '') + '</div>' + (o.cta || '');
+    return '<h3 dir="auto">' + esc(i.title || o.title || '') + '</h3>' + (o.photos && det ? '<div class="cardTabs"><button type="button" data-p="d">' + tx.info + '</button><button type="button" data-p="p">' + tx.photos + '</button></div>' : '') + (det ? '<div data-pane="d">' + body + '</div>' : '') + (o.photos ? '<div data-pane="p" hidden>' + (o.photosHtml || '') + '</div>' : '');
+  }
+  // shows one part of the card (d: details, p: photos) and marks its tab
+  function show(box, k) { box.querySelectorAll('[data-pane]').forEach(e => { e.hidden = e.dataset.pane !== k; }); box.querySelectorAll('.cardTabs button').forEach(b => b.classList.toggle('on', b.dataset.p === k)); }
+  return { COL, IC, WA, href, label, cta, hasDetails, html, show };
+})();
 // ===== Live tours: a Gambit360 layer (client logo, music, nadir, mini map) over original Matterport tours, published to a subdomain. Studio only. =====
 (function () {
   if (window.G360_CLIENT) return;
@@ -6900,7 +6939,12 @@ function g360_count($slug) {
 
   const BTN_KEYS = ['title', 'info', 'video', 'tours', 'music', 'spots', 'contact'];   // the round buttons on the page
   const MP_KEYS = [['brand', 'mpBrand'], ['title', 'mpTitle'], ['help', 'mpHelp'], ['qs', 'mpQs'], ['play', 'mpPlay'], ['hl', 'mpHl'], ['dh', 'mpDh'], ['mt', 'mpMt'], ['vr', 'mpVr']];
-  const newTour = () => ({ id: 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: '', client: '', model: '', slug: '', title: '', mp: { brand: 0, title: 1, help: 0, qs: 1, play: 0, hl: 0, dh: 1, mt: 1, vr: 1 }, extra: '', logo: { on: true, pos: 'tl', w: 160, card: true, link: '', top: 14, side: 14 }, music: { on: false, vol: 35 }, nadir: { on: false, size: .9, opacity: 100 }, mini: { on: false, pos: 'br', w: 240, open: true, floors: [] }, videos: [], tours: [], vidSec: { on: false }, tourSec: { on: false }, contact: { on: false, type: 'wa', value: '', msg: '', label: '', pos: 'br' }, folder: '', mainName: '', icons: { tours: 'list', video: 'video', info: 'list', spots: 'pin' }, spots: { on: false, list: [] }, info: { on: false, title: '', text: '', phone: '', mail: '', link: '', linkTxt: '' }, photos: { on: false, only360: false }, welcome: { on: false, title: '', text: '', pos: 'l', secs: 6, bottom: 64 }, btnPos: { info: 'l', video: 'l', tours: 'l', music: 'l', spots: 'l', contact: 'l' }, btnOff: { top: -1, side: 14 }, cardMig: 1, updated: Date.now(), btnOrder: ['title', 'info', 'tours', 'music', 'video', 'spots', 'contact'], btnSty: { title: { on: false, link: '', lbl: '', bg: '', tr: 28 },  info: { lbl: '', bg: '', tr: 28 }, video: { lbl: '', bg: '', tr: 28 }, tours: { lbl: '', bg: '', tr: 28 }, music: { lbl: '', bg: '', tr: 28 }, spots: { lbl: '', bg: '', tr: 28 }, contact: { on: false, lbl: '', bg: '', tr: 28 } } });
+  // every field of a tour with its default. A new tour starts from this; normTour fills in what a tour made by an older Studio lacks.
+  // A new field goes here only (and, when older tours need more than its default, a line in normTour).
+  const BTN_STY_DEF = () => ({ lbl: '', bg: '', tr: 28, w: 0, r: 20 });
+  const TOUR_DEF = () => ({ name: '', client: '', model: '', slug: '', title: '', mp: { brand: 0, title: 1, help: 0, qs: 1, play: 0, hl: 0, dh: 1, mt: 1, vr: 1 }, extra: '', logo: { on: true, pos: 'tl', w: 160, card: true, link: '', top: 14, side: 14 }, music: { on: false, vol: 35 }, nadir: { on: false, size: .9, opacity: 100 }, mini: { on: false, pos: 'br', w: 240, open: true, floors: [] }, videos: [], tours: [], vidSec: { on: false }, tourSec: { on: false }, contact: { on: false, type: 'wa', value: '', msg: '', label: '', pos: 'br' }, folder: '', mainName: '', icons: { tours: 'list', video: 'video', info: 'list', spots: 'pin' }, spots: { on: false, list: [] }, info: { on: false, title: '', text: '', phone: '', mail: '', link: '', linkTxt: '' }, photos: { on: false, only360: false }, welcome: { on: false, title: '', text: '', pos: 'l', secs: 6, bottom: 64 }, btnPos: { title: 'l', info: 'l', video: 'l', tours: 'l', music: 'l', spots: 'l', contact: 'l' }, btnOff: { top: -1, side: 14 }, btnOrder: ['title', 'info', 'tours', 'music', 'video', 'spots', 'contact'], btnSty: Object.assign(Object.fromEntries(BTN_KEYS.map(k => [k, BTN_STY_DEF()])), { title: Object.assign(BTN_STY_DEF(), { on: false, link: '' }), contact: Object.assign(BTN_STY_DEF(), { on: false }) }), vidMode: 'player', btnLbl: 'both', uiLang: 'auto' });
+  const TOUR_MERGE = ['contact', 'icons', 'spots', 'info', 'photos', 'welcome', 'btnPos', 'btnOff'];   // objects an older tour may have only some fields of: filled in field by field
+  const newTour = () => normTour(Object.assign(TOUR_DEF(), { id: 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), cardMig: 1, updated: Date.now() }));
   const modelId = s => { s = String(s || '').trim(); const m = s.match(/[?&]m=([A-Za-z0-9]{6,})/) || s.match(/^([A-Za-z0-9]{6,})$/); return m ? m[1] : ''; };
   // a jump point from a Matterport "link to this location" (…&ss=19&sr=-3.05,.57) or just its ss=…&sr=… part
   const spotParse = v => { v = String(v || '').trim(); const q = new URLSearchParams((v.indexOf('?') >= 0 ? v.slice(v.indexOf('?') + 1) : v).replace(/^[?&#]+/, '').replace(/#.*$/, '')), ss = q.get('ss'), sr = q.get('sr') || ''; if (!/^\d{1,4}$/.test(ss || '')) return null; return { ss, sr: /^-?[0-9.]+,-?[0-9.]+$/.test(sr) ? sr : '', m: modelId(v) }; };
@@ -6915,14 +6959,11 @@ function g360_count($slug) {
 
   const fileKeys = t => ['logo', 'music', 'nadir', 'infoimg', 'share'].concat(t.mini.floors.map((_, i) => 'floor:' + i), (t.videos || []).map(v => 'video:' + v.id));
   function normTour(t) {
-    t.contact = Object.assign({ on: false, type: 'wa', value: '', msg: '', label: '', pos: 'br' }, t.contact || {}); t.folder = t.folder || ''; t.videos = t.videos || []; t.tours = t.tours || []; t.mainName = t.mainName || ''; t.icons = Object.assign({ tours: 'list', video: 'video', info: 'list', spots: 'pin' }, t.icons || {});
-    t.spots = Object.assign({ on: false, list: [] }, t.spots || {}); if (!Array.isArray(t.spots.list)) t.spots.list = [];   // jump points: places in the tour the visitor can jump to (a Matterport link to a location)
-    t.info = Object.assign({ on: false, title: '', text: '', phone: '', mail: '', link: '', linkTxt: '' }, t.info || {});
-    t.photos = Object.assign({ on: false, only360: false }, t.photos || {});
-    t.welcome = Object.assign({ on: false, title: '', text: '', pos: 'l', secs: 6, bottom: 64 }, t.welcome || {});   // the opening caption: shown until a few seconds after Play
-    t.btnPos = Object.assign({ info: 'l', video: 'l', tours: 'l', music: 'l', spots: 'l', contact: 'l' }, t.btnPos || {});
+    const d = TOUR_DEF();
+    Object.keys(d).forEach(k => { if (k === 'vidSec' || k === 'tourSec' || k === 'btnOrder' || k === 'btnSty') return; if (t[k] == null || t[k] === '') t[k] = d[k]; else if (TOUR_MERGE.includes(k)) t[k] = Object.assign(d[k], t[k]); });   // the four left out get their own lines below
+    if (!Array.isArray(t.spots.list)) t.spots.list = [];   // jump points: places in the tour the visitor can jump to (a Matterport link to a location)
     // button order (the title button comes first), and each button's own name / colour / width
-    t.btnOff = Object.assign({ top: -1, side: 14 }, t.btnOff || {}); t.btnOrder = (Array.isArray(t.btnOrder) ? t.btnOrder : []).filter((k, i, a) => BTN_KEYS.includes(k) && a.indexOf(k) === i); if (t.btnOrder.indexOf('title') < 0) t.btnOrder.unshift('title'); ['info', 'tours', 'music', 'video'].forEach(k => { if (t.btnOrder.indexOf(k) < 0) t.btnOrder.push(k); }); if (t.btnOrder.join() === 'title,info,video,tours,music') t.btnOrder = ['title', 'info', 'tours', 'music', 'video'];   /* the earlier default order moves to the new one */ ['spots', 'contact'].forEach(k => { if (t.btnOrder.indexOf(k) < 0) t.btnOrder.push(k); });   /* buttons added later go last */ t.btnSty = t.btnSty || {}; BTN_KEYS.forEach(k => { t.btnSty[k] = Object.assign({ lbl: '', bg: '', tr: 28, w: 0, r: 20 }, t.btnSty[k] || {}); }); t.btnSty.title = Object.assign({ on: false, link: '' }, t.btnSty.title); t.btnSty.contact = Object.assign({ on: false }, t.btnSty.contact); if (!t.btnPos.title) t.btnPos.title = 'l'; t.vidMode = t.vidMode === 'menu' ? 'menu' : 'player'; t.btnLbl = t.btnLbl === 'icon' ? 'icon' : 'both'; t.uiLang = ['he', 'en'].includes(t.uiLang) ? t.uiLang : 'auto';
+    t.btnOrder = (Array.isArray(t.btnOrder) ? t.btnOrder : []).filter((k, i, a) => BTN_KEYS.includes(k) && a.indexOf(k) === i); if (t.btnOrder.indexOf('title') < 0) t.btnOrder.unshift('title'); ['info', 'tours', 'music', 'video'].forEach(k => { if (t.btnOrder.indexOf(k) < 0) t.btnOrder.push(k); }); if (t.btnOrder.join() === 'title,info,video,tours,music') t.btnOrder = ['title', 'info', 'tours', 'music', 'video'];   /* the earlier default order moves to the new one */ ['spots', 'contact'].forEach(k => { if (t.btnOrder.indexOf(k) < 0) t.btnOrder.push(k); });   /* buttons added later go last */ t.btnSty = t.btnSty || {}; BTN_KEYS.forEach(k => { t.btnSty[k] = Object.assign(BTN_STY_DEF(), t.btnSty[k] || {}); }); t.btnSty.title = Object.assign({ on: false, link: '' }, t.btnSty.title); t.btnSty.contact = Object.assign({ on: false }, t.btnSty.contact); t.vidMode = t.vidMode === 'menu' ? 'menu' : 'player'; t.btnLbl = t.btnLbl === 'icon' ? 'icon' : 'both'; t.uiLang = ['he', 'en'].includes(t.uiLang) ? t.uiLang : 'auto';
     if (!t.cardMig) { t.cardMig = 1; if (t.contact.on && String(t.contact.value || '').trim() && !t.info.on) t.info.on = true; }   // the contact button moved into the details card
     t.vidSec = Object.assign({ on: t.videos.length > 0 }, t.vidSec || {}); t.tourSec = Object.assign({ on: t.tours.length > 0 }, t.tourSec || {});   // the videos / extra-tours buttons can be switched on and off
     if (t.logo) { t.logo.top = Number.isFinite(+t.logo.top) && t.logo.top !== '' && t.logo.top != null ? +t.logo.top : 14; t.logo.side = Number.isFinite(+t.logo.side) && t.logo.side !== '' && t.logo.side != null ? +t.logo.side : 14; }
@@ -7130,15 +7171,14 @@ function g360_count($slug) {
   }
   const ICONS = {"list": "<path d=\"M4 7h16M4 12h16M4 17h16\"/>", "grid": "<rect x=\"4\" y=\"4\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"13\" y=\"4\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"4\" y=\"13\" width=\"7\" height=\"7\" rx=\"1\"/><rect x=\"13\" y=\"13\" width=\"7\" height=\"7\" rx=\"1\"/>", "layers": "<path d=\"M12 3l9 5-9 5-9-5z\"/><path d=\"M3 13l9 5 9-5\"/>", "home": "<path d=\"M4 11l8-7 8 7\"/><path d=\"M6 10v10h12V10\"/>", "map": "<path d=\"M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z\"/><path d=\"M9 4v14M15 6v14\"/>", "pin": "<path d=\"M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11z\"/><circle cx=\"12\" cy=\"10\" r=\"2.5\"/>", "compass": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M15.5 8.5l-2 5-5 2 2-5z\"/>", "dots": "<circle cx=\"5\" cy=\"12\" r=\"1.4\" fill=\"currentColor\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\" fill=\"currentColor\"/><circle cx=\"19\" cy=\"12\" r=\"1.4\" fill=\"currentColor\"/>", "video": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"3\"/><path d=\"M10 9.5v5l4.5-2.5z\" fill=\"currentColor\"/>", "play": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M10 8.5v7l6-3.5z\" fill=\"currentColor\"/>", "film": "<rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><path d=\"M8 4v16M16 4v16M4 9h4M4 15h4M16 9h4M16 15h4\"/>", "camera": "<path d=\"M4 8h3l2-3h6l2 3h3v11H4z\"/><circle cx=\"12\" cy=\"13\" r=\"3.5\"/>", "image": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><circle cx=\"9\" cy=\"10\" r=\"1.6\"/><path d=\"M4 18l5-5 4 4 3-3 4 4\"/>", "info": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 11v6\"/><circle cx=\"12\" cy=\"7.6\" r=\".6\" fill=\"currentColor\"/>", "card": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"M7 10h5M7 14h10\"/>", "user": "<circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 20c1-4 4-6 8-6s7 2 8 6\"/>", "phone": "<path d=\"M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z\"/>", "chat": "<path d=\"M4 5h16v11H9l-5 4z\"/>", "mail": "<rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"M3 7l9 6 9-6\"/>", "star": "<path d=\"M12 4l2.4 5 5.6.7-4.1 3.9 1 5.6L12 16.5 7.1 19.2l1-5.6L4 9.7 9.6 9z\"/>", "building": "<path d=\"M5 21V4h9v17M14 9h5v12M3 21h18\"/><path d=\"M8 8h3M8 12h3M8 16h3\"/>", "key": "<circle cx=\"8\" cy=\"15\" r=\"4\"/><path d=\"M11 12l9-9M17 6l3 3M14.5 8.5l2 2\"/>", "help": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M9.5 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.4v.6\"/><circle cx=\"12\" cy=\"17\" r=\".6\" fill=\"currentColor\"/>", "globe": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18\"/>"};
   const ICON_SETS = { spots: ['pin','map','compass','home','building','layers','star','image','camera','dots','list','grid'], tours: ['list','grid','layers','home','map','pin','compass','dots','info','card','user','phone','chat','mail','star','image','building','key','help','globe'], video: ['video','play','film','camera','image'], info: ['list','grid','layers','home','map','pin','compass','dots','info','card','user','phone','chat','mail','star','image','building','key','help','globe'] };
-  const WA_ICON = '<path d="M4 20l1.2-4A8.5 8.5 0 1 1 8 18.9z"/><path d="M9.2 8.6c.2 2.4 2.6 4.8 5 5l1.3-1.3-1.7-1.1-.9.7c-.8-.3-1.7-1.2-2-2l.7-.9-1.1-1.7z" fill="currentColor" stroke="none"/>';
-  function contactHref(c) { const v = String(c && c.value || '').trim(), dg = v.replace(/[^0-9]/g, ''); if (!v) return ''; if (c.type === 'wa' && dg) return 'https://wa.me/' + (dg[0] === '0' ? '972' + dg.slice(1) : dg) + (c.msg ? '?text=' + encodeURIComponent(c.msg) : ''); if (c.type === 'tel' && dg) return 'tel:' + (v[0] === '+' ? '+' : '') + dg; if (c.type === 'mail' && v.indexOf('@') > 0) return 'mailto:' + v; if (c.type === 'link' && /^https?:\/\//i.test(v)) return v; return ''; }
+  const WA_ICON = G360Card.WA, contactHref = G360Card.href;   // the details card and its contact link: card.js, shared with the published page
   // a button's background (colour + transparency) and a readable text colour for it; the same rule is in the published page
   function btnLook(st) {
     const h = /^#[0-9a-f]{6}$/i.test(st && st.bg || '') ? st.bg : '#14181b', r = parseInt(h.slice(1, 3), 16), g = parseInt(h.slice(3, 5), 16), b = parseInt(h.slice(5, 7), 16);
     const a = Math.max(.1, Math.min(1, 1 - (st && Number.isFinite(+st.tr) ? +st.tr : 28) / 100)), lum = (.299 * r + .587 * g + .114 * b) / 255;
     return { bg: 'rgba(' + r + ',' + g + ',' + b + ',' + a.toFixed(2) + ')', fg: lum > .62 && a >= .45 ? '#14181b' : '#fff' };
   }
-  const CONTACT_COL = { wa: '#25a85a', tel: '#1f8a70', mail: '#3b6fd8', link: '#4a5560' }, CONTACT_IC = { tel: 'phone', mail: 'mail', link: 'star' };
+  const CONTACT_COL = G360Card.COL, CONTACT_IC = G360Card.IC;
   function iconRow(parent, key, t) {
     const lb = document.createElement('label'); lb.textContent = L('iconL'); parent.appendChild(lb);
     const row = document.createElement('div'); row.className = 'row icoRow'; parent.appendChild(row);
@@ -7617,18 +7657,16 @@ function g360_count($slug) {
     { const bpp = t.btnPos || {}; const pid = { title: 'lvPTitle', info: 'lvPInfo', video: 'lvPVid', tours: 'lvPTour', music: 'lvPMusic', spots: 'lvPSpot', contact: 'lvPCt' }; (t.btnOrder || ['title', 'info', 'tours', 'music', 'video', 'spots', 'contact']).forEach(k => { $(bpp[k] === 'r' ? 'lvPCtl' : 'lvPLctl').appendChild($(pid[k])); }); const bo2 = t.btnOff || { top: -1, side: 14 }; let tp = 12 + (+t.mp.brand !== 0 ? 34 : 0) + (+t.mp.title !== 0 ? 30 : 0); if (bo2.top >= 0) tp = bo2.top; $('lvPLctl').style.top = tp + 'px'; $('lvPLctl').style.left = bo2.side + 'px'; $('lvPCtl').style.top = (bo2.top >= 0 ? bo2.top : 14) + 'px'; $('lvPCtl').style.right = bo2.side + 'px'; }
     const openOv = html => { oc.innerHTML = html; ov.style.display = 'flex'; ov.dataset.k = ''; };
     ov.querySelector('.x').onclick = () => { ov.style.display = 'none'; oc.innerHTML = ''; ov.dataset.k = ''; };
-    // the details card, built like the published page builds it: the same links as buttons, the contact button and the Photos tab
+    // the details card, built by the same code as on the published page (card.js): the same links as buttons, the contact button and the Photos tab
     const infoCard = async () => {
       const i = t.info, en = tourLang(t) === 'en', ch = cOk ? contactHref(t.contact) : '', iu = await fileUrl(t.id + ':infoimg');
       if (cur !== t) return;
-      const ph = String(i.phone || '').replace(/[^0-9+]/g, ''), ln = /^https?:\/\//i.test(i.link || '') ? i.link : '', tb = ' target="_blank" rel="noopener"';
-      const cta = ch ? '<a class="ovCta" style="background:' + (CONTACT_COL[t.contact.type] || CONTACT_COL.link) + '" href="' + esc(ch) + '"' + tb + '><svg viewBox="0 0 24 24">' + (t.contact.type === 'wa' ? WA_ICON : ICONS[CONTACT_IC[t.contact.type] || 'star']) + '</svg><span>' + esc(t.contact.label || (en ? { wa: 'Send a message', tel: 'Call us', mail: 'Send an email', link: 'Contact us' } : { wa: 'שלחו הודעה', tel: 'התקשרו אלינו', mail: 'שלחו מייל', link: 'צרו קשר' })[t.contact.type] || (en ? 'Contact us' : 'צרו קשר')) + '</span></a>' : '';
-      const hasDet = !!(i.title || i.text || i.phone || i.mail || i.link || i.address || iu || cta), pho = !!t.photos.on;
-      const det = (iu ? '<img class="ovImg" alt="" src="' + iu + '">' : '') + (i.text ? '<p style="white-space:pre-wrap;margin:0 0 12px">' + esc(i.text) + '</p>' : '') +
-        '<div class="ovLinks">' + (ph ? '<a href="tel:' + ph + '">' + esc(i.phone) + '</a>' : '') + (i.mail ? '<a href="mailto:' + esc(i.mail) + '">' + esc(i.mail) + '</a>' : '') + (i.address ? '<a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(i.address) + '"' + tb + '><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-inline-end:6px">' + ICONS.pin + '</svg>' + esc(i.address) + '</a>' : '') + (ln ? '<a href="' + esc(ln) + '"' + tb + '>' + esc(i.linkTxt || ln) + '</a>' : '') + '</div>' + cta;
-      openOv('<h3 dir="auto">' + esc(i.title || t.title || t.name || '') + '</h3>' + (pho && hasDet ? '<div class="cardTabs"><button type="button" data-p="d">' + (en ? 'Details' : 'פרטים') + '</button><button type="button" data-p="p">' + (en ? 'Photos' : 'תמונות') + '</button></div>' : '') + (hasDet ? '<div data-pane="d">' + det + '</div>' : '') + (pho ? '<div data-pane="p" hidden><div class="photoMsg" dir="auto">' + esc(L('photosPrevNote')) + '</div></div>' : ''));
+      const o = { info: i, title: t.title || t.name || '', img: iu, photos: !!t.photos.on, photosHtml: '<div class="photoMsg" dir="auto">' + esc(L('photosPrevNote')) + '</div>', lang: en ? 'en' : 'he', icon: k => ICONS[k] };
+      o.cta = G360Card.cta(t.contact, ch, o.lang, o.icon);
+      const hasDet = G360Card.hasDetails(o), pho = o.photos;
+      openOv(G360Card.html(o));
       ov.dataset.k = 'info';
-      const show = k => { oc.querySelectorAll('[data-pane]').forEach(e => { e.hidden = e.dataset.pane !== k; }); oc.querySelectorAll('.cardTabs button').forEach(b => b.classList.toggle('on', b.dataset.p === k)); ov.dataset.pane = k; };
+      const show = k => { G360Card.show(oc, k); ov.dataset.pane = k; };
       oc.querySelectorAll('.cardTabs button').forEach(b => { b.onclick = () => show(b.dataset.p); });
       show(hasDet ? (ov.dataset.pane === 'p' && pho ? 'p' : 'd') : 'p');
     };

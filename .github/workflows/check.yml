@@ -15,3 +15,19 @@ jobs:
           php-version: '8.3'
       - name: Built HTML matches src, JavaScript and PHP syntax
         run: python3 src/check.py
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+      - name: Install Playwright and Chromium
+        working-directory: tests
+        run: npm ci && npx playwright install --with-deps chromium
+      - name: Browser checks (older tour, new tour, publish, second computer)
+        working-directory: tests
+        run: npm test

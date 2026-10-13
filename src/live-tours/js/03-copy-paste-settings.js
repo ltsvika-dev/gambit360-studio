@@ -368,7 +368,7 @@
     bDel.onclick = async () => {
       const others = tours.filter(o => o !== t), sl = t.upSlug, ml = String(t.model || '').toLowerCase();
       const onSrv = !!(sl && settings.upKey && settings.upOn !== false && !others.some(o => slugOf(o) === sl));   /* only a tour that was uploaded and whose address no other tour uses */
-      const rm = onSrv && confirm(L('delSrvAsk', settings.base.replace(/\/?$/, '/') + sl));
+      const rm = onSrv && await g360Ask(L('delSrvAsk', settings.base.replace(/\/?$/, '/') + sl));
       clearTimeout(saveT); t.deleted = t.updated = Date.now(); await db.put(t); bkSoon();
       tours = others; trash.unshift(t); cur = null; stopPrev(); renderList(); renderEdit(); preview(true); msg(L('trashed'));
       if (!rm) return;
@@ -395,7 +395,7 @@
       secs.forEach(x => x.querySelectorAll('input, select, textarea, button').forEach(e => { e.disabled = true; }));
       bCpp.disabled = bDel.disabled = true;
       const rb = document.createElement('div'); rb.className = 'roBar'; rb.innerHTML = '<span></span><button type="button"></button>'; rb.firstChild.textContent = '\ud83d\udd12 ' + L('roNote'); rb.lastChild.textContent = L('roUnlock');
-      rb.lastChild.onclick = () => { if (!confirm(L('folderUnlockAsk', t.name || t.client || L('untitled')))) return; t.locked = false; db.put(t).catch(() => {}); bkSoon(); renderList(); renderEdit(); };
+      rb.lastChild.onclick = async () => { if (!(await g360Ask(L('folderUnlockAsk', t.name || t.client || L('untitled'))))) return; t.locked = false; db.put(t).catch(() => {}); bkSoon(); renderList(); renderEdit(); };
       box.insertBefore(rb, box.firstChild);
     }
   }

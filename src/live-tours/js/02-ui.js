@@ -203,5 +203,5 @@
     const r = document.createElement('input'); r.type = 'range'; r.min = min; r.max = max; r.step = step; r.value = val; parent.appendChild(r);
     r.oninput = () => { l.textContent = label(+r.value); onIn(+r.value); };
   }
-  function bindToggle(s, obj, t, cb) { const c = s.querySelector('h4 input[data-k=on]'); c.checked = !!obj.on; s.classList.toggle('off', !obj.on); c.onchange = () => { obj.on = c.checked; s.classList.toggle('off', !obj.on); save(t); preview(); if (cb) cb(); }; }
+  function bindToggle(s, obj, t, cb, guard) { const c = s.querySelector('h4 input[data-k=on]'); c.checked = !!obj.on; s.classList.toggle('off', !obj.on); c.onchange = async () => { if (c.checked && guard && !(await guard())) { c.checked = false; return; } obj.on = c.checked; s.classList.toggle('off', !obj.on); save(t); preview(); if (cb) cb(); }; }
 

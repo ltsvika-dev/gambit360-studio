@@ -7,6 +7,14 @@ function out($code, $arr) { http_response_code($code); echo json_encode($arr); e
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') out(405, array('ok' => false, 'error' => 'method'));
 $action = isset($_POST['action']) ? (string)$_POST['action'] : '';
 
+if ($action === 'sdkfail' || $action === 'sdkok') {   // a tour page tells whether the Matterport SDK key connected on this site; the Studio shows it (ping) and warns before SDK options
+  $f = $root . '/_stats/sdk.json'; $j = @json_decode((string)@file_get_contents($f), true); if (!is_array($j)) $j = array();
+  $k = $action === 'sdkfail' ? 'fail' : 'ok';
+  if (isset($j[$k]['at']) && time() - (int)$j[$k]['at'] < 60) out(200, array('ok' => true));   // one note a minute is enough
+  $j[$k] = array('at' => time(), 'key' => substr(preg_replace('#[^A-Za-z0-9]#', '', isset($_POST['k']) ? (string)$_POST['k'] : ''), 0, 4), 'err' => substr(preg_replace('#[^\x20-\x7E]#', '', isset($_POST['err']) ? (string)$_POST['err'] : ''), 0, 200), 'host' => substr(preg_replace('#[^A-Za-z0-9.:-]#', '', isset($_SERVER['HTTP_HOST']) ? (string)$_SERVER['HTTP_HOST'] : ''), 0, 100));
+  denyDir($root . '/_stats'); @file_put_contents($f, json_encode($j));
+  out(200, array('ok' => true));
+}
 if ($action === 'login' || $action === 'logout') {   // another computer: the cloud password gives back the upload key (encrypted with that same password)
   if ($action === 'logout') { header('Set-Cookie: g360app=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=Lax'); out(200, array('ok' => true)); }
   if (!$keyOk || !is_file($bd . '/auth.json')) { sleep(1); out(200, array('ok' => false, 'error' => 'nopass')); }

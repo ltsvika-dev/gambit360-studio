@@ -62,6 +62,7 @@
   #ovBox.wide { width:min(960px,100%); }
   #ovBox h3 { margin:0 44px 10px 0; font-size:1.1rem; }
   #ovX { position:absolute; top:8px; right:8px; padding:0; width:32px; height:32px; min-width:0; border-radius:8px; }
+  [dir=rtl] #ovX { right:auto; left:8px; } [dir=rtl] #ovBox h3 { margin:0 0 10px 44px; }   /* in Hebrew the close button sits at the end of the title line */
   #ovBox video { width:100%; max-height:68vh; background:#000; border-radius:8px; display:block; }
   .ovTabs { display:flex; flex-wrap:wrap; gap:4px; margin-top:10px; }
   .ovTabs button { width:auto; border:1px solid #3a464d; }
@@ -160,7 +161,10 @@
 
   const calibMode = q.get('calib') === '1';
   const mini = ti === 0 && cfg.mini && cfg.mini.floors && cfg.mini.floors.some(f => f && f.file) ? cfg.mini : null;
-  const wantSdk = !!cfg.sdkKey && (calibMode || !!cfg.nadir || !!(cfg.photos && cfg.info) || (mini && mini.floors.some(f => f && f.calib && f.calib.length >= 3)));
+  // the SDK key did not connect on this site a short while ago (in this browser): the tour opens without it, with no extras that need it
+  const sdkBadK = 'g360sdkBad:' + (cfg.sdkKey || ''), sdkOkK = 'g360sdkOk:' + (cfg.sdkKey || '');
+  let sdkBad = false; try { sdkBad = Date.now() - (+localStorage.getItem(sdkBadK) || 0) < 600e3; } catch (e) {}
+  let wantSdk = !!cfg.sdkKey && !sdkBad && (calibMode || !!cfg.nadir || !!(cfg.photos && cfg.info) || (mini && mini.floors.some(f => f && f.calib && f.calib.length >= 3)));
 
   // ---- the Matterport tour ----
   const p = new URLSearchParams();
@@ -422,16 +426,24 @@
   }
 
   // ---- Showcase SDK ----
+  // a key that Matterport refuses (wrong key, or this site's address not allowed for it) stops the tour from loading at all,
+  // so when the SDK does not connect the tour opens again without the key: the tour always works, only the SDK extras are left out
+  const sdkNote = (a, e) => { try { const fd = new FormData(); fd.append('action', a); fd.append('k', String(cfg.sdkKey).slice(-4)); fd.append('err', String(e && e.message || e || '').slice(0, 200)); navigator.sendBeacon(root + 'upload.php', fd); } catch (x) {} };
   let sdk;
   try {
-    await new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://static.matterport.com/showcase-sdk/latest.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+    await new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://static.matterport.com/showcase-sdk/latest.js'; s.onload = res; s.onerror = () => rej(new Error('showcase-sdk script did not load')); document.head.appendChild(s); });
     if (tapWait) await tapWait;   /* connect to the tour that actually plays */
-    sdk = await window.MP_SDK.connect(iframe, cfg.sdkKey, '');
+    sdk = await Promise.race([window.MP_SDK.connect(iframe, cfg.sdkKey, ''), new Promise((res, rej) => setTimeout(() => rej(new Error('timeout')), 60e3))]);   // no answer at all for a minute counts as a refusal
   } catch (e) {
-    console.warn('Gambit360: SDK connect failed', e); reelState = 'fail'; reelDone();
+    console.warn('Gambit360: SDK connect failed, the tour opens without the SDK', e);
+    wantSdk = false; reelState = 'fail'; reelDone();
+    try { localStorage.setItem(sdkBadK, String(Date.now())); } catch (x) {}
+    p.delete('applicationKey'); iframe.src = 'https://my.matterport.com/show/?' + p.toString();
+    sdkNote('sdkfail', e);
     if (mini) setupMini(null);
     return;
   }
+  try { if (localStorage.getItem(sdkBadK) || Date.now() - (+localStorage.getItem(sdkOkK) || 0) > 12 * 3600e3) { localStorage.removeItem(sdkBadK); localStorage.setItem(sdkOkK, String(Date.now())); sdkNote('sdkok', ''); } } catch (x) {}   // the Studio learns that the key works (again)
 
   try {
     sdk.Sweep.data.subscribe({

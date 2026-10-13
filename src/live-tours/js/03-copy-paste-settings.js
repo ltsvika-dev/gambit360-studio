@@ -107,11 +107,11 @@
     const mn = document.createElement('div'); mn.className = 'note'; mn.textContent = L('musicNote'); s.appendChild(mn);
 
     // nadir
-    s = sec('lvSecN', L('sNadir'), true); box.appendChild(s); bindToggle(s, t.nadir, t);
+    s = sec('lvSecN', L('sNadir'), true); box.appendChild(s); bindToggle(s, t.nadir, t, null, sdkWarn);
     await fileRow(s, t.id + ':nadir', 'image/*', imgOk, () => { save(t); preview(); }, true); if (!alive()) return;
     range(s, L.bind(null, 'size'), .3, 2, .05, t.nadir.size, v => { t.nadir.size = v; save(t); });
     range(s, L.bind(null, 'opacity'), 20, 100, 5, t.nadir.opacity, v => { t.nadir.opacity = v; save(t); });
-    const nn = document.createElement('div'); nn.className = 'note' + (settings.sdk ? '' : ' warn'); nn.textContent = L('nadirNote'); s.appendChild(nn);
+    const nn = document.createElement('div'); nn.className = 'note' + (sdkNoteWarn() ? ' warn' : ''); nn.textContent = sdkNoteText(L('nadirNote')); s.appendChild(nn);
 
     // mini map
     s = sec('lvSecP', L('sMini'), true); box.appendChild(s); bindToggle(s, t.mini, t);
@@ -135,9 +135,9 @@
     af.querySelector('button').onclick = () => { t.mini.floors.push({ label: '', calib: null }); save(t); renderEdit(); };
     const mnote = document.createElement('div'); mnote.className = 'note'; mnote.textContent = L('miniNote') + ' ' + L('miniNoCal'); s.appendChild(mnote);
     const ch = document.createElement('label'); ch.className = 'f'; ch.textContent = L('calHead'); s.appendChild(ch);
-    const cs = document.createElement('div'); cs.className = 'note' + (settings.sdk ? '' : ' warn'); cs.textContent = L('calSteps') + (settings.sdk ? '' : ' ' + L('sdkNeed')); s.appendChild(cs);
+    const cs = document.createElement('div'); cs.className = 'note' + (sdkNoteWarn() ? ' warn' : ''); cs.textContent = sdkNoteText(L('calSteps') + (settings.sdk ? '' : ' ' + L('sdkNeed'))); s.appendChild(cs);
     const co = document.createElement('div'); co.className = 'row'; co.innerHTML = '<button type="button">' + esc(L('calOpen')) + '</button>'; s.appendChild(co);
-    co.querySelector('button').dataset.calopen = '1'; co.querySelector('button').onclick = () => window.open(siteLink(t) + '&calib=1', '_blank', 'noopener');
+    co.querySelector('button').dataset.calopen = '1'; co.querySelector('button').onclick = async () => { if (sdkNoteWarn() && !(await sdkWarn())) return; window.open(siteLink(t) + '&calib=1', '_blank', 'noopener'); };
     const ta = document.createElement('textarea'); ta.placeholder = L('calPaste'); s.appendChild(ta); ta.style.marginTop = '6px';
     const ca = document.createElement('div'); ca.className = 'row'; ca.innerHTML = '<button type="button">' + esc(L('calApply')) + '</button>'; s.appendChild(ca);
     ca.querySelector('button').onclick = () => {
@@ -163,7 +163,7 @@
     };
     // details card: hide Matterport's own card and/or build ours as a layer over the tour
     s = sec('lvSecI', L('sInfo')); box.appendChild(s);
-    const mkChk = (parent, label, get, set, rerender) => { const c = document.createElement('label'); c.className = 'tgl'; c.style.display = 'flex'; c.style.marginTop = '6px'; c.innerHTML = '<input type="checkbox"> ' + esc(label); parent.appendChild(c); const i = c.querySelector('input'); i.checked = !!get(); i.onchange = () => { set(i.checked); save(t); if (rerender) { preview(true); renderEdit(); } else preview(); }; return c; };
+    const mkChk = (parent, label, get, set, rerender, guard) => { const c = document.createElement('label'); c.className = 'tgl'; c.style.display = 'flex'; c.style.marginTop = '6px'; c.innerHTML = '<input type="checkbox"> ' + esc(label); parent.appendChild(c); const i = c.querySelector('input'); i.checked = !!get(); i.onchange = async () => { if (i.checked && guard && !(await guard())) { i.checked = false; return; } set(i.checked); save(t); if (rerender) { preview(true); renderEdit(); } else preview(); }; return c; };
     mkChk(s, L('infoHideMp'), () => !(+t.mp.title) && !(+t.mp.brand), v => { t.mp.title = v ? 0 : 1; t.mp.brand = 0; }, true);
     const iw = document.createElement('div'); iw.style.display = t.info.on ? '' : 'none';
     mkChk(s, L('infoCustom'), () => t.info.on, v => { t.info.on = v; iw.style.display = v ? '' : 'none'; if (v) wantCard = true; }, false);
@@ -181,10 +181,10 @@
     { const il = document.createElement('label'); il.className = 'f'; il.textContent = L('infoImgL'); iw.appendChild(il); }
     await fileRow(iw, t.id + ':infoimg', 'image/*', imgOk, () => { save(t); preview(); }, true); if (!alive()) return;
     const pw = document.createElement('div'); pw.style.display = t.photos.on ? '' : 'none';
-    mkChk(iw, L('infoPhotos'), () => t.photos.on, v => { t.photos.on = v; pw.style.display = v ? '' : 'none'; }, false);
+    mkChk(iw, L('infoPhotos'), () => t.photos.on, v => { t.photos.on = v; pw.style.display = v ? '' : 'none'; }, false, sdkWarn);
     iw.appendChild(pw);
     mkChk(pw, L('infoOnly360'), () => t.photos.only360, v => { t.photos.only360 = v; }, false);
-    { const pn = document.createElement('div'); pn.className = 'note' + (settings.sdk ? '' : ' warn'); pn.textContent = L('infoPhotosNote'); pw.appendChild(pn); }
+    { const pn = document.createElement('div'); pn.className = 'note' + (sdkNoteWarn() ? ' warn' : ''); pn.textContent = sdkNoteText(L('infoPhotosNote')); pw.appendChild(pn); }
     // contact button, inside the details card
     const cw = document.createElement('div'); cw.className = 'cbox'; iw.appendChild(cw);
     const ctg = document.createElement('label'); ctg.className = 'tgl'; ctg.innerHTML = '<input type="checkbox"> ' + esc(L('sContact')); cw.appendChild(ctg);

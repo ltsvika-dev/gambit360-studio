@@ -78,7 +78,7 @@
       const menu = t.vidMode === 'menu' && t.videos.length > 1;
       const show = k => {
         const vtabs = t.videos.length > 1 && !menu ? '<div class="tabs"></div>' : '';
-        openOv('<h3 dir="auto" style="margin:0 34px 8px 0">' + esc(t.videos[k].name) + '</h3><video controls autoplay playsinline></video>' + vtabs);
+        openOv('<h3 dir="auto" style="margin:0 0 8px;margin-inline-end:34px">' + esc(t.videos[k].name) + '</h3><video controls autoplay playsinline></video>' + vtabs);
         oc.querySelector('video').src = urls[k];
         const tb = oc.querySelector('.tabs'); if (tb) t.videos.forEach((v, j) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = v.name || ('#' + (j + 1)); b.dir = 'auto'; if (j === k) b.className = 'on'; b.onclick = () => show(j); tb.appendChild(b); });
       };

@@ -1,9 +1,16 @@
-if ($action === 'ping') out(200, array('ok' => true, 'php' => PHP_VERSION, 'writable' => is_writable($root), 'ver' => $VER, 'self' => basename(__FILE__), 'pass' => is_file($bd . '/auth.json'), 'app' => $meta($bd . '/app.json'), 'sdk' => $meta($root . '/_stats/sdk.json')));
+if ($action === 'ping') out(200, array('ok' => true, 'php' => PHP_VERSION, 'writable' => is_writable($root), 'ver' => $VER, 'self' => basename(__FILE__), 'pass' => is_file($bd . '/auth.json'), 'user' => (string)(($au = $meta($bd . '/auth.json')) && isset($au['user']) ? $au['user'] : ''), 'app' => $meta($bd . '/app.json'), 'sdk' => $meta($root . '/_stats/sdk.json')));
 if ($action === 'setpass') {   // the cloud password: kept only as a hash, with the upload key encrypted by that password on the computer
   $pw = isset($_POST['pass']) ? (string)$_POST['pass'] : ''; $w = isset($_POST['wrap']) ? (string)$_POST['wrap'] : '';
+  $u = trim(preg_replace('#\s+#u', ' ', isset($_POST['user']) ? (string)$_POST['user'] : '')); $old = $meta($bd . '/auth.json');
+  if ($u === '' && $old && isset($old['user'])) $u = (string)$old['user'];   // an older Studio sends no user name: the one already set stays
+  if (strlen($u) > 60) out(400, array('ok' => false, 'error' => 'user'));
+  if ($pw === '' && $u !== '' && $old && isset($old['hash'])) {   // only the user name changes: the password and the key it wraps stay
+    $old['user'] = $u; if (!@file_put_contents($bd . '/auth.json', json_encode($old))) out(500, array('ok' => false, 'error' => 'write'));
+    out(200, array('ok' => true));
+  }
   if (strlen($pw) < 8 || json_decode($w) === null) out(400, array('ok' => false, 'error' => 'pass'));
   denyDir($bd);
-  if (!@file_put_contents($bd . '/auth.json', json_encode(array('hash' => password_hash($pw, PASSWORD_DEFAULT), 'wrap' => $w, 'at' => time())))) out(500, array('ok' => false, 'error' => 'write'));
+  if (!@file_put_contents($bd . '/auth.json', json_encode(array('hash' => password_hash($pw, PASSWORD_DEFAULT), 'wrap' => $w, 'user' => $u, 'at' => time())))) out(500, array('ok' => false, 'error' => 'write'));
   @unlink($bd . '/login-fails.json');
   out(200, array('ok' => true));
 }

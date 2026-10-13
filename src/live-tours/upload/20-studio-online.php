@@ -1,4 +1,4 @@
-if (!empty($G360_APP) || isset($_GET['app'])) {   // app/index.php: the Studio itself, or the password page
+if (!empty($G360_APP) || isset($_GET['app'])) {   // app/index.php: the Studio itself, or the sign-in page (user name and password)
   header('X-Robots-Tag: noindex'); header('Cache-Control: no-store'); header('Referrer-Policy: no-referrer'); header('X-Frame-Options: DENY');
   if ($keyOk && appOk($KEY_SHA256) && is_file($bd . '/app.html')) { header('Content-Type: text/html; charset=utf-8'); readfile($bd . '/app.html'); exit; }
   header('Content-Type: text/html; charset=utf-8');
@@ -14,7 +14,7 @@ if (!empty($G360_APP) || isset($_GET['app'])) {   // app/index.php: the Studio i
     '.in{padding:22px 26px 26px}h1{margin:0;font-size:1.3rem;font-weight:700}.en{display:block;color:#8ea4a9;font-size:.84rem;font-weight:400;margin-top:2px}',
     'label{display:block;margin:20px 0 6px;font-size:.88rem;color:#b9c9cc}.pw{position:relative}',
     'input{width:100%;height:46px;padding:0 14px 0 46px;border-radius:10px;border:1px solid #33464b;background:#0d1416;color:inherit;font:inherit;direction:ltr;outline:0;transition:border-color .15s,box-shadow .15s}',
-    'input:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(94,196,182,.22)}',
+    '#u{padding:0 14px}input:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(94,196,182,.22)}',
     '.eye{position:absolute;top:0;left:0;width:46px;height:46px;border:0;background:none;color:#8ea4a9;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:10px}.eye:hover{color:#e8eef0}.eye svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.eye .x{display:none}.eye.on .x{display:inline}',
     '.go{margin-top:16px;width:100%;height:46px;border:0;border-radius:10px;background:var(--ac);color:#0b1412;font:inherit;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:filter .15s,transform .05s}',
     '.go:hover{filter:brightness(1.07)}.go:active{transform:translateY(1px)}.go:disabled{filter:saturate(.4);cursor:default}',
@@ -23,21 +23,22 @@ if (!empty($G360_APP) || isset($_GET['app'])) {   // app/index.php: the Studio i
     '.ft{color:#6f8489;font-size:.8rem;text-decoration:none}.ft:hover{color:#b9c9cc}</style></head><body><main class="card">', $logo, '<div class="in">',
     $none ? '<h1>הסטודיו עוד לא באתר<span class="en">No Studio on the server yet</span></h1><p>פתחו את הסטודיו במחשב שלכם: סיורים חיים ← אפשרויות ← "עדכון הסטודיו באתר".</p><p class="note" dir="ltr" style="text-align:right">In your own Studio: Live tours, Options, "Update the Studio online".</p></div></main>'
       : '<form id="f"><h1>כניסה לסטודיו<span class="en">Sign in to Gambit360 Studio</span></h1>' .
-        '<input type="text" name="username" autocomplete="username" value="Gambit360 Studio" hidden>' .
-        '<label for="p">סיסמת הענן · Cloud password</label><div class="pw"><input id="p" name="password" type="password" autocomplete="current-password" autofocus required>' .
+        '<label for="u">שם משתמש · User name</label><input id="u" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>' .
+        '<label for="p">סיסמת הענן · Cloud password</label><div class="pw"><input id="p" name="password" type="password" autocomplete="current-password" required>' .
         '<button type="button" class="eye" id="eye" aria-label="הצגת הסיסמה · Show password" title="הצגת הסיסמה · Show password"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path class="x" d="M4 4l16 16"/></svg></button></div>' .
         '<button class="go" id="go"><span class="sp"></span><span>כניסה · Sign in</span></button><div id="m" role="alert"></div>' .
         '<p class="note">המכשיר הזה יישאר מחובר 30 יום<br>This device stays signed in for 30 days</p></form></div></main>' .
-        $S . 'const f=document.getElementById("f"),m=document.getElementById("m"),p=document.getElementById("p"),go=document.getElementById("go"),eye=document.getElementById("eye"),b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));' .
+        $S . 'const f=document.getElementById("f"),m=document.getElementById("m"),p=document.getElementById("p"),u=document.getElementById("u"),go=document.getElementById("go"),eye=document.getElementById("eye"),b64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));' .
+        'try{u.value=localStorage.getItem("g360user")||"";}catch(x){}(u.value?p:u).focus();' .
         'eye.onclick=()=>{const on=p.type==="password";p.type=on?"text":"password";eye.classList.toggle("on",on);p.focus();};' .
         'const busy=b=>{go.disabled=b;go.classList.toggle("busy",b);};' .
-        'f.onsubmit=async e=>{e.preventDefault();m.textContent="";busy(true);const pw=p.value;try{const fd=new FormData();fd.append("action","login");fd.append("pass",pw);' .
+        'f.onsubmit=async e=>{e.preventDefault();m.textContent="";busy(true);const pw=p.value;try{const fd=new FormData();fd.append("action","login");fd.append("user",u.value);fd.append("pass",pw);' .
         'const j=await (await fetch("../upload.php",{method:"POST",body:fd,credentials:"same-origin",cache:"no-store"})).json();' .
-        'if(!j.ok){busy(false);m.textContent=j.error==="wait"?"יותר מדי ניסיונות. נסו שוב בעוד רבע שעה\nToo many tries, wait 15 minutes":j.error==="nopass"?"עוד לא נקבעה סיסמה בסטודיו\nNo password was set yet":"סיסמה שגויה\nWrong password";p.select();return;}' .
+        'if(!j.ok){busy(false);m.textContent=j.error==="wait"?"יותר מדי ניסיונות. נסו שוב בעוד רבע שעה\nToo many tries, wait 15 minutes":j.error==="nopass"?"עוד לא נקבעה סיסמה בסטודיו\nNo password was set yet":"שם משתמש או סיסמה שגויים\nWrong user name or password";p.select();return;}' .
         'const w=JSON.parse(j.wrap),k0=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveKey"]),' .
         'k=await crypto.subtle.deriveKey({name:"PBKDF2",salt:b64(w.salt),iterations:w.it,hash:"SHA-256"},k0,{name:"AES-GCM",length:256},false,["decrypt"]),' .
         'key=new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(w.iv)},k,b64(w.ct)));' .
-        'localStorage.setItem("g360cloudKey",key);location.reload();}catch(x){busy(false);m.textContent=String(x&&x.message||x);}};' . $E,
+        'localStorage.setItem("g360cloudKey",key);localStorage.setItem("g360user",u.value.trim());location.reload();}catch(x){busy(false);m.textContent=String(x&&x.message||x);}};' . $E,
     '<a class="ft" href="https://gambit360.co.il/" target="_blank" rel="noopener">gambit360.co.il</a></body></html>';
   exit;
 }

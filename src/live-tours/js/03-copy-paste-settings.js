@@ -170,6 +170,10 @@
     s.appendChild(iw);
     iw.addEventListener('focusin', () => { const o = $('lvPOv'); if (o.style.display !== 'flex' || o.dataset.k !== 'info') openInfoCard(); });   // while the card is being filled in, the preview shows it as the visitor will
     iconRow(iw, 'info', t);
+    { const l = document.createElement('label'); l.className = 'f'; l.textContent = L('infoLayout'); iw.appendChild(l);   // the card's layout: rows, small buttons, or the picture on the side
+      const row = document.createElement('div'); row.className = 'row'; row.style.cssText = 'display:grid;gap:6px;grid-template-columns:repeat(3,1fr)'; iw.appendChild(row);
+      [['rows', 'layRows'], ['chips', 'layChips'], ['side', 'laySide']].forEach(([v, k]) => { const b = document.createElement('button'); b.type = 'button'; b.style.cssText = 'min-width:0;padding:7px 4px;white-space:normal;line-height:1.25'; b.textContent = L(k); b.dataset.v = v; b.classList.toggle('on', (t.info.layout || 'rows') === v); b.onclick = () => { t.info.layout = v; save(t); [...row.children].forEach(x => x.classList.toggle('on', x.dataset.v === v)); nt.hidden = v !== 'side'; openInfoCard(); }; row.appendChild(b); });
+      const nt = document.createElement('div'); nt.className = 'note'; nt.textContent = L('laySideNote'); nt.hidden = t.info.layout !== 'side'; iw.appendChild(nt); }
     const fi = (key, lbl, html) => { const e = field(iw, lbl, html); e.value = t.info[key] || ''; e.oninput = () => { t.info[key] = e.value; save(t); preview(); }; return e; };
     fi('title', L('infoTitleL'), '<input type="text">');
     const itx = fi('text', L('infoTextL'), '<textarea></textarea>'); itx.style.cssText = 'direction:rtl;font-family:inherit;font-size:.88rem;height:90px';

@@ -14,3 +14,17 @@
   #ovBody .cardTabs button, #lvPOv .cardTabs button { background:transparent !important; color:#b8c3c9 !important; border:0 !important; border-bottom:2px solid transparent !important; border-radius:0; padding:8px 14px; font:inherit; cursor:pointer; }
   #ovBody .cardTabs button.on, #lvPOv .cardTabs button.on { color:#fff !important; border-bottom-color:#5ec4b6 !important; }
   #ovBody .photoMsg, #lvPOv .photoMsg { color:#b8c3c9; padding:18px 4px; text-align:center; }
+  /* layout "chips": the contact details as small round buttons in one line that wraps */
+  #ovBody .lay-chips .ovLinks, #lvPOv .lay-chips .ovLinks { display:flex; flex-wrap:wrap; gap:8px; }
+  #ovBody .lay-chips .ovLinks a, #lvPOv .lay-chips .ovLinks a { flex:0 1 auto; max-width:100%; gap:8px; border-radius:999px; padding:5px 14px 5px 5px; }
+  [dir=rtl] #ovBody .lay-chips .ovLinks a, #lvStage[dir=rtl] #lvPOv .lay-chips .ovLinks a { padding:5px 5px 5px 14px; }
+  #ovBody .lay-chips .ovLinks .ic, #lvPOv .lay-chips .ovLinks .ic { width:28px; height:28px; border-radius:50%; }
+  #ovBody .lay-chips .ovLinks .ic svg, #lvPOv .lay-chips .ovLinks .ic svg { width:16px; height:16px; }
+  #ovBody .lay-chips .ovLinks .tx, #lvPOv .lay-chips .ovLinks .tx { flex:0 1 auto; }
+  /* layout "side": the picture on one side and the details beside it, in a wider card; one under the other when the card is narrow */
+  #ovBox:has(.lay-side .ovSide), #lvPOv .b:has(.lay-side .ovSide) { width:min(860px,100%); container-type:inline-size; }
+  #ovBody .ovSide, #lvPOv .ovSide { display:grid; grid-template-columns:minmax(0, 44%) minmax(0, 1fr); gap:18px; align-items:start; }
+  #ovBody .ovSide .ovImg, #lvPOv .ovSide .ovImg { aspect-ratio:4/5; max-height:min(60vh, 460px); margin:0; }
+  #ovBody .ovSide .ovLinks, #lvPOv .ovSide .ovLinks { grid-template-columns:1fr; }
+  #ovBody .ovSide .ovCta, #lvPOv .ovSide .ovCta { margin-top:12px; }
+  @container (max-width:600px) { #ovBody .ovSide, #lvPOv .ovSide { grid-template-columns:1fr; } #ovBody .ovSide .ovImg, #lvPOv .ovSide .ovImg { aspect-ratio:16/9; max-height:46vh; } }

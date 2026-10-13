@@ -62,7 +62,7 @@
         cfg.tours = t.tourSec.on ? (t.tours || []).filter(x => x.model).map(x => ({ name: x.name || x.model, model: x.model })) : [];
         cfg.info = null; cfg.photos = null;
         if (t.info && t.info.on) {
-          cfg.info = { title: t.info.title, text: t.info.text, phone: t.info.phone, mail: t.info.mail, link: t.info.link, linkTxt: t.info.linkTxt, address: String(t.info.address || '').trim() };
+          cfg.info = { title: t.info.title, text: t.info.text, phone: t.info.phone, mail: t.info.mail, link: t.info.link, linkTxt: t.info.linkTxt, address: String(t.info.address || '').trim(), layout: G360Card.LAYOUTS.includes(t.info.layout) ? t.info.layout : 'rows' };
           const im = await put('infoimg', 'info-image', 'jpg'); if (im) cfg.info.image = im;
           if (t.photos && t.photos.on) cfg.photos = { only360: !!t.photos.only360 };
         }

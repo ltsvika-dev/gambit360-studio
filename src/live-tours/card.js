@@ -10,16 +10,19 @@ const G360Card = (() => {
   // the contact button at the bottom of the card; icon(name) gives the svg paths of one of the page's icons
   function cta(c, link, lang, icon) { if (!link) return ''; return '<a class="ovCta" style="background:' + (COL[c.type] || COL.link) + '" href="' + esc(link) + '" rel="noopener"' + (c.type === 'wa' || c.type === 'link' ? ' target="_blank"' : '') + '><svg viewBox="0 0 24 24">' + (c.type === 'wa' ? WA : icon(IC[c.type] || 'star')) + '</svg><span>' + esc(label(c, lang)) + '</span></a>'; }
   // o: { info, title (the tour's), img (url or ''), cta (from cta()), photos (true: a Photos tab), photosHtml, lang ('he'/'en'), icon }
+  const LAYOUTS = ['rows', 'chips', 'side'];
   const hasDetails = o => { const i = o.info || {}; return !!(i.title || i.text || i.phone || i.mail || i.link || i.address || o.img || o.cta); };
   function html(o) {
     const i = o.info || {}, tx = TX[o.lang] || TX.he, ph = String(i.phone || '').replace(/[^0-9+]/g, ''), ln = /^https?:\/\//i.test(i.link || '') ? i.link : '', det = hasDetails(o);
     // the contact details: one row each, with its icon (phone and email open in place, the map and the web site in a new tab)
     const row = (href, ic, txt, ltr, blank) => '<a href="' + esc(href) + '"' + (blank ? ' target="_blank" rel="noopener"' : '') + '><span class="ic"><svg viewBox="0 0 24 24">' + o.icon(ic) + '</svg></span><span class="tx" dir="' + (ltr ? 'ltr' : 'auto') + '">' + esc(txt) + '</span></a>';
     const rows = (ph ? row('tel:' + ph, 'phone', i.phone, true) : '') + (i.mail ? row('mailto:' + i.mail, 'mail', i.mail, true) : '') + (i.address ? row('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(i.address), 'pin', i.address, false, true) : '') + (ln ? row(ln, 'globe', i.linkTxt || ln.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/$/, ''), !i.linkTxt, true) : '');
-    const body = (o.img ? '<img class="ovImg" alt="" src="' + esc(o.img) + '">' : '') + (i.text ? '<p class="ovTxt" dir="auto">' + esc(i.text) + '</p>' : '') + (rows ? '<div class="ovLinks">' + rows + '</div>' : '') + (o.cta || '');
+    const lay = LAYOUTS.includes(i.layout) ? i.layout : 'rows', side = lay === 'side' && !!o.img;   // the layout chosen in the Studio: rows, chips, or the picture on the side
+    const img = o.img ? '<img class="ovImg" alt="" src="' + esc(o.img) + '">' : '', main = (i.text ? '<p class="ovTxt" dir="auto">' + esc(i.text) + '</p>' : '') + (rows ? '<div class="ovLinks">' + rows + '</div>' : '') + (o.cta || '');
+    const body = '<div class="ovLay lay-' + lay + '">' + (side ? '<div class="ovSide">' + img + '<div class="ovMain">' + main + '</div></div>' : img + main) + '</div>';
     return '<h3 dir="auto">' + esc(i.title || o.title || '') + '</h3>' + (o.photos && det ? '<div class="cardTabs"><button type="button" data-p="d">' + tx.info + '</button><button type="button" data-p="p">' + tx.photos + '</button></div>' : '') + (det ? '<div data-pane="d">' + body + '</div>' : '') + (o.photos ? '<div data-pane="p" hidden>' + (o.photosHtml || '') + '</div>' : '');
   }
   // shows one part of the card (d: details, p: photos) and marks its tab
   function show(box, k) { box.querySelectorAll('[data-pane]').forEach(e => { e.hidden = e.dataset.pane !== k; }); box.querySelectorAll('.cardTabs button').forEach(b => b.classList.toggle('on', b.dataset.p === k)); }
-  return { COL, IC, WA, href, label, cta, hasDetails, html, show };
+  return { COL, IC, WA, LAYOUTS, href, label, cta, hasDetails, html, show };
 })();

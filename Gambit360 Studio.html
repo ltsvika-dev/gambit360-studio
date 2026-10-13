@@ -5655,6 +5655,8 @@ renderer.domElement.addEventListener('mousedown', e => {
   .stT { width:100%; border-collapse:collapse; font-size:.85rem; } .stT th, .stT td { padding:6px 8px; border-bottom:1px solid var(--line); text-align:start; white-space:nowrap; } .stT th { color:var(--mute); font-weight:500; } .stT td.n, .stT th.n { text-align:end; font-variant-numeric:tabular-nums; } .stT tbody tr { cursor:pointer; } .stT tbody tr:hover { background:var(--bg); } .stT tr.sel { background:var(--bg); } .stT td.nm { white-space:normal; }
   .stWrap { overflow-x:auto; } .stBars { display:flex; align-items:flex-end; gap:2px; height:90px; margin:6px 0 2px; direction:ltr; } .stBars i { flex:1; background:var(--accent, #5ec4b6); border-radius:2px 2px 0 0; min-height:1px; opacity:.85; } .stBars i.z { background:var(--line); }
   .stAx { display:flex; justify-content:space-between; font-size:.72rem; color:var(--mute); direction:ltr; } .stKv { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; margin:8px 0; } .stKv div { background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; } .stKv b { display:block; font-size:1.2rem; } .stKv span { font-size:.78rem; color:var(--mute); }
+  .stRep { margin-top:10px; border-top:1px solid var(--line); } .stRepR { margin-top:8px; } .stRepR .ln { display:flex; gap:6px; align-items:center; } #lvDlg .stRepR input { flex:1; min-width:0; } .stRepR select { padding:6px; } .stRepR button { flex:none; } .stRepS { font-size:.76rem; color:var(--mute); margin-top:3px; }
+  .stRepF { margin-top:10px; font-size:.85rem; } .stRepF summary { cursor:pointer; color:var(--mute); } .stRepF label { display:block; margin-top:8px; } .stRepF label span { display:block; font-size:.78rem; color:var(--mute); margin-bottom:3px; } .stRepF label.ck { display:flex; gap:8px; align-items:center; } #lvDlg .stRepF label.ck input { width:auto; } .stRepF label.ck span { margin:0; font-size:.85rem; color:inherit; }
   .stList { margin:4px 0; padding:0; list-style:none; font-size:.85rem; } .stList li { display:flex; justify-content:space-between; gap:10px; padding:3px 0; border-bottom:1px dashed var(--line); } .stMsg { padding:14px 4px; color:var(--mute); }
 </style>
 <div id="live" hidden>
@@ -6294,9 +6296,9 @@ renderer.domElement.addEventListener('mousedown', e => {
 // Only a request with the Studio's upload key is accepted, only into tours/<address>/ (plus index.html and .htaccess),
 // and only image, audio, video and config files. The previous copy of every file is kept in _backup/.
 // It also keeps the Studio's synced data (a private _bk_ folder), lets another computer connect with a password,
-// serves the Studio online at /app/ after that password, and replaces itself when the Studio has a newer copy.
+// serves the Studio online at /app/ after that password, replaces itself when the Studio has a newer copy, and emails the clients' view reports.
 $KEY_SHA256 = '@@KEYHASH@@';
-$VER = 2;   // grows with every change to this file: the Studio replaces an older copy on the server by itself
+$VER = 3;   // grows with every change to this file: the Studio replaces an older copy on the server by itself
 $MAX_BYTES = 500 * 1024 * 1024;
 
 $root = __DIR__;
@@ -6306,6 +6308,129 @@ function denyDir($d) { if (!is_dir($d)) @mkdir($d, 0755, true); if (!is_file($d 
 // the Studio online: a cookie set by a correct password, signed with the key's hash, good for 30 days
 function appTok($exp, $h) { return $exp . '.' . hash_hmac('sha256', 'g360app' . $exp, $h); }
 function appOk($h) { $c = isset($_COOKIE['g360app']) ? (string)$_COOKIE['g360app'] : ''; $p = explode('.', $c); return count($p) === 2 && preg_match("#^[0-9]{1,12}$#", $p[0]) && (int)$p[0] > time() && hash_equals(appTok($p[0], $h), $c); }
+// ---- automatic view reports by email: a tour can have recipients (usually the client), each with how often it is sent.
+// Kept in the private folder (reports.json). Sent with PHP mail() at 08:00 (Israel) on the due day: by the server's cron (upload.php?cron=1) when one is set,
+// otherwise by the first tour visit (index.php) or Studio request after that time. _stats/.rep-next holds the next due time, so a visit checks one small file.
+function repStep($e) { $m = array('day' => '+1 day', 'week' => '+7 days', '2week' => '+14 days', 'month' => '+1 month'); return isset($m[$e]) ? $m[$e] : ''; }
+function repDt($ts) { $d = new DateTime('@' . (int)$ts); try { $d->setTimezone(new DateTimeZone('Asia/Jerusalem')); } catch (Exception $x) {} return $d; }
+function repNext($e, $after) { $st = repStep($e); if ($st === '') return 0; $d = repDt($after); $d->modify($st); $d->setTime(8, 0); return $d->getTimestamp(); }
+function repBack($e, $ts) { $st = repStep($e); $d = repDt($ts); $d->modify($st !== '' ? str_replace('+', '-', $st) : '-7 days'); return $d->getTimestamp(); }
+function repSig($h, $slug, $em) { return substr(hash_hmac('sha256', 'rep|' . $slug . '|' . strtolower($em), $h), 0, 32); }
+function repLoad($bd) {
+  $j = @json_decode(@file_get_contents($bd . '/reports.json'), true); if (!is_array($j)) $j = array();
+  foreach (array('tours', 'from') as $k) if (!isset($j[$k]) || !is_array($j[$k])) $j[$k] = array();
+  if (!isset($j['base'])) $j['base'] = '';
+  return $j;
+}
+function repSave($root, $bd, $j) {
+  denyDir($bd);
+  $ok = @file_put_contents($bd . '/reports.json.part', json_encode($j)) !== false && @rename($bd . '/reports.json.part', $bd . '/reports.json');
+  $nx = 0; foreach ($j['tours'] as $t) foreach ($t['to'] as $r) if ($r['every'] !== 'off' && $r['next'] && (!$nx || $r['next'] < $nx)) $nx = $r['next'];
+  if ($nx) { denyDir($root . '/_stats'); @file_put_contents($root . '/_stats/.rep-next', (string)$nx); } else @unlink($root . '/_stats/.rep-next');
+  return $ok;
+}
+function repTxt($lang) {
+  if ($lang === 'en') return array('dir' => 'ltr', 'subj' => array('day' => 'Daily views report', 'week' => 'Weekly views report', '2week' => 'Views report (2 weeks)', 'month' => 'Monthly views report', '' => 'Views report'),
+    'period' => 'Period', 'visits' => 'Visits to the tour', 'prev' => 'Previous period', 'new' => 'New visitors (estimate)', 'total' => 'All visits since', 'dev' => 'Devices', 'devs' => array('d' => 'Computer', 'm' => 'Phone', 't' => 'Tablet'),
+    'ref' => 'Where they came from', 'direct' => 'Direct (link, WhatsApp, email, QR)', 'days' => 'Last 30 days', 'open' => 'Open the tour', 'none' => 'No visits in this period.',
+    'note' => 'A visit is counted once per browser every 30 minutes. Search engines and link previews are not counted.', 'chg' => 'Change how often you get this report, or stop it',
+    'pgH' => 'Views reports', 'pgQ' => 'How often should we send you the report?', 'opts' => array('day' => 'Every day', 'week' => 'Every week', '2week' => 'Every two weeks', 'month' => 'Every month', 'off' => 'Stop the reports'),
+    'pgSaved' => 'Saved. The next report will be sent on ', 'pgOff' => 'The reports were stopped. You can turn them back on here at any time.', 'pgBad' => 'This link is no longer valid.');
+  return array('dir' => 'rtl', 'subj' => array('day' => 'דוח צפיות יומי', 'week' => 'דוח צפיות שבועי', '2week' => 'דוח צפיות דו-שבועי', 'month' => 'דוח צפיות חודשי', '' => 'דוח צפיות'),
+    'period' => 'התקופה', 'visits' => 'ביקורים בסיור', 'prev' => 'בתקופה הקודמת', 'new' => 'מבקרים חדשים (הערכה)', 'total' => 'סה״כ ביקורים מאז', 'dev' => 'מכשירים', 'devs' => array('d' => 'מחשב', 'm' => 'נייד', 't' => 'טאבלט'),
+    'ref' => 'מאיפה הגיעו', 'direct' => 'ישירות (קישור, WhatsApp, מייל, QR)', 'days' => '30 הימים האחרונים', 'open' => 'לצפייה בסיור', 'none' => 'לא היו ביקורים בתקופה הזו.',
+    'note' => 'ביקור נספר פעם אחת לכל דפדפן בכל 30 דקות. מנועי חיפוש ותצוגות מקדימות של קישורים לא נספרים.', 'chg' => 'לשינוי התדירות של הדוח או להפסקתו',
+    'pgH' => 'דוחות צפיות', 'pgQ' => 'כל כמה זמן לשלוח לך את הדוח?', 'opts' => array('day' => 'כל יום', 'week' => 'כל שבוע', '2week' => 'כל שבועיים', 'month' => 'כל חודש', 'off' => 'הפסקת הדוחות'),
+    'pgSaved' => 'נשמר. הדוח הבא יישלח ב-', 'pgOff' => 'הדוחות הופסקו. אפשר לחדש אותם כאן בכל זמן.', 'pgBad' => 'הקישור הזה כבר לא בתוקף.');
+}
+function repDate($ts, $lang) { return repDt($ts)->format($lang === 'en' ? 'Y-m-d' : 'd/m/Y'); }
+// the numbers for one tour: visits between $from and $to, the same length before it, everything so far, and the last 30 days day by day
+function repStats($root, $slug, $from, $to) {
+  $f0 = repDt($from)->format('Y-m-d H:i'); $f1 = repDt($to)->format('Y-m-d H:i'); $fp = repDt($from - ($to - $from))->format('Y-m-d H:i');
+  $days = array(); for ($i = 29; $i >= 0; $i--) $days[repDt($to - $i * 86400)->format('Y-m-d')] = 0;
+  $a = array('n' => 0, 'prev' => 0, 'u' => 0, 'all' => 0, 'first' => '', 'dev' => array('d' => 0, 'm' => 0, 't' => 0), 'ref' => array(), 'day' => $days);
+  $h = @fopen($root . '/_stats/' . $slug . '.log', 'r'); if (!$h) return $a;
+  while (($ln = fgets($h)) !== false) {
+    $p = explode("\t", rtrim($ln, "\r\n")); if (count($p) < 3 || !preg_match('#^\d{4}-\d\d-\d\d#', $p[0]) || $p[0] >= $f1) continue;
+    $a['all']++; if ($a['first'] === '') $a['first'] = $p[0];
+    $d = substr($p[0], 0, 10); if (isset($a['day'][$d])) $a['day'][$d]++;
+    if ($p[0] >= $fp && $p[0] < $f0) $a['prev']++;
+    if ($p[0] < $f0) continue;
+    $a['n']++; if ($p[2] === '1') $a['u']++; if (isset($a['dev'][$p[1]])) $a['dev'][$p[1]]++;
+    $r = isset($p[3]) && $p[3] !== '' ? $p[3] : '-'; $a['ref'][$r] = (isset($a['ref'][$r]) ? $a['ref'][$r] : 0) + 1;
+  }
+  fclose($h); arsort($a['ref']); $a['ref'] = array_slice($a['ref'], 0, 5, true);
+  return $a;
+}
+function repMail($root, $j, $slug, $em, $every, $from, $to, $h) {
+  $t = $j['tours'][$slug]; $lang = isset($t['lang']) && $t['lang'] === 'en' ? 'en' : 'he'; $T = repTxt($lang); $rtl = $T['dir'] === 'rtl';
+  $e = function ($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); };
+  $s = repStats($root, $slug, $from, $to);
+  $name = isset($t['name']) && $t['name'] !== '' ? $t['name'] : $slug; $link = isset($t['link']) ? (string)$t['link'] : '';
+  $base = $j['base'] !== '' ? rtrim($j['base'], '/') . '/' : '';
+  $chg = $base !== '' ? $base . 'upload.php?rep=' . rawurlencode($slug) . '&to=' . rawurlencode($em) . '&s=' . repSig($h, $slug, $em) : '';
+  $per = repDate($from, $lang) . ' – ' . repDate($to, $lang);
+  $dn = max(1, $s['dev']['d'] + $s['dev']['m'] + $s['dev']['t']); $devs = array();
+  foreach ($T['devs'] as $k => $l) if ($s['dev'][$k]) $devs[] = $l . ' ' . round(100 * $s['dev'][$k] / $dn) . '%';
+  $refs = array(); foreach ($s['ref'] as $k => $n) $refs[] = array($k === '-' ? $T['direct'] : $k, $n, $k === '-' ? 'auto' : 'ltr');
+  $al = $rtl ? 'right' : 'left';
+  // the plain-text part
+  $tx = $name . "\n" . $T['period'] . ': ' . $per . "\n\n" . $T['visits'] . ': ' . $s['n'] . ' (' . $T['prev'] . ': ' . $s['prev'] . ")\n" . $T['new'] . ': ' . $s['u'] . "\n"
+    . ($s['first'] !== '' ? $T['total'] . ' ' . repDate(strtotime(substr($s['first'], 0, 10)), $lang) . ': ' . $s['all'] . "\n" : '')
+    . ($devs ? $T['dev'] . ': ' . implode(', ', $devs) . "\n" : '');
+  if ($refs) { $tx .= $T['ref'] . ":\n"; foreach ($refs as $r) $tx .= '  ' . $r[0] . ': ' . $r[1] . "\n"; }
+  $tx .= ($link !== '' ? "\n" . $T['open'] . ': ' . $link . "\n" : '') . "\n" . $T['note'] . "\n" . ($chg !== '' ? $T['chg'] . ': ' . $chg . "\n" : '');
+  // the HTML part: tables and inline styles only, so mail programs show it the same
+  $mx = max(1, max($s['day'])); $bars = '';
+  foreach ($s['day'] as $d => $n) { $ht = $n ? max(3, round($n / $mx * 60)) : 2; $bars .= '<td valign="bottom" style="padding:0 1px" title="' . $e($d . ': ' . $n) . '"><div style="height:' . $ht . 'px;background:' . ($n ? '#3aa596' : '#d6dee0') . ';border-radius:2px 2px 0 0;font-size:0;line-height:0">&nbsp;</div></td>'; }
+  $kv = function ($v, $l) use ($e) { return '<td style="padding:10px 12px;background:#f3f7f7;border-radius:8px;width:33%"><div style="font-size:24px;font-weight:700;color:#14302c">' . $e($v) . '</div><div style="font-size:12px;color:#5d7175">' . $e($l) . '</div></td>'; };
+  $ht = '<!doctype html><html dir="' . $T['dir'] . '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
+    . '<body style="margin:0;padding:0;background:#eef2f3"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef2f3"><tr><td align="center" style="padding:20px 10px">'
+    . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" dir="' . $T['dir'] . '" style="max-width:560px;background:#ffffff;border-radius:12px;font-family:Arial,Helvetica,sans-serif;color:#1d2b2e;text-align:' . $al . '">'
+    . '<tr><td style="padding:22px 24px 6px"><div style="font-size:13px;color:#3aa596;font-weight:700">Gambit360 · ' . $e($T['subj'][$every]) . '</div><div style="font-size:21px;font-weight:700;margin-top:4px" dir="auto">' . $e($name) . '</div>'
+    . '<div style="font-size:13px;color:#5d7175;margin-top:4px">' . $e($T['period']) . ': <span dir="ltr">' . $e($per) . '</span></div></td></tr>'
+    . '<tr><td style="padding:12px 18px"><table role="presentation" width="100%" cellpadding="0" cellspacing="6"><tr>' . $kv($s['n'], $T['visits']) . $kv($s['prev'], $T['prev']) . $kv($s['u'], $T['new']) . '</tr></table>'
+    . ($s['n'] ? '' : '<div style="padding:4px 6px;color:#5d7175;font-size:14px">' . $e($T['none']) . '</div>') . '</td></tr>'
+    . '<tr><td style="padding:4px 24px"><div style="font-size:13px;font-weight:700;color:#5d7175;margin-bottom:6px">' . $e($T['days']) . '</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" dir="ltr" style="height:62px"><tr>' . $bars . '</tr></table></td></tr>'
+    . '<tr><td style="padding:12px 24px;font-size:14px;line-height:1.6">'
+    . ($s['first'] !== '' ? '<div>' . $e($T['total']) . ' ' . $e(repDate(strtotime(substr($s['first'], 0, 10)), $lang)) . ': <b>' . $s['all'] . '</b></div>' : '')
+    . ($devs ? '<div>' . $e($T['dev']) . ': ' . $e(implode(', ', $devs)) . '</div>' : '');
+  if ($refs) { $ht .= '<div style="margin-top:6px">' . $e($T['ref']) . ':</div>'; foreach ($refs as $r) $ht .= '<div style="color:#40565a">• <span dir="' . $r[2] . '">' . $e($r[0]) . '</span>: ' . $r[1] . '</div>'; }
+  $ht .= '</td></tr>' . ($link !== '' ? '<tr><td style="padding:8px 24px 18px"><a href="' . $e($link) . '" style="display:inline-block;background:#3aa596;color:#ffffff;text-decoration:none;font-weight:700;padding:10px 20px;border-radius:8px;font-size:15px">' . $e($T['open']) . '</a></td></tr>' : '')
+    . '<tr><td style="padding:12px 24px 20px;border-top:1px solid #e3eaeb;font-size:12px;color:#7a8b8f">' . $e($T['note']) . ($chg !== '' ? '<br><a href="' . $e($chg) . '" style="color:#3aa596">' . $e($T['chg']) . '</a>' : '') . '</td></tr>'
+    . '</table></td></tr></table></body></html>';
+  // sender: the site's own address; replies go to the Studio owner's email when one was set
+  $fr = $j['from']; $host = strtolower((string)parse_url($base !== '' ? $base : 'https://' . (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost') . '/', PHP_URL_HOST));
+  $host = preg_replace('#^www\.#', '', preg_replace('#[^a-z0-9.-]#', '', $host));
+  $faddr = !empty($fr['addr']) && filter_var($fr['addr'], FILTER_VALIDATE_EMAIL) ? $fr['addr'] : 'reports@' . ($host !== '' ? $host : 'localhost');
+  $fname = isset($fr['name']) && trim($fr['name']) !== '' ? trim($fr['name']) : 'Gambit360';
+  $b64h = function ($s) { return '=?UTF-8?B?' . base64_encode($s) . '?='; };
+  $bnd = 'g360-' . bin2hex(function_exists('random_bytes') ? random_bytes(8) : uniqid());
+  $hd = 'MIME-Version: 1.0' . "\r\n" . 'From: ' . $b64h($fname) . ' <' . $faddr . '>' . "\r\n" . 'Content-Type: multipart/alternative; boundary="' . $bnd . '"' . "\r\n";
+  if (!empty($fr['reply']) && filter_var($fr['reply'], FILTER_VALIDATE_EMAIL)) { $hd .= 'Reply-To: ' . $fr['reply'] . "\r\n"; if (!empty($fr['copy'])) $hd .= 'Bcc: ' . $fr['reply'] . "\r\n"; }
+  if ($chg !== '') $hd .= 'List-Unsubscribe: <' . $chg . '>' . "\r\n";
+  $body = '--' . $bnd . "\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" . chunk_split(base64_encode($tx))
+    . '--' . $bnd . "\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" . chunk_split(base64_encode($ht)) . '--' . $bnd . "--\r\n";
+  return @mail($em, $b64h($T['subj'][$every] . ': ' . $name), $body, $hd);
+}
+// sends every report that is due (once at a time: a lock), then writes down the next time
+function repRun($root, $bd, $h, $force) {
+  $nx = @file_get_contents($root . '/_stats/.rep-next');
+  if (!$force && ($nx === false || time() < (int)$nx)) return 0;
+  $lk = @fopen($bd . '/.replock', 'c'); if (!$lk || !flock($lk, LOCK_EX | LOCK_NB)) return 0;
+  @set_time_limit(300); @ignore_user_abort(true);
+  $j = repLoad($bd); $now = time(); $n = 0;
+  foreach ($j['tours'] as $slug => $t) foreach ($t['to'] as $i => $r) {
+    if ($r['every'] === 'off' || !$r['next'] || $r['next'] > $now) continue;
+    $ok = repMail($root, $j, $slug, $r['email'], $r['every'], !empty($r['last']) ? $r['last'] : repBack($r['every'], $now), $now, $h);
+    if ($ok) { $r['last'] = $now; $r['fail'] = 0; $n++; } else $r['fail'] = $now;
+    $r['next'] = repNext($r['every'], $r['next']); if ($r['next'] <= $now) $r['next'] = repNext($r['every'], $now);
+    $j['tours'][$slug]['to'][$i] = $r;
+  }
+  repSave($root, $bd, $j);
+  flock($lk, LOCK_UN); fclose($lk);
+  return $n;
+}
 
 if (!empty($G360_APP) || isset($_GET['app'])) {   // app/index.php: the Studio itself, or the password page
   header('X-Robots-Tag: noindex'); header('Cache-Control: no-store'); header('Referrer-Policy: no-referrer'); header('X-Frame-Options: DENY');
@@ -6332,6 +6457,41 @@ if (!empty($G360_APP) || isset($_GET['app'])) {   // app/index.php: the Studio i
   exit;
 }
 
+if (!empty($G360_CRON) || PHP_SAPI === 'cli' || isset($_GET['cron'])) {   // due email reports: from index.php after a visit, or the server's cron (upload.php?cron=1, or php upload.php)
+  $n = $keyOk ? repRun($root, $bd, $KEY_SHA256, false) : 0;
+  if (!empty($G360_CRON)) return;
+  if (PHP_SAPI !== 'cli') { header('Content-Type: text/plain; charset=utf-8'); header('X-Robots-Tag: noindex'); header('Cache-Control: no-store'); }
+  echo 'ok ' . $n . "\n"; exit;
+}
+if (isset($_GET['rep'])) {   // the link at the bottom of a report: the recipient picks how often it comes, or stops it
+  header('Content-Type: text/html; charset=utf-8'); header('X-Robots-Tag: noindex'); header('Cache-Control: no-store'); header('Referrer-Policy: no-referrer'); header('X-Frame-Options: DENY');
+  $slug = (string)$_GET['rep']; $em = isset($_GET['to']) ? (string)$_GET['to'] : ''; $sg = isset($_GET['s']) ? (string)$_GET['s'] : '';
+  $j = $keyOk ? repLoad($bd) : null; $ix = -1;
+  if ($j && isset($j['tours'][$slug]) && hash_equals(repSig($KEY_SHA256, $slug, $em), $sg)) foreach ($j['tours'][$slug]['to'] as $i => $r) if (strtolower($r['email']) === strtolower($em)) $ix = $i;
+  $lang = $ix >= 0 && isset($j['tours'][$slug]['lang']) && $j['tours'][$slug]['lang'] === 'en' ? 'en' : 'he'; $T = repTxt($lang);
+  $e = function ($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); };
+  $say = '';
+  if ($ix >= 0 && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['set']) && ($_POST['set'] === 'off' || repStep((string)$_POST['set']) !== '')) {
+    $r = $j['tours'][$slug]['to'][$ix]; $r['every'] = (string)$_POST['set']; $r['next'] = $r['every'] === 'off' ? 0 : repNext($r['every'], time()); $r['cl'] = time();
+    $j['tours'][$slug]['to'][$ix] = $r; repSave($root, $bd, $j);
+    $say = $r['every'] === 'off' ? $T['pgOff'] : $T['pgSaved'] . repDate($r['next'], $lang);
+  }
+  echo '<!doctype html><html lang="', $lang, '" dir="', $T['dir'], '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>', $e($T['pgH']), '</title>',
+    '<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#eef2f3;color:#1d2b2e;font:16px Arial,Helvetica,sans-serif;padding:16px;box-sizing:border-box}',
+    'main{width:min(420px,100%);background:#fff;border-radius:14px;padding:24px;box-sizing:border-box}h1{margin:0 0 4px;font-size:1.2rem}.t{color:#3aa596;font-weight:700;font-size:.85rem}p{color:#5d7175}',
+    'button{display:block;width:100%;margin-top:8px;padding:11px;border:1px solid #cfdadc;border-radius:8px;background:#f3f7f7;color:inherit;font:inherit;cursor:pointer}button.on{background:#3aa596;border-color:#3aa596;color:#fff;font-weight:700}.ok{background:#e5f5f2;border-radius:8px;padding:10px 12px;color:#14302c}</style></head><body><main>';
+  if ($ix < 0) echo '<h1>', $e($T['pgH']), '</h1><p>', $e($T['pgBad']), '</p>';
+  else {
+    $cur = $j['tours'][$slug]['to'][$ix]['every'];
+    echo '<div class="t">Gambit360 · ', $e($T['pgH']), '</div><h1 dir="auto">', $e($j['tours'][$slug]['name'] !== '' ? $j['tours'][$slug]['name'] : $slug), '</h1><p dir="ltr" style="text-align:', $T['dir'] === 'rtl' ? 'right' : 'left', '">', $e($em), '</p>',
+      $say !== '' ? '<div class="ok">' . $e($say) . '</div>' : '', '<p>', $e($T['pgQ']), '</p><form method="post">';
+    foreach ($T['opts'] as $k => $l) echo '<button name="set" value="', $k, '"', $k === $cur ? ' class="on"' : '', '>', $e($l), '</button>';
+    echo '</form>';
+  }
+  echo '</main></body></html>';
+  exit;
+}
+
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Content-Type: application/json; charset=utf-8');
@@ -6355,6 +6515,11 @@ if ($action === 'login' || $action === 'logout') {   // another computer: the cl
 
 $key = isset($_POST['key']) ? (string)$_POST['key'] : '';
 if (!$keyOk || !hash_equals($KEY_SHA256, hash('sha256', $key))) { sleep(2); out(403, array('ok' => false, 'error' => 'key')); }
+register_shutdown_function(function () use ($root, $bd, $KEY_SHA256) {   // email reports that are due go out after the answer, so the Studio does not wait for them
+  $nx = @file_get_contents($root . '/_stats/.rep-next'); if ($nx === false || time() < (int)$nx) return;
+  if (function_exists('fastcgi_finish_request')) @fastcgi_finish_request();
+  repRun($root, $bd, $KEY_SHA256, false);
+});
 
 $meta = function ($f) { $j = @json_decode(@file_get_contents($f), true); return is_array($j) ? $j : null; };
 if ($action === 'ping') out(200, array('ok' => true, 'php' => PHP_VERSION, 'writable' => is_writable($root), 'ver' => $VER, 'self' => basename(__FILE__), 'pass' => is_file($bd . '/auth.json'), 'app' => $meta($bd . '/app.json')));
@@ -6457,7 +6622,39 @@ if ($action === 'stats') {   // view statistics for the Studio, from the visit l
     arsort($a['ref']); $a['ref'] = array_slice($a['ref'], 0, 10, true);
     $res[$s] = $a;
   }
-  out(200, array('ok' => true, 'today' => $today->format('Y-m-d'), 'stats' => (object)$res));
+  out(200, array('ok' => true, 'today' => $today->format('Y-m-d'), 'stats' => (object)$res, 'rep' => repLoad($bd), 'now' => time()));
+}
+if ($action === 'repset' || $action === 'repsend') {   // the email reports of one tour: who gets them and how often (repset), or one report right now (repsend)
+  $j = repLoad($bd); $slug = isset($_POST['slug']) ? (string)$_POST['slug'] : ''; $now = time();
+  if (!preg_match('#^[a-z0-9][a-z0-9_-]{0,63}$#', $slug)) out(400, array('ok' => false, 'error' => 'path'));
+  if ($action === 'repset') {
+    $to = json_decode(isset($_POST['to']) ? (string)$_POST['to'] : '', true); if (!is_array($to)) out(400, array('ok' => false, 'error' => 'to'));
+    $was = array(); if (isset($j['tours'][$slug])) foreach ($j['tours'][$slug]['to'] as $r) $was[strtolower($r['email'])] = $r;
+    $list = array(); $seen = array();
+    foreach (array_slice($to, 0, 20) as $x) {
+      $em = is_array($x) && isset($x['email']) ? trim((string)$x['email']) : ''; $ev = is_array($x) && isset($x['every']) ? (string)$x['every'] : '';
+      if (!filter_var($em, FILTER_VALIDATE_EMAIL) || ($ev !== 'off' && repStep($ev) === '')) out(400, array('ok' => false, 'error' => 'email', 'email' => $em));
+      $k = strtolower($em); if (isset($seen[$k])) continue; $seen[$k] = 1;
+      $r = isset($was[$k]) ? $was[$k] : array('email' => $em, 'every' => 'off', 'next' => 0, 'last' => 0, 'fail' => 0, 'cl' => 0);
+      if ($r['every'] !== $ev) { $r['every'] = $ev; $r['next'] = $ev === 'off' ? 0 : repNext($ev, $now); $r['cl'] = 0; }
+      $r['email'] = $em; $list[] = $r;
+    }
+    $str = function ($k, $n) { return isset($_POST[$k]) ? substr(trim((string)$_POST[$k]), 0, $n) : ''; };
+    $link = $str('link', 300); if (!preg_match('#^https?://#i', $link)) $link = '';
+    if ($list) $j['tours'][$slug] = array('name' => $str('name', 200), 'lang' => $str('lang', 2) === 'en' ? 'en' : 'he', 'link' => $link, 'to' => $list); else unset($j['tours'][$slug]);
+    $b = $str('base', 300); if (preg_match('#^https?://#i', $b)) $j['base'] = $b;
+    $f = json_decode(isset($_POST['from']) ? (string)$_POST['from'] : '', true);
+    if (is_array($f)) { $fv = function ($k) use ($f) { $v = isset($f[$k]) ? trim((string)$f[$k]) : ''; return filter_var($v, FILTER_VALIDATE_EMAIL) ? $v : ''; };
+      $j['from'] = array('name' => isset($f['name']) ? substr(trim(preg_replace('#[\r\n]+#', ' ', (string)$f['name'])), 0, 80) : '', 'reply' => $fv('reply'), 'copy' => !empty($f['copy']), 'addr' => $fv('addr')); }
+    if (!repSave($root, $bd, $j)) out(500, array('ok' => false, 'error' => 'write'));
+    out(200, array('ok' => true, 'rep' => $j, 'now' => $now));
+  }
+  $em = isset($_POST['email']) ? (string)$_POST['email'] : ''; $r = null;
+  if (isset($j['tours'][$slug])) foreach ($j['tours'][$slug]['to'] as $x) if (strtolower($x['email']) === strtolower($em)) $r = $x;
+  if (!$r) out(404, array('ok' => false, 'error' => 'none'));
+  $ev = $r['every'] === 'off' ? '' : $r['every'];
+  $sent = repMail($root, $j, $slug, $r['email'], $ev, !empty($r['last']) ? $r['last'] : repBack($ev, $now), $now, $KEY_SHA256);
+  out(200, array('ok' => true, 'sent' => $sent, 'rep' => $j, 'now' => $now));
 }
 if ($action !== 'put') out(400, array('ok' => false, 'error' => 'action'));
 
@@ -6535,6 +6732,10 @@ if (is_array($cfg)) {
   $html = preg_replace('#<title>[^<]*</title>#', str_replace(array('\\', '$'), array('\\\\', '\\$'), $m), $html, 1);
 }
 echo $html;
+// automatic email reports (written by upload.php): when one is due, it goes out now, after the page already reached the visitor
+$rn = __DIR__ . '/_stats/.rep-next';
+if (is_file($rn) && time() >= (int)@file_get_contents($rn) && is_file(__DIR__ . '/upload.php')) g360_reports();
+function g360_reports() { if (function_exists('fastcgi_finish_request')) @fastcgi_finish_request(); else @flush(); $G360_CRON = true; include __DIR__ . '/upload.php'; }
 
 // View statistics: one line per visit in _stats/<tour>.log (closed to the web), read by the Studio through upload.php.
 // A visit = a browser that opens the tour after 30 minutes away (a cookie), so reloads and switching between tours do not count again.
@@ -8129,6 +8330,79 @@ function g360_count($slug) {
 
 
 
+  // ---- automatic view reports by email: recipients per tour and how often; upload.php keeps them and sends them (see repRun there) ----
+  Object.assign(STR.he, {
+    rpMailH: 'דוחות אוטומטיים במייל', rpMailN: 'הלקוח יקבל למייל דוח צפיות של הסיור הזה כל כמה זמן שתבחרו. הדוח נשלח ב-08:00 ביום שלו. בתחתית כל דוח יש קישור שבו הלקוח בוחר בעצמו את התדירות, או מפסיק.',
+    rpEmailPh: 'מייל הלקוח', rpE_off: 'מושהה', rpE_day: 'כל יום', rpE_week: 'כל שבוע', rpE_2week: 'כל שבועיים', rpE_month: 'כל חודש',
+    rpAdd: '+ נמען', rpSave: 'שמירה', rpSendNow: 'שליחת דוח עכשיו', rpDel: 'הסרה', rpNextS: d => 'הדוח הבא: ' + d, rpLastS: d => 'נשלח לאחרונה: ' + d, rpFailS: 'השליחה האחרונה נכשלה', rpOffS: 'מושהה, לא נשלח',
+    rpByCl: 'הלקוח שינה את התדירות בעצמו', rpStopCl: 'הלקוח הפסיק את הדוחות', rpNotSaved: 'עוד לא נשמר', rpBadEmail: e => 'כתובת מייל לא תקינה: ' + e, rpSaved: 'הדוחות נשמרו בשרת ✓', rpSaveFail: d => 'השמירה נכשלה: ' + d,
+    rpSent: e => 'הדוח נשלח אל ' + e, rpSendFail: 'השרת לא הצליח לשלוח את המייל (הפונקציה mail של PHP). כדאי לבדוק מול חברת האחסון שהיא פעילה.',
+    rpFromH: 'הגדרות שליחה (לכל הסיורים)', rpFromName: 'שם השולח', rpReply: 'המייל שלך: תשובות של לקוחות יגיעו אליו', rpCopy: 'לשלוח לי עותק מכל דוח', rpAddr: 'כתובת השולח (לא חובה. בלי: reports@ הדומיין של האתר)',
+    rpCronN: 'בלי הגדרה נוספת, דוח יוצא בביקור הראשון באחד הסיורים או בפתיחת הסטודיו אחרי 08:00 ביום שלו. כדי שיצא בדיוק בזמן גם בלי ביקורים, אפשר להוסיף Cron בלוח הבקרה של האחסון שיפתח כל שעה את הכתובת:',
+    rpCopyUrl: 'העתקת הכתובת', rpOldPhp: 'upload.php בשרת עוד לא יודע לשלוח דוחות. הוא מתעדכן לבד מהסטודיו; לחצו "רענון" בעוד רגע.'
+  });
+  Object.assign(STR.en, {
+    rpMailH: 'Automatic email reports', rpMailN: 'The client gets a views report of this tour by email as often as you choose. It is sent at 08:00 on its day. At the bottom of every report is a link where the client picks how often, or stops it.',
+    rpEmailPh: 'Client email', rpE_off: 'Paused', rpE_day: 'Every day', rpE_week: 'Every week', rpE_2week: 'Every two weeks', rpE_month: 'Every month',
+    rpAdd: '+ Recipient', rpSave: 'Save', rpSendNow: 'Send a report now', rpDel: 'Remove', rpNextS: d => 'Next report: ' + d, rpLastS: d => 'Last sent: ' + d, rpFailS: 'The last send failed', rpOffS: 'Paused, not sent',
+    rpByCl: 'The client changed how often', rpStopCl: 'The client stopped the reports', rpNotSaved: 'Not saved yet', rpBadEmail: e => 'Not a valid email address: ' + e, rpSaved: 'Reports saved on the server ✓', rpSaveFail: d => 'Saving failed: ' + d,
+    rpSent: e => 'The report was sent to ' + e, rpSendFail: 'The server could not send the email (PHP mail). Check with the hosting company that it is enabled.',
+    rpFromH: 'Sending settings (all tours)', rpFromName: 'Sender name', rpReply: 'Your email: client replies go to it', rpCopy: 'Send me a copy of every report', rpAddr: 'Sender address (optional; otherwise reports@ the site\'s domain)',
+    rpCronN: 'With nothing else set, a report goes out on the first visit to any tour, or when the Studio opens, after 08:00 on its day. To send exactly on time even without visits, add a cron job in the hosting control panel that opens this address every hour:',
+    rpCopyUrl: 'Copy the address', rpOldPhp: 'upload.php on the server cannot send reports yet. It updates itself from the Studio; press "Refresh" in a moment.'
+  });
+  const REP_EV = ['day', 'week', '2week', 'month', 'off'];
+  const repDate = ts => { if (!ts) return ''; const d = new Date(ts * 1000), z = n => String(n).padStart(2, '0'); return stDate(d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes())); };
+  let rep = null;
+  function repUi(box, r) {
+    box.innerHTML = '<h4></h4>'; box.firstChild.textContent = L('rpMailH');
+    if (!rep) { box.insertAdjacentHTML('beforeend', '<div class="note"></div>'); box.lastChild.textContent = L('rpOldPhp'); return; }
+    const cur = rep.tours && rep.tours[r.slug], fr = rep.from || {};
+    const list = cur ? cur.to.map(x => Object.assign({}, x)) : [{ email: '', every: 'week', fresh: 1 }];
+    box.insertAdjacentHTML('beforeend', '<div class="note" data-n></div><div data-l></div><div class="row"><button type="button" data-a></button><button type="button" class="pri" data-s></button></div>'
+      + '<details class="stRepF"><summary></summary><label><span></span><input type="text" data-fn></label><label><span></span><input type="email" data-fr></label><label class="ck"><input type="checkbox" data-fc><span></span></label><label><span></span><input type="email" data-fa></label>'
+      + '<div class="note" data-cn></div><input type="text" readonly data-cu><div class="row"><button type="button" data-cc></button></div></details>');
+    const q = s => box.querySelector(s), lb = box.querySelector('[data-l]');
+    q('[data-n]').textContent = L('rpMailN'); q('[data-a]').textContent = L('rpAdd'); q('[data-s]').textContent = L('rpSave'); q('summary').textContent = L('rpFromH');
+    const fl = box.querySelectorAll('.stRepF label span'); [L('rpFromName'), L('rpReply'), L('rpCopy'), L('rpAddr')].forEach((x, i) => { fl[i].textContent = x; });
+    q('[data-fn]').value = fr.name || ''; q('[data-fn]').placeholder = 'Gambit360'; q('[data-fr]').value = fr.reply || ''; q('[data-fc]').checked = !!fr.copy; q('[data-fa]').value = fr.addr || '';
+    q('[data-cn]').textContent = L('rpCronN'); q('[data-cu]').value = upUrl() + '?cron=1'; q('[data-cc]').textContent = L('rpCopyUrl'); q('[data-cc]').onclick = () => copyText(q('[data-cu]').value, L('shCopied'));
+    function rows() {
+      lb.innerHTML = '';
+      list.forEach((x, i) => {
+        const w = document.createElement('div'); w.className = 'stRepR';
+        w.innerHTML = '<div class="ln"><input type="email" dir="ltr"><select></select><button type="button" data-g>✉</button><button type="button" data-x>✕</button></div><div class="stRepS"></div>';
+        const inp = w.querySelector('input'), sel = w.querySelector('select');
+        inp.value = x.email || ''; inp.placeholder = L('rpEmailPh'); inp.oninput = () => { x.email = inp.value.trim(); };
+        REP_EV.forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = L('rpE_' + k); sel.appendChild(o); }); sel.value = x.every || 'week'; sel.onchange = () => { x.every = sel.value; };
+        w.querySelector('[data-g]').title = L('rpSendNow'); w.querySelector('[data-g]').onclick = () => sendNow(x);
+        w.querySelector('[data-x]').title = L('rpDel'); w.querySelector('[data-x]').onclick = () => { list.splice(i, 1); rows(); };
+        w.querySelector('.stRepS').textContent = x.fresh || !x.email ? L('rpNotSaved') : x.every === 'off' ? (x.cl ? L('rpStopCl') : L('rpOffS'))
+          : [L('rpNextS', repDate(x.next))].concat(x.last ? [L('rpLastS', repDate(x.last))] : [], x.fail ? [L('rpFailS')] : [], x.cl ? [L('rpByCl')] : []).join(' · ');
+        lb.appendChild(w);
+      });
+    }
+    rows();
+    q('[data-a]').onclick = () => { list.push({ email: '', every: 'week', fresh: 1 }); rows(); lb.lastChild.querySelector('input').focus(); };
+    async function save() {
+      const to = list.filter(x => x.email).map(x => ({ email: x.email, every: x.every || 'week' }));
+      const bad = to.find(x => !/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(x.email)); if (bad) { msg(L('rpBadEmail', bad.email), true); return false; }
+      const t = r.t, base = settings.base.replace(/\/?$/, '/');
+      let j; try {
+        j = await upPost({ key: settings.upKey, action: 'repset', slug: r.slug, to: JSON.stringify(to), name: t ? (t.title || t.name || r.slug) : r.slug, lang: t ? tourLang(t) : (he() ? 'he' : 'en'),
+          link: base + (t ? (t.upSlug || slugOf(t)) : r.slug), base, from: JSON.stringify({ name: q('[data-fn]').value.trim(), reply: q('[data-fr]').value.trim(), copy: q('[data-fc]').checked, addr: q('[data-fa]').value.trim() }) });
+      } catch (e) { msg(L('rpSaveFail', e.message || e), true); return false; }
+      if (!j.ok) { msg(j.error === 'email' ? L('rpBadEmail', j.email || '') : L('rpSaveFail', j.error), true); return false; }
+      rep = j.rep; repUi(box, r); return true;
+    }
+    q('[data-s]').onclick = async () => { if (await save()) msg(L('rpSaved')); };
+    async function sendNow(x) {
+      if (!x.email) return;
+      const em = x.email; if (!await save()) return;
+      let j; try { j = await upPost({ key: settings.upKey, action: 'repsend', slug: r.slug, email: em }); } catch (e) { msg(L('rpSendFail'), true); return; }
+      if (j.ok && j.sent) msg(L('rpSent', em)); else msg(j.ok ? L('rpSendFail') : L('rpSaveFail', j.error), true);
+    }
+  }
   // ---- view statistics: index.php on the server counts the visits (one line per visit in _stats/), upload.php sums them up for the Studio ----
   let stCur = '';
   const stDate = d => d ? (he() ? d.slice(8, 10) + '/' + d.slice(5, 7) + '/' + d.slice(0, 4) : d.slice(0, 10)) + (d.length > 10 ? ' ' + d.slice(11, 16) : '') : '';
@@ -8140,16 +8414,23 @@ function g360_count($slug) {
     if (!settings.upKey || !settings.base) { say(L('stNeedKey')); return; }
     if (t) stCur = t.upSlug || slugOf(t);
     say(L('stLoading'));
+    try { await srvCheck(); } catch (e) {}   // an older upload.php on the server updates itself first (email reports need version 3)
     let j;
     try { j = await upPost({ key: settings.upKey, action: 'stats' }); } catch (e) { say(L('stFail', e.message || e) + ' · ' + upUrl()); return; }
     if (dlg.hidden) return;
     if (!j.ok) { say(j.error === 'action' ? L('stOld') : j.error === 'key' ? L('pingKey') : L('stFail', j.error)); return; }
+    rep = j.rep || null;
     const st = j.stats || {}, today = j.today || new Date().toISOString().slice(0, 10);
     const rows = Object.keys(st).map(slug => ({ slug, t: stTourOf(slug), s: st[slug] }));
     tours.forEach(o => { const sl = o.upSlug; if (sl && !st[sl]) rows.push({ slug: sl, t: o, s: null }); });   // uploaded tours with no visits yet
     rows.sort((a, c) => ((c.s && c.s.d30) || 0) - ((a.s && a.s.d30) || 0) || ((c.s && c.s.n) || 0) - ((a.s && a.s.n) || 0));
     const nm = r => r.t ? (r.t.name || r.t.client || r.slug) : r.slug;
-    if (!rows.some(r => r.s)) { say(L('stNone')); b.insertAdjacentHTML('beforeend', '<div class="note">' + esc(L('stNote')) + '</div>'); return; }
+    if (!rows.some(r => r.s)) {   // no visits yet: the email reports can still be set for the chosen tour
+      say(L('stNone')); b.insertAdjacentHTML('beforeend', '<div class="note">' + esc(L('stNote')) + '</div>');
+      const r0 = rows.find(r => r.slug === stCur) || rows[0] || (t && t.upSlug ? { slug: t.upSlug, t, s: null } : null);
+      if (r0) { b.insertAdjacentHTML('beforeend', '<h4 dir="auto"></h4><div class="stRep"></div>'); b.querySelector('h4').textContent = nm(r0); repUi(b.querySelector('.stRep'), r0); }
+      return;
+    }
     if (!rows.some(r => r.slug === stCur)) stCur = (rows.find(r => r.s) || rows[0]).slug;
     b.innerHTML = '<div class="stWrap"><table class="stT"><thead><tr><th>' + esc(L('stTour')) + '</th><th class="n">' + esc(L('st7')) + '</th><th class="n">' + esc(L('st30')) + '</th><th class="n">' + esc(L('stAll')) + '</th><th class="n">' + esc(L('stNew')) + '</th><th>' + esc(L('stLast')) + '</th></tr></thead><tbody></tbody></table></div><div data-d></div><div class="row"><button type="button" data-r></button></div><div class="note"></div>';
     const tb = b.querySelector('tbody'), det = b.querySelector('[data-d]');
@@ -8165,7 +8446,7 @@ function g360_count($slug) {
     function show() {
       tb.querySelectorAll('tr').forEach(x => x.classList.toggle('sel', x.dataset.slug === stCur));
       const r = rows.find(x => x.slug === stCur), s = r && r.s;
-      if (!s) { det.innerHTML = '<div class="stMsg"></div>'; det.firstChild.textContent = L('stNone'); return; }
+      if (!s) { det.innerHTML = '<div class="stMsg"></div><div class="stRep"></div>'; det.firstChild.textContent = L('stNone'); repUi(det.lastChild, r); return; }
       const days = []; { const d0 = new Date(today + 'T12:00:00Z'); for (let i = 29; i >= 0; i--) { const d = new Date(d0 - i * 864e5).toISOString().slice(0, 10); days.push([d, (s.day || {})[d] || 0]); } }
       const mx = Math.max(1, ...days.map(x => x[1])), dv = s.dev || {}, dn = (dv.d || 0) + (dv.m || 0) + (dv.t || 0) || 1;
       const pct = n => Math.round(100 * (n || 0) / dn) + '%';
@@ -8177,7 +8458,7 @@ function g360_count($slug) {
         + '<h4>' + esc(L('stMonths')) + '</h4><ul class="stList">' + mons.map(m => '<li><span>' + esc(he() ? m.slice(5) + '/' + m.slice(0, 4) : m) + '</span><b>' + s.mon[m] + '</b></li>').join('') + '</ul>'
         + '<h4>' + esc(L('stDev')) + '</h4><ul class="stList">' + [['d', 'stDevD'], ['m', 'stDevM'], ['t', 'stDevT']].map(([k, l]) => '<li><span>' + esc(L(l)) + '</span><b>' + (dv[k] || 0) + ' · ' + pct(dv[k]) + '</b></li>').join('') + '</ul>'
         + '<h4>' + esc(L('stRef')) + '</h4><ul class="stList">' + refs.map(k => '<li><span dir="ltr">' + esc(k === '-' ? L('stDirect') : k) + '</span><b>' + s.ref[k] + '</b></li>').join('') + '</ul>'
-        + '<div class="row"><button type="button" class="pri" data-c></button></div>';
+        + '<div class="row"><button type="button" class="pri" data-c></button></div><div class="stRep" data-rep></div>';
       det.querySelector('h4').textContent = nm(r);
       const cb = det.querySelector('[data-c]'); cb.textContent = L('stCopy');
       cb.onclick = () => {
@@ -8186,6 +8467,7 @@ function g360_count($slug) {
           .concat(devTxt ? ['• ' + L('rpDev', devTxt)] : [], mons.length ? ['• ' + L('rpMon', mons.slice(0, 6).map(m => (he() ? m.slice(5) + '/' + m.slice(0, 4) : m) + ': ' + s.mon[m]).join(', '))] : []).join('\n');
         copyText(txt, L('stCopied'));
       };
+      repUi(det.querySelector('[data-rep]'), r);
     }
     show();
   }

@@ -50,6 +50,10 @@ if (is_array($cfg)) {
   $html = preg_replace('#<title>[^<]*</title>#', str_replace(array('\\', '$'), array('\\\\', '\\$'), $m), $html, 1);
 }
 echo $html;
+// automatic email reports (written by upload.php): when one is due, it goes out now, after the page already reached the visitor
+$rn = __DIR__ . '/_stats/.rep-next';
+if (is_file($rn) && time() >= (int)@file_get_contents($rn) && is_file(__DIR__ . '/upload.php')) g360_reports();
+function g360_reports() { if (function_exists('fastcgi_finish_request')) @fastcgi_finish_request(); else @flush(); $G360_CRON = true; include __DIR__ . '/upload.php'; }
 
 // View statistics: one line per visit in _stats/<tour>.log (closed to the web), read by the Studio through upload.php.
 // A visit = a browser that opens the tour after 30 minutes away (a cookie), so reloads and switching between tours do not count again.

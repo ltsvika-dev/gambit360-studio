@@ -15,13 +15,14 @@ if ($action === 'sdkfail' || $action === 'sdkok') {   // a tour page tells wheth
   denyDir($root . '/_stats'); @file_put_contents($f, json_encode($j));
   out(200, array('ok' => true));
 }
-if ($action === 'login' || $action === 'logout') {   // another computer: the cloud password gives back the upload key (encrypted with that same password)
+if ($action === 'login' || $action === 'logout') {   // another computer: the user name and cloud password give back the upload key (encrypted with that same password)
   if ($action === 'logout') { header('Set-Cookie: g360app=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=Lax'); out(200, array('ok' => true)); }
   if (!$keyOk || !is_file($bd . '/auth.json')) { sleep(1); out(200, array('ok' => false, 'error' => 'nopass')); }
   $ff = $bd . '/login-fails.json'; $fl = @json_decode(@file_get_contents($ff), true); if (!is_array($fl)) $fl = array('n' => 0, 't' => 0);
   if ($fl['n'] >= 5 && time() - $fl['t'] < 900) out(429, array('ok' => false, 'error' => 'wait'));
   $a = json_decode(file_get_contents($bd . '/auth.json'), true); $pw = isset($_POST['pass']) ? (string)$_POST['pass'] : '';
-  if (!is_array($a) || !password_verify($pw, $a['hash'])) { $fl = array('n' => ($fl['n'] >= 5 ? 0 : $fl['n']) + 1, 't' => time()); @file_put_contents($ff, json_encode($fl)); sleep(2); out(200, array('ok' => false, 'error' => 'pass')); }
+  $uOk = !is_array($a) || empty($a['user']) || hash_equals(unorm($a['user']), unorm(isset($_POST['user']) ? $_POST['user'] : ''));   // no user name set yet: the password alone, until one is set
+  if (!is_array($a) || !password_verify($pw, $a['hash']) || !$uOk) { $fl = array('n' => ($fl['n'] >= 5 ? 0 : $fl['n']) + 1, 't' => time()); @file_put_contents($ff, json_encode($fl)); sleep(2); out(200, array('ok' => false, 'error' => 'pass')); }
   @unlink($ff); $exp = time() + 30 * 86400;
   header('Set-Cookie: g360app=' . appTok($exp, $KEY_SHA256) . '; Max-Age=' . (30 * 86400) . '; Path=/; Secure; HttpOnly; SameSite=Lax');
   out(200, array('ok' => true, 'wrap' => $a['wrap']));

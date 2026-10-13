@@ -64,15 +64,16 @@
   // Undo / Clear all / Finish buttons next to Measure and Area, so measurements can be removed without a keyboard (phones, tablets).
   let measBtnKey = '';
   function syncMeasBtns() {
-    const any = !!(measures.length || areas.length || pending || draft), done = !!(areaMode && draft && draft.pts.length >= 3);
-    const key = (any ? 1 : 0) + '' + (done ? 1 : 0);
+    const any = !!(measures.length || areas.length || pending || draft), show = any || picking(), done = !!(areaMode && draft && draft.pts.length >= 3);
+    const key = [any, show, done].join();
     if (key === measBtnKey) return;
     measBtnKey = key;
-    $('mUndo').hidden = !any; $('mClear').hidden = !any; $('mDone').hidden = !done;
+    $('mUndo').hidden = !show; $('mClear').hidden = !show; $('mDone').hidden = !done;   // shown as soon as Measure or Area is on, greyed out until there is something to remove
+    $('mUndo').disabled = !any; $('mClear').disabled = !any;
   }
 
   function addPoint(p) {
-    if (!pending) { pending = { a:p, objs:[] }; say(t('secondPoint')); return; }
+    if (!pending) { pending = { a:p, objs:[mkDot(p)] }; say(t('secondPoint')); return; }   // the first point shows a dot right away
     const sh = { type:'line', pts:[pending.a, p], objs:[], el:document.createElement('div') };
     sh.el.className = 'mlabel'; $('labels').appendChild(sh.el);
     cancelPending();

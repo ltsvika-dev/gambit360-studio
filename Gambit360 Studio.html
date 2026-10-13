@@ -53,6 +53,7 @@
   #tools { position:fixed; bottom:16px; right:16px; display:flex; gap:6px; z-index:4; }
   #tools button { background:var(--btn); color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:8px 14px; font:inherit; cursor:pointer; white-space:nowrap; }
   #tools button.on { background:var(--accent); color:var(--on-accent); border-color:var(--accent); font-weight:600; }
+  #tools button:disabled { opacity:.4; cursor:default; }
   #modes { position:fixed; bottom:16px; left:16px; display:flex; gap:6px; z-index:4; }
   #modes button { background:var(--btn); color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:8px 14px; font:inherit; cursor:pointer; }
   #modes button.on { background:var(--accent); color:var(--on-accent); border-color:var(--accent); font-weight:600; }
@@ -851,8 +852,8 @@ try { LANG = localStorage.getItem('tourViewerLang') || 'he'; } catch (e) {}
 if (!I18N[LANG]) LANG = 'he';
 const TOUCH = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);   // a phone or tablet: the tips talk about fingers
 const TOUCH_TXT = {
-  he:{ hintText:'טיפ: לחצו על "תלת-ממד" ואז הקישו על נקודה ברצפה כדי להיכנס לסיור. גררו באצבע כדי להסתכל, הקישו על העיגול כדי לנוע, וצבטו כדי לקרב ולהרחיק. (הקשה כדי לסגור)', dollHint:'גרור באצבע לסיבוב · צביטה לזום · בחרו קומה בסרגל · הקישו על הרצפה כדי להיכנס' },
-  en:{ hintText:'Tip: press "3D" and then tap a spot on the floor to enter the tour. Drag with a finger to look around, tap the ring to move, and pinch to zoom. (tap to close)', dollHint:'Drag with a finger to rotate · pinch to zoom · pick a floor in the bar · tap the floor to step inside' } };
+  he:{ hintText:'טיפ: לחצו על "תלת-ממד" ואז הקישו על נקודה ברצפה כדי להיכנס לסיור. גררו באצבע כדי להסתכל, הקישו על העיגול כדי לנוע, וצבטו כדי לקרב ולהרחיק. (הקשה כדי לסגור)', dollHint:'גרור באצבע לסיבוב · צביטה לזום · בחרו קומה בסרגל · הקישו על הרצפה כדי להיכנס', measureHint:'מדידה: לחיצה ארוכה על הנקודה הראשונה', secondPoint:'לחיצה ארוכה על הנקודה השנייה', areaHint:'שטח: לחיצה ארוכה על כל פינה', areaMore:'לחיצה ארוכה על עוד פינות', areaFinish:'לסיום: לחיצה ארוכה על הנקודה הראשונה או ✓' },
+  en:{ hintText:'Tip: press "3D" and then tap a spot on the floor to enter the tour. Drag with a finger to look around, tap the ring to move, and pinch to zoom. (tap to close)', dollHint:'Drag with a finger to rotate · pinch to zoom · pick a floor in the bar · tap the floor to step inside', measureHint:'Measure: press and hold the first point', secondPoint:'Press and hold the second point', areaHint:'Area: press and hold each corner', areaMore:'Press and hold more corners', areaFinish:'To finish: press and hold the first point, or ✓' } };
 function t(key, ...a) {
   let v = TOUCH && TOUCH_TXT[LANG] && TOUCH_TXT[LANG][key] || I18N[LANG][key];
   if (v === undefined) v = I18N.he[key];
@@ -2843,7 +2844,10 @@ renderer.domElement.addEventListener('mousedown', e => {
     // ---- Touch: one finger drags (look around / orbit / pan the plan) or taps (walk, measure), two fingers pinch to zoom. It feeds the same handlers the mouse uses. ----
     {
       const cv = renderer.domElement; cv.style.touchAction = 'none';
-      const ptr = new Map(); let lastTouch = -1e9, moved = 0, pend = null, pinch = null, multi = false;
+      const ptr = new Map(); let lastTouch = -1e9, moved = 0, pend = null, pinch = null, multi = false, hold = null, held = false;
+      // Measure / Area on a touch screen: a point is added only by pressing and holding, so a quick tap or a drag to look around never adds one by mistake.
+      const HOLD_MS = 450;
+      const stopHold = () => { if (hold) { clearTimeout(hold); hold = null; } };
       const fire = (type, x, y, dx, dy, buttons, target) => {
         const ev = new MouseEvent(type, { bubbles:true, cancelable:true, clientX:x, clientY:y, button:0, buttons });
         Object.defineProperty(ev, 'movementX', { value:dx }); Object.defineProperty(ev, 'movementY', { value:dy });
@@ -2861,8 +2865,11 @@ renderer.domElement.addEventListener('mousedown', e => {
         e.preventDefault(); lastTouch = performance.now();
         try { cv.setPointerCapture(e.pointerId); } catch (err) {}
         ptr.set(e.pointerId, { x:e.clientX, y:e.clientY });
-        if (ptr.size === 1) { moved = 0; pend = { x:0, y:0 }; multi = false; pinch = null; fire('mousedown', e.clientX, e.clientY, 0, 0, 1); }
-        else { multi = true; if (drag) { fire('mouseup', e.clientX, e.clientY, 0, 0, 0, window); } pinch = ptr.size === 2 ? two() : null; }
+        if (ptr.size === 1) {
+          moved = 0; pend = { x:0, y:0 }; multi = false; pinch = null; held = false; stopHold(); fire('mousedown', e.clientX, e.clientY, 0, 0, 1);
+          if (picking() && !drag) { const x = e.clientX, y = e.clientY; hold = setTimeout(() => { hold = null; if (moved >= 8 || multi || drag || !picking()) return; held = true; if (navigator.vibrate) try { navigator.vibrate(25); } catch (err) {} cv.dispatchEvent(new MouseEvent('click', { bubbles:true, cancelable:true, clientX:x, clientY:y, button:0 })); }, HOLD_MS); }
+        }
+        else { stopHold(); multi = true; if (drag) { fire('mouseup', e.clientX, e.clientY, 0, 0, 0, window); } pinch = ptr.size === 2 ? two() : null; }
       });
       cv.addEventListener('pointermove', e => {
         if (e.pointerType !== 'touch' || !ptr.has(e.pointerId)) return;
@@ -2876,6 +2883,7 @@ renderer.domElement.addEventListener('mousedown', e => {
         }
         moved += Math.abs(dx) + Math.abs(dy); pend.x += dx; pend.y += dy;
         if (moved < 8) return;   // a tap with a little finger wobble is still a tap
+        stopHold();
         const mx = pend.x, my = pend.y; pend.x = 0; pend.y = 0;
         fire('mousemove', e.clientX, e.clientY, mx, my, 1);
         if (overview && !dollhouse && !drag && !tween) pan(mx, my);
@@ -2886,7 +2894,9 @@ renderer.domElement.addEventListener('mousedown', e => {
         if (ptr.size < 2) pinch = null;
         if (!wasOne) return;
         fire('mouseup', e.clientX, e.clientY, 0, 0, 0, window);
-        if (e.type === 'pointerup' && !multi && moved < 8) cv.dispatchEvent(new MouseEvent('click', { bubbles:true, cancelable:true, clientX:e.clientX, clientY:e.clientY, button:0 }));
+        const quick = !!hold; stopHold();
+        if (held || (quick && picking())) {}   // with Measure or Area on, a short tap adds nothing (the hold already added its point)
+        else if (e.type === 'pointerup' && !multi && moved < 8) cv.dispatchEvent(new MouseEvent('click', { bubbles:true, cancelable:true, clientX:e.clientX, clientY:e.clientY, button:0 }));
         cv.dispatchEvent(new MouseEvent('mouseleave'));
       };
       cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
@@ -4915,15 +4925,16 @@ renderer.domElement.addEventListener('mousedown', e => {
   // Undo / Clear all / Finish buttons next to Measure and Area, so measurements can be removed without a keyboard (phones, tablets).
   let measBtnKey = '';
   function syncMeasBtns() {
-    const any = !!(measures.length || areas.length || pending || draft), done = !!(areaMode && draft && draft.pts.length >= 3);
-    const key = (any ? 1 : 0) + '' + (done ? 1 : 0);
+    const any = !!(measures.length || areas.length || pending || draft), show = any || picking(), done = !!(areaMode && draft && draft.pts.length >= 3);
+    const key = [any, show, done].join();
     if (key === measBtnKey) return;
     measBtnKey = key;
-    $('mUndo').hidden = !any; $('mClear').hidden = !any; $('mDone').hidden = !done;
+    $('mUndo').hidden = !show; $('mClear').hidden = !show; $('mDone').hidden = !done;   // shown as soon as Measure or Area is on, greyed out until there is something to remove
+    $('mUndo').disabled = !any; $('mClear').disabled = !any;
   }
 
   function addPoint(p) {
-    if (!pending) { pending = { a:p, objs:[] }; say(t('secondPoint')); return; }
+    if (!pending) { pending = { a:p, objs:[mkDot(p)] }; say(t('secondPoint')); return; }   // the first point shows a dot right away
     const sh = { type:'line', pts:[pending.a, p], objs:[], el:document.createElement('div') };
     sh.el.className = 'mlabel'; $('labels').appendChild(sh.el);
     cancelPending();
@@ -5033,7 +5044,7 @@ renderer.domElement.addEventListener('mousedown', e => {
   function buildShape(sh) {
     removeObjs(sh.objs); sh.objs = [];
     const pts = sh.pts, n = pts.length, isArea = sh.type === 'area';
-    pts.forEach(p => { const d = mkDot(p); d.visible = isArea; sh.objs.push(d); });   // a plain measurement has no dots, they only show when the cursor is over an end so it can be dragged
+    pts.forEach(p => sh.objs.push(mkDot(p)));   // both ends of a measurement always show a dot (they turn yellow under the cursor and can be dragged)
     applyHover(sh);
     for (let i = 0; i < (isArea ? n : n - 1); i++) sh.objs.push(mkBar(pts[i], pts[(i + 1) % n]));
     sh.mid = new THREE.Vector3(); pts.forEach(p => sh.mid.add(p)); sh.mid.divideScalar(n);
@@ -5066,7 +5077,7 @@ renderer.domElement.addEventListener('mousedown', e => {
   }
   function setHover(v) {
     if (hoverV && v && hoverV.sh === v.sh && hoverV.i === v.i) return;
-    if (hoverV) { const o = hoverV.sh.objs[hoverV.i]; if (o) { o.material = measMat; o.userData.hot = false; o.visible = hoverV.sh.type === 'area'; } }
+    if (hoverV) { const o = hoverV.sh.objs[hoverV.i]; if (o) { o.material = measMat; o.userData.hot = false; o.visible = true; } }
     hoverV = v ? { sh:v.sh, i:v.i } : null;
     if (hoverV) applyHover(hoverV.sh);
   }

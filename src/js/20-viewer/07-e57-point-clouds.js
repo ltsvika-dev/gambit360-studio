@@ -173,7 +173,10 @@ renderer.domElement.addEventListener('mousedown', e => {
     // ---- Touch: one finger drags (look around / orbit / pan the plan) or taps (walk, measure), two fingers pinch to zoom. It feeds the same handlers the mouse uses. ----
     {
       const cv = renderer.domElement; cv.style.touchAction = 'none';
-      const ptr = new Map(); let lastTouch = -1e9, moved = 0, pend = null, pinch = null, multi = false;
+      const ptr = new Map(); let lastTouch = -1e9, moved = 0, pend = null, pinch = null, multi = false, hold = null, held = false;
+      // Measure / Area on a touch screen: a point is added only by pressing and holding, so a quick tap or a drag to look around never adds one by mistake.
+      const HOLD_MS = 450;
+      const stopHold = () => { if (hold) { clearTimeout(hold); hold = null; } };
       const fire = (type, x, y, dx, dy, buttons, target) => {
         const ev = new MouseEvent(type, { bubbles:true, cancelable:true, clientX:x, clientY:y, button:0, buttons });
         Object.defineProperty(ev, 'movementX', { value:dx }); Object.defineProperty(ev, 'movementY', { value:dy });
@@ -191,8 +194,11 @@ renderer.domElement.addEventListener('mousedown', e => {
         e.preventDefault(); lastTouch = performance.now();
         try { cv.setPointerCapture(e.pointerId); } catch (err) {}
         ptr.set(e.pointerId, { x:e.clientX, y:e.clientY });
-        if (ptr.size === 1) { moved = 0; pend = { x:0, y:0 }; multi = false; pinch = null; fire('mousedown', e.clientX, e.clientY, 0, 0, 1); }
-        else { multi = true; if (drag) { fire('mouseup', e.clientX, e.clientY, 0, 0, 0, window); } pinch = ptr.size === 2 ? two() : null; }
+        if (ptr.size === 1) {
+          moved = 0; pend = { x:0, y:0 }; multi = false; pinch = null; held = false; stopHold(); fire('mousedown', e.clientX, e.clientY, 0, 0, 1);
+          if (picking() && !drag) { const x = e.clientX, y = e.clientY; hold = setTimeout(() => { hold = null; if (moved >= 8 || multi || drag || !picking()) return; held = true; if (navigator.vibrate) try { navigator.vibrate(25); } catch (err) {} cv.dispatchEvent(new MouseEvent('click', { bubbles:true, cancelable:true, clientX:x, clientY:y, button:0 })); }, HOLD_MS); }
+        }
+        else { stopHold(); multi = true; if (drag) { fire('mouseup', e.clientX, e.clientY, 0, 0, 0, window); } pinch = ptr.size === 2 ? two() : null; }
       });
       cv.addEventListener('pointermove', e => {
         if (e.pointerType !== 'touch' || !ptr.has(e.pointerId)) return;
@@ -206,6 +212,7 @@ renderer.domElement.addEventListener('mousedown', e => {
         }
         moved += Math.abs(dx) + Math.abs(dy); pend.x += dx; pend.y += dy;
         if (moved < 8) return;   // a tap with a little finger wobble is still a tap
+        stopHold();
         const mx = pend.x, my = pend.y; pend.x = 0; pend.y = 0;
         fire('mousemove', e.clientX, e.clientY, mx, my, 1);
         if (overview && !dollhouse && !drag && !tween) pan(mx, my);
@@ -216,7 +223,9 @@ renderer.domElement.addEventListener('mousedown', e => {
         if (ptr.size < 2) pinch = null;
         if (!wasOne) return;
         fire('mouseup', e.clientX, e.clientY, 0, 0, 0, window);
-        if (e.type === 'pointerup' && !multi && moved < 8) cv.dispatchEvent(new MouseEvent('click', { bubbles:true, cancelable:true, clientX:e.clientX, clientY:e.clientY, button:0 }));
+        const quick = !!hold; stopHold();
+        if (held || (quick && picking())) {}   // with Measure or Area on, a short tap adds nothing (the hold already added its point)
+        else if (e.type === 'pointerup' && !multi && moved < 8) cv.dispatchEvent(new MouseEvent('click', { bubbles:true, cancelable:true, clientX:e.clientX, clientY:e.clientY, button:0 }));
         cv.dispatchEvent(new MouseEvent('mouseleave'));
       };
       cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);

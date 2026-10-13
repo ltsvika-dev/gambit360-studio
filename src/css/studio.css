@@ -42,6 +42,7 @@
   #tools { position:fixed; bottom:16px; right:16px; display:flex; gap:6px; z-index:4; }
   #tools button { background:var(--btn); color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:8px 14px; font:inherit; cursor:pointer; white-space:nowrap; }
   #tools button.on { background:var(--accent); color:var(--on-accent); border-color:var(--accent); font-weight:600; }
+  #tools button:disabled { opacity:.4; cursor:default; }
   #modes { position:fixed; bottom:16px; left:16px; display:flex; gap:6px; z-index:4; }
   #modes button { background:var(--btn); color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:8px 14px; font:inherit; cursor:pointer; }
   #modes button.on { background:var(--accent); color:var(--on-accent); border-color:var(--accent); font-weight:600; }

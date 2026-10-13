@@ -52,7 +52,7 @@
   function buildShape(sh) {
     removeObjs(sh.objs); sh.objs = [];
     const pts = sh.pts, n = pts.length, isArea = sh.type === 'area';
-    pts.forEach(p => { const d = mkDot(p); d.visible = isArea; sh.objs.push(d); });   // a plain measurement has no dots, they only show when the cursor is over an end so it can be dragged
+    pts.forEach(p => sh.objs.push(mkDot(p)));   // both ends of a measurement always show a dot (they turn yellow under the cursor and can be dragged)
     applyHover(sh);
     for (let i = 0; i < (isArea ? n : n - 1); i++) sh.objs.push(mkBar(pts[i], pts[(i + 1) % n]));
     sh.mid = new THREE.Vector3(); pts.forEach(p => sh.mid.add(p)); sh.mid.divideScalar(n);
@@ -85,7 +85,7 @@
   }
   function setHover(v) {
     if (hoverV && v && hoverV.sh === v.sh && hoverV.i === v.i) return;
-    if (hoverV) { const o = hoverV.sh.objs[hoverV.i]; if (o) { o.material = measMat; o.userData.hot = false; o.visible = hoverV.sh.type === 'area'; } }
+    if (hoverV) { const o = hoverV.sh.objs[hoverV.i]; if (o) { o.material = measMat; o.userData.hot = false; o.visible = true; } }
     hoverV = v ? { sh:v.sh, i:v.i } : null;
     if (hoverV) applyHover(hoverV.sh);
   }

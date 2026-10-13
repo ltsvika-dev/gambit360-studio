@@ -328,8 +328,8 @@ try { LANG = localStorage.getItem('tourViewerLang') || 'he'; } catch (e) {}
 if (!I18N[LANG]) LANG = 'he';
 const TOUCH = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);   // a phone or tablet: the tips talk about fingers
 const TOUCH_TXT = {
-  he:{ hintText:'טיפ: לחצו על "תלת-ממד" ואז הקישו על נקודה ברצפה כדי להיכנס לסיור. גררו באצבע כדי להסתכל, הקישו על העיגול כדי לנוע, וצבטו כדי לקרב ולהרחיק. (הקשה כדי לסגור)', dollHint:'גרור באצבע לסיבוב · צביטה לזום · בחרו קומה בסרגל · הקישו על הרצפה כדי להיכנס' },
-  en:{ hintText:'Tip: press "3D" and then tap a spot on the floor to enter the tour. Drag with a finger to look around, tap the ring to move, and pinch to zoom. (tap to close)', dollHint:'Drag with a finger to rotate · pinch to zoom · pick a floor in the bar · tap the floor to step inside' } };
+  he:{ hintText:'טיפ: לחצו על "תלת-ממד" ואז הקישו על נקודה ברצפה כדי להיכנס לסיור. גררו באצבע כדי להסתכל, הקישו על העיגול כדי לנוע, וצבטו כדי לקרב ולהרחיק. (הקשה כדי לסגור)', dollHint:'גרור באצבע לסיבוב · צביטה לזום · בחרו קומה בסרגל · הקישו על הרצפה כדי להיכנס', measureHint:'מדידה: לחיצה ארוכה על הנקודה הראשונה', secondPoint:'לחיצה ארוכה על הנקודה השנייה', areaHint:'שטח: לחיצה ארוכה על כל פינה', areaMore:'לחיצה ארוכה על עוד פינות', areaFinish:'לסיום: לחיצה ארוכה על הנקודה הראשונה או ✓' },
+  en:{ hintText:'Tip: press "3D" and then tap a spot on the floor to enter the tour. Drag with a finger to look around, tap the ring to move, and pinch to zoom. (tap to close)', dollHint:'Drag with a finger to rotate · pinch to zoom · pick a floor in the bar · tap the floor to step inside', measureHint:'Measure: press and hold the first point', secondPoint:'Press and hold the second point', areaHint:'Area: press and hold each corner', areaMore:'Press and hold more corners', areaFinish:'To finish: press and hold the first point, or ✓' } };
 function t(key, ...a) {
   let v = TOUCH && TOUCH_TXT[LANG] && TOUCH_TXT[LANG][key] || I18N[LANG][key];
   if (v === undefined) v = I18N.he[key];

@@ -65,9 +65,10 @@
   let measBtnKey = '';
   function syncMeasBtns() {
     const any = !!(measures.length || areas.length || pending || draft), show = any || picking(), done = !!(areaMode && draft && draft.pts.length >= 3);
-    const key = [any, show, done].join();
+    const key = [any, show, done, picking()].join();
     if (key === measBtnKey) return;
     measBtnKey = key;
+    document.body.classList.toggle('mPicking', picking());
     $('mUndo').hidden = !show; $('mClear').hidden = !show; $('mDone').hidden = !done;   // shown as soon as Measure or Area is on, greyed out until there is something to remove
     $('mUndo').disabled = !any; $('mClear').disabled = !any;
   }

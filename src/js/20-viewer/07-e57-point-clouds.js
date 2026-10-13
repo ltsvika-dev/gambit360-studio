@@ -172,10 +172,11 @@ renderer.domElement.addEventListener('mousedown', e => {
     }, { passive:false });
     // ---- Touch: one finger drags (look around / orbit / pan the plan) or taps (walk, measure), two fingers pinch to zoom. It feeds the same handlers the mouse uses. ----
     {
-      const cv = renderer.domElement; cv.style.touchAction = 'none';
-      const ptr = new Map(); let lastTouch = -1e9, moved = 0, pend = null, pinch = null, multi = false, hold = null, held = false;
+      const cv = renderer.domElement; cv.style.touchAction = 'none'; cv.style.webkitTouchCallout = 'none'; cv.style.webkitUserSelect = cv.style.userSelect = 'none';
+      cv.addEventListener('contextmenu', e => { if (performance.now() - lastTouch < 1500) e.preventDefault(); });   // a long press must not open the phone's own menu
+      const ptr = new Map(); let lastTouch = -1e9, moved = 0, pend = null, pinch = null, multi = false, hold = null, held = false, hx = 0, hy = 0;
       // Measure / Area on a touch screen: a point is added only by pressing and holding, so a quick tap or a drag to look around never adds one by mistake.
-      const HOLD_MS = 450;
+      const HOLD_MS = 450, HOLD_SLOP = 16;   // a finger never stays still: up to 16px of drift still counts as holding
       const stopHold = () => { if (hold) { clearTimeout(hold); hold = null; } };
       const fire = (type, x, y, dx, dy, buttons, target) => {
         const ev = new MouseEvent(type, { bubbles:true, cancelable:true, clientX:x, clientY:y, button:0, buttons });
@@ -196,7 +197,7 @@ renderer.domElement.addEventListener('mousedown', e => {
         ptr.set(e.pointerId, { x:e.clientX, y:e.clientY });
         if (ptr.size === 1) {
           moved = 0; pend = { x:0, y:0 }; multi = false; pinch = null; held = false; stopHold(); fire('mousedown', e.clientX, e.clientY, 0, 0, 1);
-          if (picking() && !drag) { const x = e.clientX, y = e.clientY; hold = setTimeout(() => { hold = null; if (moved >= 8 || multi || drag || !picking()) return; held = true; if (navigator.vibrate) try { navigator.vibrate(25); } catch (err) {} cv.dispatchEvent(new MouseEvent('click', { bubbles:true, cancelable:true, clientX:x, clientY:y, button:0 })); }, HOLD_MS); }
+          if (picking() && !drag) { const x = e.clientX, y = e.clientY; hx = x; hy = y; hold = setTimeout(() => { hold = null; if (moved >= 8 || multi || drag || !picking()) return; held = true; if (navigator.vibrate) try { navigator.vibrate(25); } catch (err) {} cv.dispatchEvent(new MouseEvent('click', { bubbles:true, cancelable:true, clientX:x, clientY:y, button:0 })); }, HOLD_MS); }
         }
         else { stopHold(); multi = true; if (drag) { fire('mouseup', e.clientX, e.clientY, 0, 0, 0, window); } pinch = ptr.size === 2 ? two() : null; }
       });
@@ -210,6 +211,8 @@ renderer.domElement.addEventListener('mousedown', e => {
           if (Math.abs(f - 1) > 0.002) cv.dispatchEvent(new WheelEvent('wheel', { bubbles:true, cancelable:true, clientX:n.x, clientY:n.y, deltaY:Math.log(f) / 0.0015 }));
           pinch = n; return;
         }
+        if (held) return;   // the point is placed: the finger lifting off must not turn or pan the view
+        if (hold) { if (Math.hypot(e.clientX - hx, e.clientY - hy) < HOLD_SLOP) return; stopHold(); }   // while a point may be placed, small drift neither turns the view nor cancels the hold
         moved += Math.abs(dx) + Math.abs(dy); pend.x += dx; pend.y += dy;
         if (moved < 8) return;   // a tap with a little finger wobble is still a tap
         stopHold();

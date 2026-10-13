@@ -4933,7 +4933,7 @@ renderer.domElement.addEventListener('mousedown', e => {
     const key = [any, show, done, picking()].join();
     if (key === measBtnKey) return;
     measBtnKey = key;
-    document.body.classList.toggle('mPicking', picking());
+    document.body.classList.toggle('mPicking', show);   // while the measuring buttons are on screen (mode on, or measurements left), the phone toolbar makes room for them
     $('mUndo').hidden = !show; $('mClear').hidden = !show; $('mDone').hidden = !done;   // shown as soon as Measure or Area is on, greyed out until there is something to remove
     $('mUndo').disabled = !any; $('mClear').disabled = !any;
   }

@@ -2,7 +2,8 @@
 //  1. a tour made by an older Studio opens, every section of its editor opens, and nothing throws;
 //  2. a new tour has every field from the start (the same as a tour that was loaded again);
 //  3. publishing uploads it to a local PHP site, and the published page's details card is the card the preview shows;
-//  4. a second computer with the same key gets the tour from the server (cloud sync).
+//  4. a second computer with the same key gets the tour from the server (cloud sync);
+//  5. point cloud: tag types (infrastructure set), quick mode, layers, and the PDF tag report.
 // Needs node, php and the built "Gambit360 Studio.html". Run:  npm install  then  npm test   (in this folder)
 import { chromium } from 'playwright';
 import { spawn, execFileSync } from 'node:child_process';
@@ -137,6 +138,31 @@ try {
   await b.page.waitForFunction(name => (document.getElementById('lvList').textContent || '').includes(name), OLD_TOUR.name, { timeout: 15000 }).catch(() => {});
   ok((await b.page.locator('#lvList').textContent()).includes(OLD_TOUR.name), 'computer B gets the tour from the server');
   ok(b.errors.length === 0 && a.errors.length === 0, 'no errors on either computer', a.errors.concat(b.errors).join('\n'));
+
+  // ---- 5. point cloud: tag types, quick mode, layers and the PDF report (fixtures/room.e57: a small box room) ----
+  const s = await computer(browser, 'point cloud');
+  await s.page.setInputFiles('#pickerE57', path.join(HERE, 'fixtures', 'room.e57'));
+  await s.page.waitForSelector('#mbtn', { state: 'visible', timeout: 60000 });
+  await s.page.waitForTimeout(800); await s.page.click('#b3d'); await s.page.waitForTimeout(800); await s.page.mouse.click(700, 600); await s.page.waitForTimeout(1500);
+  await s.page.click('#viewsBtn'); await s.page.click('#tabTags'); await s.page.waitForTimeout(200);
+  await s.page.click('#tagTyEdBtn'); await s.page.locator('#tagTyEd button', { hasText: /תשתיות|infrastructure/ }).click(); await s.page.click('#tagTyEd .tyOk');
+  ok(await s.page.locator('#tagTyRow .tyChip').count() === 7, 'the infrastructure set adds 7 tag types, each with its layer switch');
+  await s.page.selectOption('#tagQuickTy', 'i0'); await s.page.click('#tagQuick');
+  for (const [x, y] of [[500, 400], [700, 450], [900, 380]]) { await s.page.mouse.click(x, y); await s.page.waitForTimeout(250); }
+  await s.page.selectOption('#tagQuickTy', 'i1'); await s.page.mouse.click(600, 600); await s.page.waitForTimeout(250);
+  await s.page.keyboard.press('Escape'); await s.page.waitForTimeout(200);
+  const rows = () => s.page.locator('#viewsList .vrow').count();
+  const made = await rows();
+  const listed = await s.page.locator('#viewsList').textContent();
+  ok(made >= 3 && listed.includes('חשמל 2') && listed.includes('אינסטלציה 1'), 'quick mode adds one numbered tag of the chosen type per click', 'tags listed: ' + made + ' ' + listed);
+  await s.page.locator('#tagTyRow .tyChip input').first().uncheck(); await s.page.waitForTimeout(200);
+  const elec = (listed.match(/חשמל \d/g) || []).length;
+  ok(await rows() === made - elec, 'switching a layer off hides its tags');
+  await s.page.click('#tagRepBtn');
+  await s.page.waitForFunction(() => !!window.G360_lastReport, null, { timeout: 30000 }).catch(() => {});
+  const rep = await s.page.evaluate(async () => { const b = window.G360_lastReport; if (!b) return null; const u = new Uint8Array(await b.arrayBuffer()); const txt = new TextDecoder('latin1').decode(u); return { head: txt.slice(0, 5), pages: (txt.match(/\/Type \/Page\b/g) || []).length }; });
+  ok(!!rep && rep.head === '%PDF-' && rep.pages === 1 + Math.ceil((made - elec) / 2), 'the PDF report has a cover and the shown tags, two to a page', JSON.stringify(rep));
+  ok(s.errors.length === 0, 'no errors in the point cloud tags', s.errors.join('\n'));
 } catch (e) { ok(false, 'the test itself ran to the end', e.stack || e); }
 finally {
   if (browser) await browser.close();

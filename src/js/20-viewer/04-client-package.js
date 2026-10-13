@@ -50,7 +50,7 @@
       let u = null;
       if (E) u = E;
       if (u && u.pkg && M && u.name === M.name && (u.ts || 0) >= (M.built || 0)) {
-        ['logo', 'tags', 'start', 'hide', 'floors', 'miniClosed', 'clientTags', 'noCloud', 'promoMode'].forEach(k => { if (!(k in u.pkg)) delete M[k]; });
+        ['logo', 'tags', 'tagTypes', 'start', 'hide', 'floors', 'miniClosed', 'clientTags', 'noCloud', 'promoMode'].forEach(k => { if (!(k in u.pkg)) delete M[k]; });
         Object.assign(M, u.pkg, { built:M.built });
       }
     } catch (err) { console.error(err); }
@@ -394,7 +394,7 @@
       const ex = window.G360_extrasData ? window.G360_extrasData() : {};
       Object.assign(man, { built:Date.now(), logo:customLogo || undefined, title:projName, manager:mgr, expires, terms:(window.G360_getTerms ? window.G360_getTerms(true) : ''),
         link:$('pkgMpShow').checked ? getLink() : '', miniClosed:$('pkgMini').checked ? 1 : undefined, clientTags:$('pkgClientTags').checked ? 1 : undefined, noCloud:$('pkgCloud').checked ? undefined : 1, promoMode:promoModeVal(),
-        tags:(ex.tags && ex.tags.length ? ex.tags : undefined), floors:ex.floors, start:ex.start, hide:ex.hide,
+        tags:(ex.tags && ex.tags.length ? ex.tags : undefined), tagTypes:ex.tagTypes, floors:ex.floors, start:ex.start, hide:ex.hide,
         views:views.map(v => ({ n:v.n, p:v.p, yaw:v.yaw, pitch:v.pitch, room:v.room ? 1 : undefined })) });
       savePkgOpt();
       const wr = async (dir, name, data) => { const fh = await dir.getFileHandle(name, { create:true }); const w = await fh.createWritable(); await w.write(data); await w.close(); };
@@ -410,7 +410,7 @@
     const ex = window.G360_extrasData ? window.G360_extrasData() : {};
     return { logo:customLogo || undefined, title:$('pkgName').value.trim(), manager:$('pkgMgr').value.trim(), expires:expiryEnd(), terms:(window.G360_getTerms ? window.G360_getTerms(true) : ''),
       link:$('pkgMpShow').checked ? getLink() : '', miniClosed:$('pkgMini').checked ? 1 : undefined, clientTags:$('pkgClientTags').checked ? 1 : undefined, noCloud:$('pkgCloud').checked ? undefined : 1, promoMode:promoModeVal(),
-      tags:(ex.tags && ex.tags.length ? ex.tags : undefined), floors:ex.floors, start:ex.start, hide:ex.hide, views:views.map(v => ({ n:v.n, p:v.p, yaw:v.yaw, pitch:v.pitch, room:v.room ? 1 : undefined })) };
+      tags:(ex.tags && ex.tags.length ? ex.tags : undefined), tagTypes:ex.tagTypes, floors:ex.floors, start:ex.start, hide:ex.hide, views:views.map(v => ({ n:v.n, p:v.p, yaw:v.yaw, pitch:v.pitch, room:v.room ? 1 : undefined })) };
   }
   async function srcForFiles(needHtml) {
     if ((!lastObjFiles && !lastE57) || !window.showDirectoryPicker) { pkgMsg(t('pkgNoFS')); return null; }

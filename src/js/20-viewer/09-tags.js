@@ -26,7 +26,7 @@
   const HIDE_MAP = { measure:'#mbtn', area:'#abtn', shot:'#shotBtn', floors:'#floors', modes:'#bOver,#b3d', points:'#viewsBtn', mini:'#mini,#miniCtl,#miniToggle' };
   const HIDE_LBL = { measure:'hMeasure', area:'hArea', shot:'hShot', floors:'hFloors', modes:'hModes', points:'hPoints', mini:'hMini' };
   const safeUrl = u => { u = String(u || '').trim(); if (/^(https?:\/\/|mailto:|tel:)/i.test(u)) return u; return /^[\w-]+(\.[\w-]+)+(\/|$)/.test(u) ? 'https://' + u : ''; };
-  const cleanTag = x => ({ n:x.n, d:x.d || '', url:x.url || '', img:x.img || '', icon:x.icon | 0, col:x.col || '#5ec4b6', p:x.p });
+  const cleanTag = x => Object.assign({ n:x.n, d:x.d || '', url:x.url || '', img:x.img || '', icon:x.icon | 0, col:x.col || '#5ec4b6', p:x.p }, x.ty ? { ty:String(x.ty).slice(0, 24) } : {});   // ty: the tag's type (tag types, 09a), optional
   async function saveTags() { try { await idb.set(tagKey(), tags.filter(x => !x.locked && !x.pkg).map(cleanTag)); if (window.G360_CLIENT && clientTagsOn) await idb.set(tagKey() + ':pkg', tags.filter(x => x.pkg).map(cleanTag)); } catch (err) { console.error(err); } }
   function saveStart() { try { if (startView) localStorage.setItem(startKey(), JSON.stringify(startView)); else localStorage.removeItem(startKey()); } catch (err) {} }
   function saveHide() { try { localStorage.setItem(hideKey(), JSON.stringify(hideSet)); } catch (err) {} }
@@ -59,6 +59,7 @@
     try { const a = await idb.get(tagKey()); if (Array.isArray(a)) tags = a; } catch (err) {}
     try { startView = JSON.parse(localStorage.getItem(startKey()) || 'null'); } catch (err) {}
     try { hideSet = JSON.parse(localStorage.getItem(hideKey()) || '[]') || []; } catch (err) {}
+    loadTagTypes();
     renderTagEls(); refreshStartUI(); renderViews();
   }
   window.G360_loadExtras = loadExtras;
@@ -71,6 +72,7 @@
     tags = (Array.isArray(pk.tags) ? pk.tags : []).map(x => Object.assign(cleanTag(x), clientTagsOn ? { pkg:1 } : { locked:true }));
     views.forEach(v => { if (v.locked && v.room && clientTagsOn) { v.locked = false; v.pkg = 1; } });
     if (clientTagsOn) { try { const ov = JSON.parse(localStorage.getItem(viewsKey() + ':pkg') || 'null'); if (Array.isArray(ov)) views = views.filter(v => !v.pkg).concat(ov.map(v => Object.assign({}, v, { pkg:1 }))); } catch (err) {} }
+    setTagTypes(pk.tagTypes, false);
     hideSet = Array.isArray(pk.hide) ? pk.hide : [];   // set before applyHide: the owner's choice of what the client sees
     applyHide(); renderTagEls(); renderViews(); if (window.G360_syncClientBtns) window.G360_syncClientBtns();
     if (clientTagsOn) idb.get(tagKey() + ':pkg').then(ov => { if (Array.isArray(ov)) tags = ov.map(x => Object.assign(cleanTag(x), { pkg:1 })); return idb.get(tagKey()); }).then(a => { if (Array.isArray(a) && a.length) tags = tags.concat(a.map(cleanTag)); renderTagEls(); renderViews(); }).catch(() => {});
@@ -90,10 +92,11 @@
     await saveTags(); saveViews(); renderTagEls(); renderViews();
     return nt.length + nv.length;
   };
-  window.G360_extrasData = () => ({ tags:tags.filter(x => !x.locked && !x.pkg).map(cleanTag), start:startView || undefined, hide:hideSet.length ? hideSet : undefined, floors:floorNames.some(Boolean) ? floorNames : undefined });
+  window.G360_extrasData = () => ({ tags:tags.filter(x => !x.locked && !x.pkg).map(cleanTag), start:startView || undefined, hide:hideSet.length ? hideSet : undefined, floors:floorNames.some(Boolean) ? floorNames : undefined, tagTypes:tagTypes.length ? tagTypes : undefined });
   window.G360_setExtras = async d => {   // opening a project file
     tags = Array.isArray(d.tags) ? d.tags.map(cleanTag) : []; startView = d.start && d.start.p ? d.start : null; hideSet = Array.isArray(d.hide) ? d.hide : [];
     floorNames = Array.isArray(d.floors) ? d.floors.map(x => String(x || '').slice(0, 40)) : []; saveFloorNames(); if (floors.length) buildFloorBar();
+    setTagTypes(d.tagTypes, true);
     await saveTags(); saveStart(); saveHide(); renderTagEls(); refreshStartUI(); renderViews();
   };
   // -- the round markers on the model, and the card a click opens --
@@ -161,7 +164,7 @@
     const v = new THREE.Vector3(), hideAll = (overview && !dollhouse) || !$('tagEd').hidden;
     tags.forEach(tg => {
       if (!tg.el) return;
-      if (hideAll || tg._occ) { tg.el.style.display = 'none'; return; }
+      if (hideAll || tg._occ || !tagShown(tg)) { tg.el.style.display = 'none'; return; }
       v.set(tg.p[0], tg.p[1], tg.p[2]).project(camera);
       const vis = v.z < 1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05;
       tg.el.style.display = vis ? 'flex' : 'none';
@@ -187,7 +190,7 @@
     editingTag = tg || null; if (document.pointerLockElement) document.exitPointerLock();
     $('tagEdH').textContent = tg ? t('tagEdit') : t('tagNew'); $('tagEdOk').textContent = t('tagSave');
     $('tagEdT').value = tg ? tg.n : ''; $('tagEdD').value = tg ? tg.d : ''; $('tagEdU').value = tg ? tg.url : ''; $('tagEdC').value = tg ? tg.col : '#5ec4b6'; tagIcon = tg ? tg.icon | 0 : 0;
-    setEdImg(tg ? tg.img : ''); buildTagIcons(); $('tagEd').hidden = false; $('tagEdT').focus();
+    setEdImg(tg ? tg.img : ''); fillTypeSel(tg ? tg.ty || '' : quickTy()); if (!tg && quickTy()) applyType(quickTy()); buildTagIcons(); $('tagEd').hidden = false; $('tagEdT').focus();
   }
   $('tagAdd').onclick = () => {   // first pick the spot on the model, then the title / icon window opens there
     if (!started) return; $('tagEd').hidden = true; pendingPt = null;
@@ -197,19 +200,19 @@
   $('tagEdNo').onclick = () => { $('tagEd').hidden = true; pendingPt = null; };
   ['tagEdT', 'tagEdD', 'tagEdU'].forEach(id => $(id).addEventListener('keydown', e => e.stopPropagation()));
   $('tagEdOk').onclick = () => {
-    const f = { n:$('tagEdT').value.trim().slice(0, 80) || t('tagNew'), d:$('tagEdD').value.trim(), url:$('tagEdU').value.trim(), img:tagImg, icon:tagIcon, col:$('tagEdC').value };
+    const f = { n:$('tagEdT').value.trim().slice(0, 80) || t('tagNew'), d:$('tagEdD').value.trim(), url:$('tagEdU').value.trim(), img:tagImg, icon:tagIcon, col:$('tagEdC').value, ty:$('tagEdTy').value || undefined };
     $('tagEd').hidden = true;
-    if (editingTag) { Object.assign(editingTag, f); renderTagEls(); saveTags(); renderViews(); return; }
+    if (editingTag) { Object.assign(editingTag, f); if (!f.ty) delete editingTag.ty; renderTagEls(); saveTags(); renderViews(); return; }
     if (pendingPt) { tags.push(Object.assign({}, f, { p:pendingPt })); pendingPt = null; renderTagEls(); saveTags(); viewsTab = 'tags'; renderViews(); }
   };
   const endPlaceTag = () => { placingTag = null; document.body.classList.remove('placing'); if (renderer) renderer.domElement.style.cursor = ''; say(''); };
   window.G360_placeTag = point => {   // the canvas click calls this while a tag waits for its spot
     if (!placingTag) return false;
+    if (placingTag.quick) { quickPlace([point.x, point.y, point.z]); return true; }   // quick mode: one click, one tag of the chosen type, and it goes on
     pendingPt = [point.x, point.y, point.z]; endPlaceTag(); openTagEd(null); return true;
   };
-  addEventListener('keydown', e => { if (e.key === 'Escape' && placingTag) { endPlaceTag(); e.stopPropagation(); } }, true);
-  function flyToTag(tg) {
-    if (!tg || !tg.p || !camera) return;
+  addEventListener('keydown', e => { if (e.key === 'Escape' && placingTag) { endPlaceTag(); e.stopPropagation(); if (window.G360_tagTypesUI) G360_tagTypesUI(); } }, true);
+  function tagPose(tg) {   // where to stand to see a tag, and the direction to look (also used by the tag report)
     const q = new THREE.Vector3(tg.p[0], tg.p[1], tg.p[2]);
     // stand on the nearest viewpoint of the tour (floor level, same floor); when that is far from the tag, stop about 2 m before it on the way
     let best = null, bd = Infinity;
@@ -221,12 +224,17 @@
       else { const k = (2 * scale) / h; pos = new THREE.Vector3(q.x + (s0.x - q.x) * k, s0.y, q.z + (s0.z - q.z) * k); }
     } else { pos = new THREE.Vector3(q.x, q.y, q.z).add(new THREE.Vector3(0, 0, 2 * scale)); }
     const d = q.clone().sub(pos), yw = Math.atan2(-d.x, -d.z), pt = Math.max(-1.2, Math.min(1.2, Math.atan2(d.y, Math.hypot(d.x, d.z))));
-    goView({ p:[pos.x, pos.y, pos.z], yaw:yw, pitch:pt });
+    return { p:[pos.x, pos.y, pos.z], yaw:yw, pitch:pt };
+  }
+  function flyToTag(tg) {
+    if (!tg || !tg.p || !camera) return;
+    goView(tagPose(tg));
     setTimeout(() => { if (tg.el) { tg.el.classList.remove('pulse'); void tg.el.offsetWidth; tg.el.classList.add('pulse'); setTimeout(() => tg.el && tg.el.classList.remove('pulse'), 3200); } }, 950);
   }
   function renderTagRows() {
     const box = $('viewsList');
     tags.forEach((tg, i) => {
+      if (!tagShown(tg)) return;   // its layer is switched off
       const row = document.createElement('div'); row.className = 'vrow';
       const go = document.createElement('button'); go.className = 'vgo'; const num = document.createElement('span'); num.className = 'vnum'; num.innerHTML = iconSvg(tg.icon | 0); num.style.background = tg.col; num.style.display = 'flex'; num.style.alignItems = 'center'; num.style.justifyContent = 'center'; go.appendChild(num); go.title = t('tagGo');
       go.onclick = () => { $('tagCard').hidden = true; selectItem('tag', tg); flyToTag(tg); };   // walk to the tag (from any room or from above), look at it and flash it; the card opens only when the tag itself is clicked

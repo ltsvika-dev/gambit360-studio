@@ -62,13 +62,20 @@
   #ovBox.wide { width:min(960px,100%); }
   #ovBox h3 { margin:0 44px 10px 0; font-size:1.1rem; }
   #ovX { position:absolute; top:8px; right:8px; padding:0; width:32px; height:32px; min-width:0; border-radius:8px; }
+  [dir=rtl] #ovX { right:auto; left:8px; } [dir=rtl] #ovBox h3 { margin:0 0 10px 44px; }   /* in Hebrew the close button sits at the end of the title line */
   #ovBox video { width:100%; max-height:68vh; background:#000; border-radius:8px; display:block; }
   .ovTabs { display:flex; flex-wrap:wrap; gap:4px; margin-top:10px; }
   .ovTabs button { width:auto; border:1px solid #3a464d; }
-  .ovLinks { display:flex; flex-wrap:wrap; gap:8px; }
-  .ovLinks a { background:#2a3338; color:#5ec4b6; border:1px solid #3a464d; border-radius:8px; padding:7px 12px; text-decoration:none; direction:ltr; }
-  .ovImg { display:block; width:100%; max-height:46vh; object-fit:cover; border-radius:8px; margin:0 0 12px; }
-  .ovCta { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:14px; padding:11px 16px; border-radius:12px; color:#fff; font-weight:600; text-decoration:none; }
+  .ovTxt { white-space:pre-wrap; margin:0 0 14px; color:#c9d2d7; }
+  .ovLinks { display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:8px; }   /* the contact details: one tidy row each, with its icon */
+  .ovLinks a { display:flex; align-items:center; gap:10px; min-width:0; background:#1b2226; color:#e8ecee; border:1px solid #2c373d; border-radius:10px; padding:8px 12px 8px 8px; text-decoration:none; transition:background .15s, border-color .15s; }
+  [dir=rtl] .ovLinks a { padding:8px 8px 8px 12px; }
+  .ovLinks a:hover { background:#222b30; border-color:#5ec4b6; }
+  .ovLinks .ic { flex:none; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; background:rgba(94,196,182,.14); color:#5ec4b6; }
+  .ovLinks .ic svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .ovLinks .tx { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.92rem; text-align:left; } [dir=rtl] .ovLinks .tx { text-align:right; }
+  .ovImg { display:block; width:100%; aspect-ratio:16/9; max-height:46vh; object-fit:cover; border-radius:10px; margin:0 0 14px; }
+  .ovCta { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:14px; padding:12px 16px; border-radius:12px; color:#fff; font-weight:600; text-decoration:none; box-shadow:0 4px 14px rgba(0,0,0,.3); transition:filter .15s; } .ovCta:hover { filter:brightness(1.08); }
   .ovCta svg { width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none; }
   .cardTabs { display:flex; gap:4px; margin:0 0 12px; border-bottom:1px solid #3a464d; }
   .cardTabs button { background:transparent; color:#b8c3c9; border:0; border-bottom:2px solid transparent; padding:8px 14px; font:inherit; cursor:pointer; }
@@ -313,8 +320,9 @@
     $('infoBtn').hidden = false;
     $('infoBtn').onclick = () => {
       const ph = String(info.phone || '').replace(/[^0-9+]/g, ''), ln = /^https?:\/\//i.test(info.link || '') ? info.link : '';
-      const det = (info.image ? '<img class="ovImg" alt="" src="' + esc(base + info.image) + '">' : '') + (info.text ? '<p style="white-space:pre-wrap;margin:0 0 12px">' + esc(info.text) + '</p>' : '') +
-        '<div class="ovLinks">' + (ph ? '<a href="tel:' + ph + '">' + esc(info.phone) + '</a>' : '') + (info.mail ? '<a href="mailto:' + esc(info.mail) + '">' + esc(info.mail) + '</a>' : '') + (info.address ? '<a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(info.address) + '" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;margin-inline-end:6px">' + ICONS.pin + '</svg>' + esc(info.address) + '</a>' : '') + (ln ? '<a href="' + esc(ln) + '" target="_blank" rel="noopener">' + esc(info.linkTxt || ln) + '</a>' : '') + '</div>' + cta;
+      const row = (href, ic, txt, ltr, blank) => '<a href="' + esc(href) + '"' + (blank ? ' target="_blank" rel="noopener"' : '') + '><span class="ic"><svg viewBox="0 0 24 24">' + ICONS[ic] + '</svg></span><span class="tx" dir="' + (ltr ? 'ltr' : 'auto') + '">' + esc(txt) + '</span></a>';
+      const rows = (ph ? row('tel:' + ph, 'phone', info.phone, true) : '') + (info.mail ? row('mailto:' + info.mail, 'mail', info.mail, true) : '') + (info.address ? row('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(info.address), 'pin', info.address, false, true) : '') + (ln ? row(ln, 'globe', info.linkTxt || ln.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/$/, ''), !info.linkTxt, true) : '');
+      const det = (info.image ? '<img class="ovImg" alt="" src="' + esc(base + info.image) + '">' : '') + (info.text ? '<p class="ovTxt" dir="auto">' + esc(info.text) + '</p>' : '') + (rows ? '<div class="ovLinks">' + rows + '</div>' : '') + cta;
       ovBody.innerHTML = '<h3 dir="auto">' + esc(info.title || cfg.title || cfg.name || '') + '</h3>' + (phCfg && hasDet ? '<div class="cardTabs"><button type="button" data-p="d">' + TX.info + '</button><button type="button" data-p="p">' + TX.photos + '</button></div>' : '') + (hasDet ? '<div data-pane="d">' + det + '</div>' : '') + (phCfg ? '<div data-pane="p" hidden></div>' : '');
       const show = k => { ovBody.querySelectorAll('[data-pane]').forEach(e => { e.hidden = e.dataset.pane !== k; }); ovBody.querySelectorAll('.cardTabs button').forEach(b => b.classList.toggle('on', b.dataset.p === k)); if (k === 'p') fillPhotos(ovBody.querySelector('[data-pane=p]')); };
       ovBody.querySelectorAll('.cardTabs button').forEach(b => { b.onclick = () => show(b.dataset.p); });

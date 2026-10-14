@@ -7,7 +7,7 @@
       title:$('pkgName').value.trim(), manager:$('pkgMgr').value.trim(), exp:{ start:$('pkgStart').value, dur:$('pkgDur').value, unit:$('pkgUnit').value },
       link:getLink(), logo:customLogo || '', pkgOpt:{ mp:$('pkgMpShow').checked, mini:$('pkgMini').checked, ctags:$('pkgClientTags').checked, cloud:$('pkgCloud').checked, promo:$('pkgPromoMode').value }, extras:window.G360_extrasData ? window.G360_extrasData() : undefined,
       views:views.filter(v => !v.locked && !v.pkg).map(v => ({ n:v.n, p:v.p, yaw:v.yaw, pitch:v.pitch, room:v.room ? 1 : undefined })),
-      measures:measures.map(a => ({ type:'line', pts:pts(a) })), areas:areas.map(a => ({ type:'area', pts:pts(a) })), pub:pkgPubOf(currentName) || undefined };
+      measures:measures.map(a => ({ type:'line', pts:pts(a) })), areas:areas.map(a => ({ type:'area', pts:pts(a) })), pub:pkgPubOf(currentName) || undefined, pubCode:(() => { try { return localStorage.getItem('tourViewerPkgCode:' + currentName) || undefined; } catch (err) { return undefined; } })() };
   }
   async function saveProject() {
     if (!currentName || window.G360_CLIENT || fromPkg) return;
@@ -35,7 +35,7 @@
       if (d.link) localStorage.setItem(mpKey(), d.link);
       localStorage.setItem(viewsKey(), JSON.stringify(d.views || []));
       if (d.pkgOpt) localStorage.setItem(pkgOptKey(), JSON.stringify(d.pkgOpt));
-      if (d.pub) localStorage.setItem('tourViewerPkgPub:' + nm, d.pub);   // the client's link on the site stays the same from every computer
+      if (d.pub) localStorage.setItem('tourViewerPkgPub:' + nm, d.pub); if (d.pubCode) localStorage.setItem('tourViewerPkgCode:' + nm, d.pubCode);   // the client's link on the site stays the same from every computer
     } catch (err) {}
     applyLogo(d.logo || ''); saveLogoLocal();
     $('pkgName').dataset.for = '';

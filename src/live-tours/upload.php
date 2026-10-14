@@ -24,6 +24,8 @@ function appOk($h) { $c = isset($_COOKIE['g360app']) ? (string)$_COOKIE['g360app
 
 @@include(live-tours/upload/30-report-links.php)@@
 
+@@include(live-tours/upload/35-package-download.php)@@
+
 @@include(live-tours/upload/40-request-and-sign-in.php)@@
 @@include(live-tours/upload/50-cloud-and-self-update.php)@@
 @@include(live-tours/upload/60-tours-stats-reports.php)@@

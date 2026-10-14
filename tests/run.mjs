@@ -32,7 +32,7 @@ const html = fs.readFileSync(HTML, 'utf8'), tpl = id => html.match(new RegExp('<
 fs.writeFileSync(path.join(siteDir, 'upload.php'), tpl('g360UploadTpl').replace('@@KEYHASH@@', crypto.createHash('sha256').update(KEY).digest('hex')).replace('@@LOGO@@', ''));
 fs.writeFileSync(path.join(tmp, 'router.php'), `<?php
 $p = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-if ($p !== '/' && is_file(__DIR__ . '/site' . $p)) return false;
+if ($p !== '/' && (is_file(__DIR__ . '/site' . $p) || is_dir(__DIR__ . '/site' . $p))) return false;   // as RewriteCond !-f and !-d
 if (preg_match('#^/([A-Za-z0-9][A-Za-z0-9_-]*)/?$#', $p, $m)) { $_GET['t'] = $m[1]; chdir(__DIR__ . '/site'); require __DIR__ . '/site/index.php'; return true; }
 return false;
 `);
@@ -206,9 +206,23 @@ try {
   });
   await c.page.waitForFunction(() => { const a = document.getElementById('g360Ask'); return a && !a.hidden; }, null, { timeout: 15000 });
   const asked = await c.page.evaluate(() => document.querySelector('#g360Ask p').textContent); await c.page.evaluate(() => document.querySelector('#g360Ask .ok').click());
-  const link = await pub.catch(e => String(e));
+  const link = (await pub.catch(e => String(e))).split('\n')[0];
   const got = /\/p\/p[a-z0-9]{10}\/index\.html$/.test(link) ? await (await fetch(link)).text() : '';
   ok(got.includes('<title>client</title>') && (await (await fetch(link.replace('index.html', 'model/manifest.js'))).text()).includes('G360PKG'), 'after asking, a client package is published on the site and the client\'s link opens it', asked + ' ' + link);
+  // the client downloads it as a ZIP with the code the Studio gave: the server builds the ZIP from the published files
+  const code = ((await c.page.locator('#pkgPath').textContent()).match(/[A-Z2-9]{4}-[A-Z2-9]{4}/) || [])[0] || '', tok = (link.match(/\/p\/(p[a-z0-9]{10})\//) || [])[1] || '';
+  const ask = async f => { const fd = new FormData(); fd.append('token', tok); Object.entries(f).forEach(([k, v]) => fd.append(k, v)); return (await fetch(SITE + 'upload.php', { method: 'POST', body: fd })).json(); };
+  const info = await ask({ action: 'pkginfo' }), bad = await ask({ action: 'pkgdl', code: 'WRONG-CODE' }), good = await ask({ action: 'pkgdl', code: code.toLowerCase() });
+  let zipOk = false, zipNote = '';
+  if (good.ok) {
+    const zb = Buffer.from(await (await fetch(SITE + good.url)).arrayBuffer()), zp = path.join(tmp, 'pkg.zip'); fs.writeFileSync(zp, zb);
+    try { zipNote = execFileSync('python3', ['-c', 'import sys,zipfile; z=zipfile.ZipFile(sys.argv[1]); bad=z.testzip(); print(sorted(z.namelist()), bad, [(i.filename,i.CRC,i.file_size) for i in z.infolist()]); assert bad is None; print(z.read("Room/Room.html").decode())', zp]).toString(); zipOk = zipNote.includes("'Room/lib/three.min.js'") && zipNote.includes("'Room/model/manifest.js'") && zipNote.includes('<title>client</title>'); } catch (e) { zipNote = String(e.stderr || e); }
+  }
+  ok(info.dl === true && bad.error === 'code' && zipOk, 'the client downloads the package as a ZIP only with the right code', JSON.stringify({ code, info, bad, good }) + ' ' + zipNote);
+  const lists = await Promise.all(['p/', 'p/' + tok + '/lib/', 'p/' + tok + '/model/'].map(async u => (await (await fetch(SITE + u)).text()).length));
+  ok(lists.every(n => n === 0), 'the package folders show an empty page, never a list of the files', JSON.stringify(lists));
+  const expired = await (await fetch(SITE + 'upload.php?pkgget=' + tok + '&e=1&s=x')).status;
+  ok(expired === 403, 'a download link without a valid signature is refused');
   ok(c.errors.length === 0 && s.errors.length === 0, 'no errors with projects in the cloud', c.errors.concat(s.errors).join('\n'));
 } catch (e) { ok(false, 'the test itself ran to the end', e.stack || e); }
 finally {

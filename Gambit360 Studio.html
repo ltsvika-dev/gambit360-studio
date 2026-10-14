@@ -2420,7 +2420,7 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
       title:$('pkgName').value.trim(), manager:$('pkgMgr').value.trim(), exp:{ start:$('pkgStart').value, dur:$('pkgDur').value, unit:$('pkgUnit').value },
       link:getLink(), logo:customLogo || '', pkgOpt:{ mp:$('pkgMpShow').checked, mini:$('pkgMini').checked, ctags:$('pkgClientTags').checked, cloud:$('pkgCloud').checked, promo:$('pkgPromoMode').value }, extras:window.G360_extrasData ? window.G360_extrasData() : undefined,
       views:views.filter(v => !v.locked && !v.pkg).map(v => ({ n:v.n, p:v.p, yaw:v.yaw, pitch:v.pitch, room:v.room ? 1 : undefined })),
-      measures:measures.map(a => ({ type:'line', pts:pts(a) })), areas:areas.map(a => ({ type:'area', pts:pts(a) })), pub:pkgPubOf(currentName) || undefined };
+      measures:measures.map(a => ({ type:'line', pts:pts(a) })), areas:areas.map(a => ({ type:'area', pts:pts(a) })), pub:pkgPubOf(currentName) || undefined, pubCode:(() => { try { return localStorage.getItem('tourViewerPkgCode:' + currentName) || undefined; } catch (err) { return undefined; } })() };
   }
   async function saveProject() {
     if (!currentName || window.G360_CLIENT || fromPkg) return;
@@ -2448,7 +2448,7 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
       if (d.link) localStorage.setItem(mpKey(), d.link);
       localStorage.setItem(viewsKey(), JSON.stringify(d.views || []));
       if (d.pkgOpt) localStorage.setItem(pkgOptKey(), JSON.stringify(d.pkgOpt));
-      if (d.pub) localStorage.setItem('tourViewerPkgPub:' + nm, d.pub);   // the client's link on the site stays the same from every computer
+      if (d.pub) localStorage.setItem('tourViewerPkgPub:' + nm, d.pub); if (d.pubCode) localStorage.setItem('tourViewerPkgCode:' + nm, d.pubCode);   // the client's link on the site stays the same from every computer
     } catch (err) {}
     applyLogo(d.logo || ''); saveLogoLocal();
     $('pkgName').dataset.for = '';
@@ -2809,8 +2809,8 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
     cpSaved: 'הפרויקט נשמר בענן ✓', cpSavedAlso: n => 'הפרויקט נשמר ב-"' + n + '" וגם בענן ✓', cpFail: e => 'השמירה בענן נכשלה: ' + e, cpErr: e => 'הענן לא ענה: ' + e, cpNoCloud: 'המחשב הזה לא מחובר לענן. מתחברים ב"סיורים חיים" ← אפשרויות ← ענן.',
     cpOld: 'upload.php בשרת ישן מכדי לשמור פרויקטים. פתחו פעם אחת את "סיורים חיים" במחשב הראשי והוא יתעדכן לבד.',
     cpStale: d => 'במחשב אחר נשמרה בינתיים גרסה של הפרויקט הזה (' + d + ').\nלשמור בענן את הגרסה שכאן במקומה?', cpGot: d => 'נטענה מהענן גרסה חדשה יותר של הפרויקט (' + d + ')',
-    pubAsk: 'לפרסם את החבילה גם בשרת?\nהלקוח יקבל קישור ויצפה בה בדפדפן, בלי להוריד קבצים. פרסום חוזר של אותו פרויקט מעדכן את אותו קישור.', pubYes: 'פרסום בשרת', pubNo: 'לא עכשיו',
-    pubBusy: (i, n) => 'מעלה את החבילה לשרת… ' + i + ' מתוך ' + n, pubDone: u => 'החבילה פורסמה בשרת ✓ הקישור ללקוח: ' + u, pubFail: e => 'הפרסום בשרת נכשל: ' + e + '. החבילה במחשב מוכנה ותקינה.',
+    pubAsk: 'לפרסם את החבילה גם בשרת?\nהלקוח יקבל קישור ויצפה בה בדפדפן, ועם הקוד שהסטודיו ייתן לך הוא יוכל גם להוריד אותה. פרסום חוזר של אותו פרויקט מעדכן את אותו קישור.', pubYes: 'פרסום בשרת', pubNo: 'לא עכשיו',
+    pubBusy: (i, n) => 'מעלה את החבילה לשרת… ' + i + ' מתוך ' + n, pubDone: (u, c) => 'החבילה פורסמה בשרת ✓ הקישור ללקוח: ' + u + ' · קוד להורדת החבילה: ' + c, pubCodeLine: c => 'קוד להורדת החבילה: ' + c, pubFail: e => 'הפרסום בשרת נכשל: ' + e + '. החבילה במחשב מוכנה ותקינה.',
     pubBig: (f, mb) => 'הקובץ ' + f + ' גדול מדי לשרת (' + mb + 'MB, עד 45MB). אפשר לבחור איכות פנורמות נמוכה יותר או סרטון קצר יותר.' });
   Object.assign(I18N.en, { cpOpenBtn: 'Open a project from the cloud', cpH: 'Projects in the cloud', cpLoading: 'Loading the list…', cpClose: 'Close', cpDel: 'Delete from the cloud',
     cpNone: 'No projects in the cloud yet. Every project with something in it (title, tags, views, measurements) is kept in the cloud by itself while this computer is connected to the cloud.',
@@ -2819,8 +2819,8 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
     cpSaved: 'The project was saved in the cloud ✓', cpSavedAlso: n => 'The project was saved to "' + n + '" and in the cloud ✓', cpFail: e => 'Saving in the cloud failed: ' + e, cpErr: e => 'The cloud did not answer: ' + e, cpNoCloud: 'This computer is not connected to the cloud. Connect in Live tours, Options, Cloud.',
     cpOld: 'upload.php on the server is too old to keep projects. Open Live tours once on the main computer and it updates itself.',
     cpStale: d => 'Meanwhile another computer saved a version of this project (' + d + ').\nSave the version here in the cloud instead?', cpGot: d => 'A newer version of the project came in from the cloud (' + d + ')',
-    pubAsk: 'Publish the package on the server too?\nThe client gets a link and views it in the browser, with no files to download. Publishing the same project again updates the same link.', pubYes: 'Publish on the server', pubNo: 'Not now',
-    pubBusy: (i, n) => 'Uploading the package… ' + i + ' of ' + n, pubDone: u => 'The package is on the server ✓ The client\'s link: ' + u, pubFail: e => 'Publishing on the server failed: ' + e + '. The package on this computer is ready and fine.',
+    pubAsk: 'Publish the package on the server too?\nThe client gets a link to view it in the browser, and with the code the Studio gives you, can also download it. Publishing the same project again updates the same link.', pubYes: 'Publish on the server', pubNo: 'Not now',
+    pubBusy: (i, n) => 'Uploading the package… ' + i + ' of ' + n, pubDone: (u, c) => 'The package is on the server ✓ The client\'s link: ' + u + ' · Code to download the package: ' + c, pubCodeLine: c => 'Code to download the package: ' + c, pubFail: e => 'Publishing on the server failed: ' + e + '. The package on this computer is ready and fine.',
     pubBig: (f, mb) => 'The file ' + f + ' is too large for the server (' + mb + ' MB, up to 45 MB). Choose a lower panorama quality or a shorter video.' });
   const CP_HOSTED = /^https?:$/.test(location.protocol) && /\/app\/(index\.php)?$/.test(location.pathname);   // the Studio online, at <site>/app/
   let cpCfgP = null, cpCfgAt = 0, cpLast = { name:'', saved:'', json:'' }, cpSeen = { name:'', json:'' }, cpBusy = false;   // cpLast: the copy this computer last sent to or got from the cloud
@@ -2902,7 +2902,7 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
   async function pkgPublish(entries, safe, viewerName) {
     const c = await cpCfg(true); if (!c) return;
     if (!(await g360Ask(t('pubAsk'), { ok:t('pubYes'), cancel:t('pubNo') }))) return;
-    let tk = pkgPubOf(currentName);
+    let tk = pkgPubOf(currentName), code = ''; try { code = localStorage.getItem('tourViewerPkgCode:' + currentName) || ''; } catch (err) {}
     if (!/^p[a-z0-9]{10}$/.test(tk)) { tk = 'p' + [...crypto.getRandomValues(new Uint8Array(10))].map(b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join(''); try { localStorage.setItem('tourViewerPkgPub:' + currentName, tk); } catch (err) {} }
     const list = entries.filter(e => e.path.startsWith(safe + '/')).map(e => { const rel = e.path.slice(safe.length + 1); return { rel:rel === viewerName ? 'index.html' : rel, fh:e.fh }; });
     try {
@@ -2915,11 +2915,13 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
         if (!j.ok) throw new Error(j.error + ' (' + list[i].rel + ')');
       }
       const j = await cpPost(c, { action:'pkgdone', token:tk, keep:JSON.stringify(list.map(x => x.rel)) }); if (!j.ok) throw new Error(j.error);
+      if (!/^[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(code)) { code = [0, 1].map(() => [...crypto.getRandomValues(new Uint8Array(4))].map(b => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join('')).join('-'); try { localStorage.setItem('tourViewerPkgCode:' + currentName, code); } catch (err) {} }
+      const k = await cpPost(c, { action:'pkgcode', token:tk, code, exp:expiryEnd(), name:safe }); if (!k.ok) throw new Error(k.error);   // the client downloads the package with this code (a ZIP the server builds from these same files)
     } catch (err) { pkgMsg(t('pubFail', err.message || err)); return; }
-    const url = c.url.replace(/upload\.php$/, '') + 'p/' + tk + '/index.html';
-    pkgMsg(t('pubDone', url)); say(t('pubDone', url));
-    $('pkgPath').textContent = url; $('pkgOpen').hidden = false;
-    $('pkgCopy').onclick = async () => { try { await navigator.clipboard.writeText(url); } catch (err) { const ta = document.createElement('textarea'); ta.value = url; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); } pkgMsg(t('pkgCopied')); };
+    const url = c.url.replace(/upload\.php$/, '') + 'p/' + tk + '/index.html', txt = url + '\n' + t('pubCodeLine', code);
+    pkgMsg(t('pubDone', url, code)); say(t('pubDone', url, code));
+    $('pkgPath').textContent = txt; $('pkgPath').style.whiteSpace = 'pre-line'; $('pkgOpen').hidden = false;
+    $('pkgCopy').onclick = async () => { try { await navigator.clipboard.writeText(txt); } catch (err) { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); } pkgMsg(t('pkgCopied')); };
   }
 
   window.G360_pkgPublish = pkgPublish;
@@ -5954,6 +5956,27 @@ renderer.domElement.addEventListener('mousedown', e => {
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); say2(t('mineSavedMsg'));
   };
   $('mineLoadBtn').onclick = e => { e.stopPropagation(); pick('mineFile'); };
+  // ---- Client: a package published on the site (…/p/<token>/) can be downloaded as a ZIP with the code the owner gave ----
+  Object.assign(I18N.he, { dlPkgBtn: 'הורדת החבילה', dlPkgAsk: 'הקלידו את הקוד להורדת החבילה (קיבלתם אותו יחד עם הקישור):', dlPkgBad: 'הקוד שגוי.', dlPkgWait: 'יותר מדי ניסיונות. נסו שוב בעוד רבע שעה.', dlPkgNone: 'אי אפשר להוריד את החבילה הזו.', dlPkgFail: 'השרת לא ענה. נסו שוב.', dlPkgGo: 'ההורדה מתחילה…' });
+  Object.assign(I18N.en, { dlPkgBtn: 'Download the package', dlPkgAsk: 'Type the code to download the package (you got it with the link):', dlPkgBad: 'Wrong code.', dlPkgWait: 'Too many tries. Try again in 15 minutes.', dlPkgNone: 'This package cannot be downloaded.', dlPkgFail: 'The server did not answer. Try again.', dlPkgGo: 'The download is starting…' });
+  const pkgTk = (location.pathname.match(/\/p\/(p[a-z0-9]{10})\/(index\.html)?$/) || [])[1] || '', siteBase = () => location.href.slice(0, location.href.indexOf('/p/' + pkgTk + '/') + 1);
+  if (window.G360_CLIENT && pkgTk && /^https?:$/.test(location.protocol)) {
+    const b = document.createElement('button'); b.type = 'button'; b.id = 'dlPkgBtn'; b.className = 'ib'; b.hidden = true;
+    b.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M4 19h16"/></svg><span></span>';
+    const lbl = () => { b.querySelector('span').textContent = t('dlPkgBtn'); }; lbl();
+    $('optMenu').insertBefore(b, $('mineSaveBtn').parentNode === $('optMenu') ? $('mineSaveBtn') : $('optMenu').firstChild);
+    const post = async (f) => { const fd = new FormData(); fd.append('token', pkgTk); Object.keys(f).forEach(k => fd.append(k, f[k])); return (await fetch(siteBase() + 'upload.php', { method:'POST', body:fd, cache:'no-store' })).json(); };
+    post({ action:'pkginfo' }).then(j => { b.hidden = !(j && j.dl); }).catch(() => {});
+    b.onclick = async e => {
+      e.stopPropagation(); $('optMenu').hidden = true;
+      const code = await g360Ask(t('dlPkgAsk'), { input:true }); if (!code) return;
+      let j = null; try { j = await post({ action:'pkgdl', code }); } catch (err) {}
+      if (!j) { say2(t('dlPkgFail')); return; }
+      if (!j.ok) { say2(t(j.error === 'code' ? 'dlPkgBad' : j.error === 'wait' ? 'dlPkgWait' : 'dlPkgNone')); return; }
+      say2(t('dlPkgGo')); location.href = siteBase() + j.url;
+    };
+    const prev = window.G360_relang; window.G360_relang = function () { if (prev) prev.apply(this, arguments); lbl(); };
+  }
   $('mineFile').onchange = async () => {   // the client restores his own file; in the Studio the items are added to the project
     const f = $('mineFile').files[0]; $('mineFile').value = ''; if (!f) return;
     const out = m => { if (window.G360_CLIENT) say2(m); else { const b = document.getElementById('pkgMsgBox'); if (b) b.textContent = m; } };
@@ -7106,6 +7129,47 @@ if (isset($_GET['rep'])) {   // the link at the bottom of a report: the recipien
   exit;
 }
 
+if (isset($_GET['pkgget']) || (isset($_POST['action']) && ($_POST['action'] === 'pkginfo' || $_POST['action'] === 'pkgdl'))) {   // a client package on the site (p/<token>/): may it be downloaded, the client's code, and the download itself
+  $pj = function ($c, $a) { http_response_code($c); header('Content-Type: application/json; charset=utf-8'); header('Cache-Control: no-store'); header('X-Robots-Tag: noindex'); echo json_encode($a); exit; };
+  $tk = (string)(isset($_GET['pkgget']) ? $_GET['pkgget'] : (isset($_POST['token']) ? $_POST['token'] : ''));
+  if (!$keyOk || !preg_match('#^p[a-z0-9]{10}$#', $tk)) $pj(400, array('ok' => false, 'error' => 'path'));
+  $pd = $root . '/p/' . $tk; $jf = $bd . '/pkg/' . $tk . '.json'; $info = @json_decode((string)@file_get_contents($jf), true);
+  try { $today = (new DateTime('now', new DateTimeZone('Asia/Jerusalem')))->format('Y-m-d'); } catch (Exception $x) { $today = date('Y-m-d'); }
+  $live = is_array($info) && !empty($info['hash']) && is_file($pd . '/index.html') && (empty($info['exp']) || $today <= $info['exp']);   // the package's storage period has not ended
+  $sig = function ($e) use ($tk, $KEY_SHA256) { return hash_hmac('sha256', 'pkgget' . $tk . $e, $KEY_SHA256); };
+  if (isset($_GET['pkgget'])) {   // the ZIP is built while it is sent, from the files already on the site: nothing is kept twice
+    $e = isset($_GET['e']) ? (string)$_GET['e'] : ''; $s = isset($_GET['s']) ? (string)$_GET['s'] : '';
+    if (!$live || !preg_match('#^[0-9]{1,12}$#', $e) || (int)$e < time() || !hash_equals($sig($e), $s)) { http_response_code(403); header('Content-Type: text/plain; charset=utf-8'); echo "This download link has expired. Open the package page again and enter the code.\nקישור ההורדה פג. פתחו שוב את דף החבילה והקלידו את הקוד."; exit; }
+    $nm = preg_replace('#[\\\\/:*?"<>|\x00-\x1f]+#u', '_', isset($info['name']) ? (string)$info['name'] : '') ?: 'Gambit360';
+    $list = array(array($pd . '/index.html', $nm . '.html'));
+    foreach (array('lib', 'model') as $sub) foreach ((array)glob($pd . '/' . $sub . '/*') as $g) if (is_file($g) && basename($g) !== 'index.html') $list[] = array($g, $sub . '/' . basename($g));
+    $len = 22; foreach ($list as $i => $f) { $list[$i][1] = $nm . '/' . $f[1]; $list[$i][2] = filesize($f[0]); $len += 76 + 2 * strlen($list[$i][1]) + $list[$i][2]; }
+    @set_time_limit(0); while (ob_get_level()) @ob_end_clean();
+    header('Content-Type: application/zip'); header('Content-Length: ' . $len); header('Cache-Control: no-store'); header('X-Robots-Tag: noindex');
+    header("Content-Disposition: attachment; filename=\"Gambit360.zip\"; filename*=UTF-8''" . rawurlencode($nm . '.zip'));
+    $cd = ''; $off = 0;
+    foreach ($list as $f) {   // a plain ZIP (stored, no compression), file names in UTF-8
+      $t = getdate(filemtime($f[0])); $dt = (($t['hours'] << 11) | ($t['minutes'] << 5) | ($t['seconds'] >> 1)); $dd = ((max(0, $t['year'] - 1980) << 9) | ($t['mon'] << 5) | $t['mday']);
+      $crc = hexdec(hash_file('crc32b', $f[0])); $n = $f[1]; $sz = $f[2];
+      $h = pack('vvvvvVVVv', 20, 0x0800, 0, $dt, $dd, $crc, $sz, $sz, strlen($n));
+      echo "PK\x03\x04", $h, pack('v', 0), $n; readfile($f[0]);
+      $cd .= "PK\x01\x02" . pack('v', 20) . $h . pack('vvvvVV', 0, 0, 0, 0, 0, $off) . $n;
+      $off += 30 + strlen($n) + $sz;
+    }
+    echo $cd, "PK\x05\x06", pack('vvvvVVv', 0, 0, count($list), count($list), strlen($cd), $off, 0);
+    exit;
+  }
+  if ($_POST['action'] === 'pkginfo') $pj(200, array('ok' => true, 'dl' => $live));
+  if (!$live) $pj(200, array('ok' => false, 'error' => 'none'));
+  $fl = isset($info['fails']) && is_array($info['fails']) ? $info['fails'] : array(0, 0);
+  if ($fl[0] >= 10 && time() - $fl[1] < 900) $pj(429, array('ok' => false, 'error' => 'wait'));
+  $code = strtoupper(preg_replace('#[^A-Za-z0-9]#', '', isset($_POST['code']) ? (string)$_POST['code'] : ''));
+  if (!password_verify($code, $info['hash'])) { $info['fails'] = array(($fl[0] >= 10 ? 0 : $fl[0]) + 1, time()); @file_put_contents($jf, json_encode($info)); sleep(1); $pj(200, array('ok' => false, 'error' => 'code')); }
+  if (!empty($info['fails'])) { unset($info['fails']); @file_put_contents($jf, json_encode($info)); }
+  $e = time() + 600;   // the link that downloads works for ten minutes
+  $pj(200, array('ok' => true, 'url' => 'upload.php?pkgget=' . $tk . '&e=' . $e . '&s=' . $sig($e)));
+}
+
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
 header('Content-Type: application/json; charset=utf-8');
@@ -7318,15 +7382,23 @@ if ($action === 'pclist' || $action === 'pcget' || $action === 'pcput' || $actio
   if (!@rename($f . '.part', $f)) { @unlink($f); if (!@rename($f . '.part', $f)) out(500, array('ok' => false, 'error' => 'rename')); }
   out(200, array('ok' => true, 'saved' => isset($j['saved']) ? (string)$j['saved'] : ''));
 }
-if ($action === 'pkgput' || $action === 'pkgdone') {   // a client package published on the site: p/<token>/index.html with its lib/ and model/ files, the link the client gets
+if ($action === 'pkgput' || $action === 'pkgdone' || $action === 'pkgcode') {   // a client package published on the site: p/<token>/index.html with its lib/ and model/ files, the link the client gets
   $tk = isset($_POST['token']) ? (string)$_POST['token'] : '';
   if (!preg_match('#^p[a-z0-9]{10}$#', $tk)) out(400, array('ok' => false, 'error' => 'path'));
   $pd = $root . '/p/' . $tk;
   if (!is_file($root . '/p/.htaccess')) { if (!is_dir($root . '/p')) @mkdir($root . '/p', 0755, true); @file_put_contents($root . '/p/.htaccess', "Options -Indexes\n<IfModule mod_headers.c>\nHeader set X-Robots-Tag \"noindex, nofollow\"\n</IfModule>\n"); }
+  if ($action === 'pkgcode') {   // the client's download code (only its hash is kept, in the private folder), the last day of the package and its name in the ZIP
+    $code = strtoupper(preg_replace('#[^A-Za-z0-9]#', '', isset($_POST['code']) ? (string)$_POST['code'] : '')); $exp = isset($_POST['exp']) ? (string)$_POST['exp'] : '';
+    if (strlen($code) < 6 || ($exp !== '' && !preg_match('#^[0-9]{4}-[0-9]{2}-[0-9]{2}$#', $exp))) out(400, array('ok' => false, 'error' => 'code'));
+    denyDir($bd); if (!is_dir($bd . '/pkg') && !@mkdir($bd . '/pkg', 0755, true)) out(500, array('ok' => false, 'error' => 'mkdir'));
+    $nm = mb_substr(trim(isset($_POST['name']) ? (string)$_POST['name'] : ''), 0, 100);
+    if (!@file_put_contents($bd . '/pkg/' . $tk . '.json', json_encode(array('hash' => password_hash($code, PASSWORD_DEFAULT), 'exp' => $exp, 'name' => $nm, 'at' => time())))) out(500, array('ok' => false, 'error' => 'write'));
+    out(200, array('ok' => true));
+  }
   if ($action === 'pkgdone') {   // the files of an older version of the package that this one no longer has are taken away
     $keep = json_decode(isset($_POST['keep']) ? (string)$_POST['keep'] : '', true); if (!is_array($keep)) out(400, array('ok' => false, 'error' => 'json'));
     $n = 0;
-    foreach (array('', '/lib', '/model') as $sub) foreach ((array)glob($pd . $sub . '/*') as $g) { if (!is_file($g)) continue; $rel = ltrim($sub . '/' . basename($g), '/'); if (!in_array($rel, $keep, true)) { @unlink($g); $n++; } }
+    foreach (array('', '/lib', '/model') as $sub) foreach ((array)glob($pd . $sub . '/*') as $g) { if (!is_file($g) || ($sub !== '' && basename($g) === 'index.html')) continue; $rel = ltrim($sub . '/' . basename($g), '/'); if (!in_array($rel, $keep, true)) { @unlink($g); $n++; } }
     out(200, array('ok' => true, 'removed' => $n));
   }
   $path = isset($_POST['path']) ? (string)$_POST['path'] : '';
@@ -7335,6 +7407,7 @@ if ($action === 'pkgput' || $action === 'pkgdone') {   // a client package publi
   if ($_FILES['file']['size'] > $MAX_BYTES) out(413, array('ok' => false, 'error' => 'size'));
   $dest = $pd . '/' . $path;
   if (!is_dir(dirname($dest)) && !@mkdir(dirname($dest), 0755, true)) out(500, array('ok' => false, 'error' => 'mkdir'));
+  foreach (array($root . '/p', dirname($dest)) as $dd) if ($dd !== $pd && !is_file($dd . '/index.html')) @file_put_contents($dd . '/index.html', '');   // an empty page in p/, lib/ and model/: no list of the files even on a server that shows folder contents
   if (is_file($dest) && md5_file($dest) === md5_file($_FILES['file']['tmp_name'])) out(200, array('ok' => true, 'same' => true));
   if (!move_uploaded_file($_FILES['file']['tmp_name'], $dest . '.part')) out(500, array('ok' => false, 'error' => 'write'));
   @chmod($dest . '.part', 0644);

@@ -1,8 +1,8 @@
-if (isset($_GET['pkgget']) || (isset($_POST['action']) && ($_POST['action'] === 'pkginfo' || $_POST['action'] === 'pkgdl'))) {   // a client package on the site (p/<token>/): may it be downloaded, the client's code, and the download itself
+if (isset($_GET['pkgget']) || (isset($_POST['action']) && ($_POST['action'] === 'pkginfo' || $_POST['action'] === 'pkgdl'))) {   // a client package on the site (packages/<token>/): may it be downloaded, the client's code, and the download itself
   $pj = function ($c, $a) { http_response_code($c); header('Content-Type: application/json; charset=utf-8'); header('Cache-Control: no-store'); header('X-Robots-Tag: noindex'); echo json_encode($a); exit; };
   $tk = (string)(isset($_GET['pkgget']) ? $_GET['pkgget'] : (isset($_POST['token']) ? $_POST['token'] : ''));
   if (!$keyOk || !preg_match('#^p[a-z0-9]{10}$#', $tk)) $pj(400, array('ok' => false, 'error' => 'path'));
-  $pd = $root . '/p/' . $tk; $jf = $bd . '/pkg/' . $tk . '.json'; $info = @json_decode((string)@file_get_contents($jf), true);
+  $pd = $root . '/packages/' . $tk; if (!is_dir($pd)) $pd = $root . '/p/' . $tk; $jf = $bd . '/pkg/' . $tk . '.json'; $info = @json_decode((string)@file_get_contents($jf), true);   // older packages are still in p/<token>/
   try { $today = (new DateTime('now', new DateTimeZone('Asia/Jerusalem')))->format('Y-m-d'); } catch (Exception $x) { $today = date('Y-m-d'); }
   $live = is_array($info) && !empty($info['hash']) && is_file($pd . '/index.html') && (empty($info['exp']) || $today <= $info['exp']);   // the package's storage period has not ended
   $sig = function ($e) use ($tk, $KEY_SHA256) { return hash_hmac('sha256', 'pkgget' . $tk . $e, $KEY_SHA256); };

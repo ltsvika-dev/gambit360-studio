@@ -325,7 +325,7 @@
     const relStr = rel.concat([safe], sub ? [sub] : []).join('\\');
     let path = await helperReq(src, ($('pkgOpenDir').checked ? '' : '?') + relStr);   // the real path, and the folder is opened when asked
     if (!path) { path = pageDir() + '\\' + relStr; }   // no helper: the best guess is the folder the Studio runs from
-    $('pkgPath').textContent = path;
+    $('pkgPath').textContent = path; $('pkgPath').style.whiteSpace = ''; $('pkgCopy').textContent = t('pkgCopy'); $('pkgCopyCode').hidden = true;
     $('pkgCopy').onclick = async () => {
       try { await navigator.clipboard.writeText(path); }
       catch (err) { const ta = document.createElement('textarea'); ta.value = path; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }

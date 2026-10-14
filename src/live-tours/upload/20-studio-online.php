@@ -21,7 +21,7 @@ if (!empty($G360_APP) || isset($_GET['app'])) {   // app/index.php: the Studio i
     '.sp{width:18px;height:18px;border:2.5px solid rgba(6,32,28,.3);border-top-color:#06201c;border-radius:50%;animation:r .8s linear infinite;display:none}.busy .sp{display:block}@keyframes r{to{transform:rotate(360deg)}}',
     '#m{min-height:1.3em;white-space:pre-line;margin-top:12px;color:#ff9a8a;font-size:.88rem}.note{margin:4px 0 0;color:#7f9499;font-size:.8rem}p{margin:16px 0 0;color:#b9c9cc;font-size:.92rem}',
     '.ft{color:#6f8489;font-size:.8rem;text-decoration:none}.ft:hover{color:#b9c9cc}</style></head><body><main class="card">', $logo, '<div class="in">',
-    $none ? '<h1>הסטודיו עוד לא באתר<span class="en">No Studio on the server yet</span></h1><p>פתחו את הסטודיו במחשב שלכם: סיורים חיים ← אפשרויות ← "עדכון הסטודיו באתר".</p><p class="note" dir="ltr" style="text-align:right">In your own Studio: Live tours, Options, "Update the Studio online".</p></div></main>'
+    $none ? '<h1>הסטודיו עוד לא בענן<span class="en">No Studio on the server yet</span></h1><p>פתחו את הסטודיו במחשב שלכם: סיורים חיים ← אפשרויות ← "עדכון הסטודיו בענן".</p><p class="note" dir="ltr" style="text-align:right">In your own Studio: Live tours, Options, "Update the Studio in the cloud".</p></div></main>'
       : '<form id="f"><h1>כניסה לסטודיו<span class="en">Sign in to Gambit360 Studio</span></h1>' .
         '<label for="u">שם משתמש · User name</label><input id="u" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>' .
         '<label for="p">סיסמת הענן · Cloud password</label><div class="pw"><input id="p" name="password" type="password" autocomplete="current-password" required>' .

@@ -242,6 +242,13 @@ try {
   await s.page.waitForFunction(() => { try { return JSON.parse(localStorage.getItem('g360Brand')).w === 520; } catch (e) { return false; } }, null, { timeout: 5000 }).catch(() => {});
   const handed = await s.page.evaluate(() => { try { return JSON.parse(localStorage.getItem('g360Brand')).w; } catch (e) { return 0; } });
   ok(handed === 520 && await logoBox() === shown, 'the width goes to the outputs and the Studio logo keeps its size', lgBefore + ' / ' + shown + ' / ' + (await logoBox()) + ' w=' + handed);
+  ok(await s.page.evaluate(() => document.getElementById('lvSplLiveBox').hidden), 'the separate live-tours logo stays closed until its box is ticked');
+  await s.page.check('#lvSplLiveOn');
+  const png2 = Buffer.from(await s.page.evaluate(() => { const c = document.createElement('canvas'); c.width = 200; c.height = 100; const g = c.getContext('2d'); g.fillStyle = '#33d'; g.fillRect(0, 0, 200, 100); return c.toDataURL('image/png').split(',')[1]; }), 'base64');
+  const [fc2] = await Promise.all([s.page.waitForEvent('filechooser'), s.page.click('#lvSplLivePick')]);
+  await fc2.setFiles({ name: 'live.png', mimeType: 'image/png', buffer: png2 });
+  await s.page.waitForSelector('#lvSplLiveImg:not([hidden])', { timeout: 5000 }).catch(() => {});
+  ok(await s.page.evaluate(() => !document.getElementById('lvSplLiveImg').hidden) && await s.page.evaluate(o => document.querySelector('#logo img').src === o, lg.src), 'ticking it opens a second logo for live tours, and the Studio keeps my logo');
   await s.page.keyboard.press('Escape');
   ok(await s.page.evaluate(() => document.getElementById('lvSet').hidden), 'Esc closes the Options screen over the point cloud');
   await s.page.reload(); await s.page.waitForTimeout(500);

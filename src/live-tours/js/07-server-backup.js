@@ -58,6 +58,9 @@
     const m = await fileMeta('splash'), im = $('lvSplImg'); forgetUrl('splash');
     if (m && m.blob) { im.src = await fileUrl('splash'); im.hidden = false; } else { im.removeAttribute('src'); im.hidden = true; }
     $('lvSplRm').hidden = !(m && m.blob); $('lvSplW').value = +settings.splW || 260; splWTxt();
+    { const ml = await fileMeta('splashLive'), il = $('lvSplLiveImg'); forgetUrl('splashLive');   // a separate logo for live tours (the loading screen only)
+      if (ml && ml.blob) { il.src = await fileUrl('splashLive'); il.hidden = false; } else { il.removeAttribute('src'); il.hidden = true; }
+      $('lvSplLiveRm').hidden = !(ml && ml.blob); $('lvSplLiveOn').checked = !!settings.splLiveOn; $('lvSplLiveBox').hidden = !settings.splLiveOn; }
     brandPush();
   }
   // My logo (the one picked here) is also the Studio's logo and the one in point-cloud outputs: the viewer gets it as a small PNG.
@@ -89,5 +92,12 @@
   const splWTxt = () => { const v = +settings.splW || 260; $('lvSplWL').textContent = L('splW', v); };
   $('lvSplW').oninput = () => { settings.splW = +$('lvSplW').value; splWTxt(); saveSet(); clearTimeout(brandT); brandT = setTimeout(brandPush, 300); };
   let brandT = 0;
+  $('lvSplLiveOn').onchange = () => { settings.splLiveOn = $('lvSplLiveOn').checked; $('lvSplLiveBox').hidden = !settings.splLiveOn; saveSet(); };
+  $('lvSplLivePick').onclick = () => {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/png,.png';
+    inp.onchange = async () => { const f = inp.files && inp.files[0]; if (!f) return; if (!pngOk(f)) { msg(L('pngBad'), true); return; } await db.fset('splashLive', { blob: f, name: f.name, type: f.type, ts: Date.now() }); bkSoon(); refreshSplash(); };
+    inp.click();
+  };
+  $('lvSplLiveRm').onclick = async () => { try { await db.fdel('splashLive'); } catch (e) {} forgetUrl('splashLive'); bkSoon(); refreshSplash(); };
   $('lvSplRm').onclick = async () => { try { await db.fdel('splash'); } catch (e) {} forgetUrl('splash'); bkSoon(); refreshSplash(); };
 

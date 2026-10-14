@@ -279,7 +279,8 @@
         zipped = true;
       }
       setProjectTitle(projName, mgr); pkgMsg(t('pkgDone', root.name, safe, zipped) + (lastPromo || promoModeVal() ? '' : ' ' + t('pkgNoPromo')));
-      showPkgPath(src, root, safe);
+      await showPkgPath(src, root, safe);
+      if (typeof pkgPublish === 'function') await pkgPublish(entries, safe, viewerName);   // asks whether the client should also get it as a link on the site
     } catch (err) { console.error(err); pkgMsg(pkgAbort ? t('pkgCancelledMsg') : t('pkgFail') + err.message); }
     finally {
       $('pkgCancelBtn').hidden = true; pkgBusy = false;

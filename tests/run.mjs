@@ -194,6 +194,21 @@ try {
   await s.page.waitForSelector('#mbtn', { state: 'visible', timeout: 60000 });
   await s.page.waitForFunction(() => document.getElementById('pkgName').value === 'From computer C', null, { timeout: 15000 }).catch(() => {});
   ok(await s.page.evaluate(() => document.getElementById('pkgName').value) === 'From computer C' && await tagCount(s.page) === sTags, 'the newer copy from computer C comes back to computer A when the scan opens', JSON.stringify({ sTags, title: await s.page.evaluate(() => document.getElementById('pkgName').value), a: await s.page.evaluate(() => window.G360_extrasData().tags.map(x => x.n)), srv: JSON.parse(fs.readFileSync(path.join(pcDir, pcFiles[0]), 'utf8')).extras.tags.map(x => x.n) }));
+  // a client package published on the site: the Studio asks, uploads the files, and gives the client's link
+  const pub = c.page.evaluate(async () => {
+    const root = await navigator.storage.getDirectory(), d = await root.getDirectoryHandle('pkg', { create: true }), entries = [];
+    const put = async (dir, name, text, rel) => { const fh = await dir.getFileHandle(name, { create: true }); const w = await fh.createWritable(); await w.write(text); await w.close(); entries.push({ path: 'Room/' + rel, fh }); };
+    await put(d, 'Room.html', '<!doctype html><title>client</title>', 'Room.html');
+    await put(await d.getDirectoryHandle('lib', { create: true }), 'three.min.js', '//three', 'lib/three.min.js');
+    await put(await d.getDirectoryHandle('model', { create: true }), 'manifest.js', 'window.G360PKG={}', 'model/manifest.js');
+    await window.G360_pkgPublish(entries, 'Room', 'Room.html');
+    return document.getElementById('pkgPath').textContent;
+  });
+  await c.page.waitForFunction(() => { const a = document.getElementById('g360Ask'); return a && !a.hidden; }, null, { timeout: 15000 });
+  const asked = await c.page.evaluate(() => document.querySelector('#g360Ask p').textContent); await c.page.evaluate(() => document.querySelector('#g360Ask .ok').click());
+  const link = await pub.catch(e => String(e));
+  const got = /\/p\/p[a-z0-9]{10}\/index\.html$/.test(link) ? await (await fetch(link)).text() : '';
+  ok(got.includes('<title>client</title>') && (await (await fetch(link.replace('index.html', 'model/manifest.js'))).text()).includes('G360PKG'), 'after asking, a client package is published on the site and the client\'s link opens it', asked + ' ' + link);
   ok(c.errors.length === 0 && s.errors.length === 0, 'no errors with projects in the cloud', c.errors.concat(s.errors).join('\n'));
 } catch (e) { ok(false, 'the test itself ran to the end', e.stack || e); }
 finally {

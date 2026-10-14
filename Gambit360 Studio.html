@@ -2157,7 +2157,8 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
         zipped = true;
       }
       setProjectTitle(projName, mgr); pkgMsg(t('pkgDone', root.name, safe, zipped) + (lastPromo || promoModeVal() ? '' : ' ' + t('pkgNoPromo')));
-      showPkgPath(src, root, safe);
+      await showPkgPath(src, root, safe);
+      if (typeof pkgPublish === 'function') await pkgPublish(entries, safe, viewerName);   // asks whether the client should also get it as a link on the site
     } catch (err) { console.error(err); pkgMsg(pkgAbort ? t('pkgCancelledMsg') : t('pkgFail') + err.message); }
     finally {
       $('pkgCancelBtn').hidden = true; pkgBusy = false;
@@ -2412,13 +2413,14 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
   /*@STUDIO*/
   // ---- Project file: everything made in the Studio for one model (not the model itself) ----
   let projHandle = null;
+  const pkgPubOf = name => { try { return localStorage.getItem('tourViewerPkgPub:' + name) || ''; } catch (err) { return ''; } };   // the client package's address on the site (06a-cloud-projects.js)
   function projectData() {
     const pts = a => a.pts.map(p => [+p.x.toFixed(4), +p.y.toFixed(4), +p.z.toFixed(4)]);
     return { g360project:1, saved:new Date().toISOString(), model:currentName, kind:lastE57 ? 'e57' : 'obj', quality:lastE57 ? +$('quality').value : null,
       title:$('pkgName').value.trim(), manager:$('pkgMgr').value.trim(), exp:{ start:$('pkgStart').value, dur:$('pkgDur').value, unit:$('pkgUnit').value },
       link:getLink(), logo:customLogo || '', pkgOpt:{ mp:$('pkgMpShow').checked, mini:$('pkgMini').checked, ctags:$('pkgClientTags').checked, cloud:$('pkgCloud').checked, promo:$('pkgPromoMode').value }, extras:window.G360_extrasData ? window.G360_extrasData() : undefined,
       views:views.filter(v => !v.locked && !v.pkg).map(v => ({ n:v.n, p:v.p, yaw:v.yaw, pitch:v.pitch, room:v.room ? 1 : undefined })),
-      measures:measures.map(a => ({ type:'line', pts:pts(a) })), areas:areas.map(a => ({ type:'area', pts:pts(a) })) };
+      measures:measures.map(a => ({ type:'line', pts:pts(a) })), areas:areas.map(a => ({ type:'area', pts:pts(a) })), pub:pkgPubOf(currentName) || undefined };
   }
   async function saveProject() {
     if (!currentName || window.G360_CLIENT || fromPkg) return;
@@ -2446,6 +2448,7 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
       if (d.link) localStorage.setItem(mpKey(), d.link);
       localStorage.setItem(viewsKey(), JSON.stringify(d.views || []));
       if (d.pkgOpt) localStorage.setItem(pkgOptKey(), JSON.stringify(d.pkgOpt));
+      if (d.pub) localStorage.setItem('tourViewerPkgPub:' + nm, d.pub);   // the client's link on the site stays the same from every computer
     } catch (err) {}
     applyLogo(d.logo || ''); saveLogoLocal();
     $('pkgName').dataset.for = '';
@@ -2805,14 +2808,20 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
     cpInfo: (d, n) => 'נשמר ' + d + (n ? ' · ' + n + ' תגיות' : ''), cpDelAsk: n => 'למחוק את "' + n + '" מהענן?\nקובץ הפרויקט וקובץ הסריקה במחשבים לא נמחקים, ועותק נשאר בשרת.',
     cpSaved: 'הפרויקט נשמר בענן ✓', cpSavedAlso: n => 'הפרויקט נשמר ב-"' + n + '" וגם בענן ✓', cpFail: e => 'השמירה בענן נכשלה: ' + e, cpErr: e => 'הענן לא ענה: ' + e, cpNoCloud: 'המחשב הזה לא מחובר לענן. מתחברים ב"סיורים חיים" ← אפשרויות ← ענן.',
     cpOld: 'upload.php בשרת ישן מכדי לשמור פרויקטים. פתחו פעם אחת את "סיורים חיים" במחשב הראשי והוא יתעדכן לבד.',
-    cpStale: d => 'במחשב אחר נשמרה בינתיים גרסה של הפרויקט הזה (' + d + ').\nלשמור בענן את הגרסה שכאן במקומה?', cpGot: d => 'נטענה מהענן גרסה חדשה יותר של הפרויקט (' + d + ')' });
+    cpStale: d => 'במחשב אחר נשמרה בינתיים גרסה של הפרויקט הזה (' + d + ').\nלשמור בענן את הגרסה שכאן במקומה?', cpGot: d => 'נטענה מהענן גרסה חדשה יותר של הפרויקט (' + d + ')',
+    pubAsk: 'לפרסם את החבילה גם בשרת?\nהלקוח יקבל קישור ויצפה בה בדפדפן, בלי להוריד קבצים. פרסום חוזר של אותו פרויקט מעדכן את אותו קישור.', pubYes: 'פרסום בשרת', pubNo: 'לא עכשיו',
+    pubBusy: (i, n) => 'מעלה את החבילה לשרת… ' + i + ' מתוך ' + n, pubDone: u => 'החבילה פורסמה בשרת ✓ הקישור ללקוח: ' + u, pubFail: e => 'הפרסום בשרת נכשל: ' + e + '. החבילה במחשב מוכנה ותקינה.',
+    pubBig: (f, mb) => 'הקובץ ' + f + ' גדול מדי לשרת (' + mb + 'MB, עד 45MB). אפשר לבחור איכות פנורמות נמוכה יותר או סרטון קצר יותר.' });
   Object.assign(I18N.en, { cpOpenBtn: 'Open a project from the cloud', cpH: 'Projects in the cloud', cpLoading: 'Loading the list…', cpClose: 'Close', cpDel: 'Delete from the cloud',
     cpNone: 'No projects in the cloud yet. Every project with something in it (title, tags, views, measurements) is kept in the cloud by itself while this computer is connected to the cloud.',
     cpNote: 'Only the project file is kept in the cloud, not the E57 file. On a computer without the scan file, it is picked once.',
     cpInfo: (d, n) => 'Saved ' + d + (n ? ' · ' + n + ' tags' : ''), cpDelAsk: n => 'Delete "' + n + '" from the cloud?\nThe project and scan files on the computers stay, and a copy stays on the server.',
     cpSaved: 'The project was saved in the cloud ✓', cpSavedAlso: n => 'The project was saved to "' + n + '" and in the cloud ✓', cpFail: e => 'Saving in the cloud failed: ' + e, cpErr: e => 'The cloud did not answer: ' + e, cpNoCloud: 'This computer is not connected to the cloud. Connect in Live tours, Options, Cloud.',
     cpOld: 'upload.php on the server is too old to keep projects. Open Live tours once on the main computer and it updates itself.',
-    cpStale: d => 'Meanwhile another computer saved a version of this project (' + d + ').\nSave the version here in the cloud instead?', cpGot: d => 'A newer version of the project came in from the cloud (' + d + ')' });
+    cpStale: d => 'Meanwhile another computer saved a version of this project (' + d + ').\nSave the version here in the cloud instead?', cpGot: d => 'A newer version of the project came in from the cloud (' + d + ')',
+    pubAsk: 'Publish the package on the server too?\nThe client gets a link and views it in the browser, with no files to download. Publishing the same project again updates the same link.', pubYes: 'Publish on the server', pubNo: 'Not now',
+    pubBusy: (i, n) => 'Uploading the package… ' + i + ' of ' + n, pubDone: u => 'The package is on the server ✓ The client\'s link: ' + u, pubFail: e => 'Publishing on the server failed: ' + e + '. The package on this computer is ready and fine.',
+    pubBig: (f, mb) => 'The file ' + f + ' is too large for the server (' + mb + ' MB, up to 45 MB). Choose a lower panorama quality or a shorter video.' });
   const CP_HOSTED = /^https?:$/.test(location.protocol) && /\/app\/(index\.php)?$/.test(location.pathname);   // the Studio online, at <site>/app/
   let cpCfgP = null, cpCfgAt = 0, cpLast = { name:'', saved:'', json:'' }, cpSeen = { name:'', json:'' }, cpBusy = false;   // cpLast: the copy this computer last sent to or got from the cloud
   function cpCfg(force) {   // the cloud's address and key, from the Live tours module (null when this computer is not connected)
@@ -2871,7 +2880,7 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
     catch (err) { console.warn('cloud project', err); }
     finally { cpBusy = false; }
   }
-  setInterval(cpTick, 15000); window.G360_cpTick = cpTick;   // (the browser tests call it instead of waiting)
+  setInterval(cpTick, 15000); window.G360_cpTick = cpTick;   // (the browser tests call it instead of waiting, and the next one)
   addEventListener('pagehide', () => cpTick(true)); document.addEventListener('visibilitychange', () => { if (document.hidden) cpTick(true); });
   // "Save project": the cloud copy too (in the Studio online, only the cloud)
   async function cpSaveNow(d, fileName) {
@@ -2887,6 +2896,33 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
     } catch (err) { const m = t('cpFail', err.message || err); pkgMsg(m); say(m); return false; }
     finally { cpBusy = false; }
   }
+
+  // ---- a client package on the site: after the package is made, the Studio asks whether the client should also get it as a link (p/<token>/index.html).
+  // The token is kept with the project, so publishing again (from any computer) updates the same link. ----
+  async function pkgPublish(entries, safe, viewerName) {
+    const c = await cpCfg(true); if (!c) return;
+    if (!(await g360Ask(t('pubAsk'), { ok:t('pubYes'), cancel:t('pubNo') }))) return;
+    let tk = pkgPubOf(currentName);
+    if (!/^p[a-z0-9]{10}$/.test(tk)) { tk = 'p' + [...crypto.getRandomValues(new Uint8Array(10))].map(b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join(''); try { localStorage.setItem('tourViewerPkgPub:' + currentName, tk); } catch (err) {} }
+    const list = entries.filter(e => e.path.startsWith(safe + '/')).map(e => { const rel = e.path.slice(safe.length + 1); return { rel:rel === viewerName ? 'index.html' : rel, fh:e.fh }; });
+    try {
+      for (let i = 0; i < list.length; i++) {
+        if (pkgAbort) throw new Error(t('pkgCancelledMsg'));
+        pkgMsg(t('pubBusy', i + 1, list.length));
+        const f = await list[i].fh.getFile();
+        if (f.size > 45 * 1048576) throw new Error(t('pubBig', list[i].rel, Math.round(f.size / 1048576)));   // the server takes up to 50MB a request
+        const j = await cpPost(c, { action:'pkgput', token:tk, path:list[i].rel }, f);
+        if (!j.ok) throw new Error(j.error + ' (' + list[i].rel + ')');
+      }
+      const j = await cpPost(c, { action:'pkgdone', token:tk, keep:JSON.stringify(list.map(x => x.rel)) }); if (!j.ok) throw new Error(j.error);
+    } catch (err) { pkgMsg(t('pubFail', err.message || err)); return; }
+    const url = c.url.replace(/upload\.php$/, '') + 'p/' + tk + '/index.html';
+    pkgMsg(t('pubDone', url)); say(t('pubDone', url));
+    $('pkgPath').textContent = url; $('pkgOpen').hidden = false;
+    $('pkgCopy').onclick = async () => { try { await navigator.clipboard.writeText(url); } catch (err) { const ta = document.createElement('textarea'); ta.value = url; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); } pkgMsg(t('pkgCopied')); };
+  }
+
+  window.G360_pkgPublish = pkgPublish;
 
   // ---- "Open a project from the cloud" on the start screen: the list, then the same way as a project file ----
   let cpDlg = null;
@@ -6853,7 +6889,7 @@ const G360Card = (() => {
 // It also keeps the Studio's synced data (a private _bk_ folder: the live tours and the point-cloud projects), lets another computer connect with a password,
 // serves the Studio online at /app/ after that password, replaces itself when the Studio has a newer copy, and emails the clients' view reports.
 $KEY_SHA256 = '@@KEYHASH@@';
-$VER = 7;   // grows with every change to this file: the Studio replaces an older copy on the server by itself
+$VER = 8;   // grows with every change to this file: the Studio replaces an older copy on the server by itself
 $LOGO = '@@LOGO@@';   // the Gambit360 logo for the sign-in page, filled in by the Studio
 $MAX_BYTES = 500 * 1024 * 1024;
 
@@ -7282,6 +7318,29 @@ if ($action === 'pclist' || $action === 'pcget' || $action === 'pcput' || $actio
   if (!@rename($f . '.part', $f)) { @unlink($f); if (!@rename($f . '.part', $f)) out(500, array('ok' => false, 'error' => 'rename')); }
   out(200, array('ok' => true, 'saved' => isset($j['saved']) ? (string)$j['saved'] : ''));
 }
+if ($action === 'pkgput' || $action === 'pkgdone') {   // a client package published on the site: p/<token>/index.html with its lib/ and model/ files, the link the client gets
+  $tk = isset($_POST['token']) ? (string)$_POST['token'] : '';
+  if (!preg_match('#^p[a-z0-9]{10}$#', $tk)) out(400, array('ok' => false, 'error' => 'path'));
+  $pd = $root . '/p/' . $tk;
+  if (!is_file($root . '/p/.htaccess')) { if (!is_dir($root . '/p')) @mkdir($root . '/p', 0755, true); @file_put_contents($root . '/p/.htaccess', "Options -Indexes\n<IfModule mod_headers.c>\nHeader set X-Robots-Tag \"noindex, nofollow\"\n</IfModule>\n"); }
+  if ($action === 'pkgdone') {   // the files of an older version of the package that this one no longer has are taken away
+    $keep = json_decode(isset($_POST['keep']) ? (string)$_POST['keep'] : '', true); if (!is_array($keep)) out(400, array('ok' => false, 'error' => 'json'));
+    $n = 0;
+    foreach (array('', '/lib', '/model') as $sub) foreach ((array)glob($pd . $sub . '/*') as $g) { if (!is_file($g)) continue; $rel = ltrim($sub . '/' . basename($g), '/'); if (!in_array($rel, $keep, true)) { @unlink($g); $n++; } }
+    out(200, array('ok' => true, 'removed' => $n));
+  }
+  $path = isset($_POST['path']) ? (string)$_POST['path'] : '';
+  if (!preg_match('#^(index\.html|lib/[A-Za-z0-9][A-Za-z0-9_.-]{0,80}\.js|model/[A-Za-z0-9][A-Za-z0-9_.-]{0,80}\.js|model/promo\.(mp4|webm|mov|m4v))$#', $path) || strpos($path, '..') !== false) out(400, array('ok' => false, 'error' => 'path'));
+  if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) out(400, array('ok' => false, 'error' => 'file', 'code' => isset($_FILES['file']) ? $_FILES['file']['error'] : -1));
+  if ($_FILES['file']['size'] > $MAX_BYTES) out(413, array('ok' => false, 'error' => 'size'));
+  $dest = $pd . '/' . $path;
+  if (!is_dir(dirname($dest)) && !@mkdir(dirname($dest), 0755, true)) out(500, array('ok' => false, 'error' => 'mkdir'));
+  if (is_file($dest) && md5_file($dest) === md5_file($_FILES['file']['tmp_name'])) out(200, array('ok' => true, 'same' => true));
+  if (!move_uploaded_file($_FILES['file']['tmp_name'], $dest . '.part')) out(500, array('ok' => false, 'error' => 'write'));
+  @chmod($dest . '.part', 0644);
+  if (!@rename($dest . '.part', $dest)) { @unlink($dest); if (!@rename($dest . '.part', $dest)) out(500, array('ok' => false, 'error' => 'rename')); }
+  out(200, array('ok' => true));
+}
 if ($action !== 'put') out(400, array('ok' => false, 'error' => 'action'));
 
 $path = isset($_POST['path']) ? str_replace('\\', '/', (string)$_POST['path']) : '';
@@ -7535,7 +7594,7 @@ const G360Card = (() => {
   const modelId = s => { s = String(s || '').trim(); const m = s.match(/[?&]m=([A-Za-z0-9]{6,})/) || s.match(/^([A-Za-z0-9]{6,})$/); return m ? m[1] : ''; };
   // a jump point from a Matterport "link to this location" (…&ss=19&sr=-3.05,.57) or just its ss=…&sr=… part
   const spotParse = v => { v = String(v || '').trim(); const q = new URLSearchParams((v.indexOf('?') >= 0 ? v.slice(v.indexOf('?') + 1) : v).replace(/^[?&#]+/, '').replace(/#.*$/, '')), ss = q.get('ss'), sr = q.get('sr') || ''; if (!/^\d{1,4}$/.test(ss || '')) return null; return { ss, sr: /^-?[0-9.]+,-?[0-9.]+$/.test(sr) ? sr : '', m: modelId(v) }; };
-  const slugOk = s => /^[a-z0-9][a-z0-9-]*$/.test(s || '') && s !== 'show' && s !== 'app';   // 'show' is the old MPEmbed address (/show/?m=...), 'app' the Studio online
+  const slugOk = s => /^[a-z0-9][a-z0-9-]*$/.test(s || '') && s !== 'show' && s !== 'app' && s !== 'p';   // 'show' is the old MPEmbed address (/show/?m=...), 'app' the Studio online, 'p' the client packages
   const slugify = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48);
   const slugOf = t => { const s = String(t.slug || '').trim().toLowerCase(); if (s) return s; const m = String(t.model || '').toLowerCase(); return slugOk(m) ? m : ''; };   // no address typed: the Matterport model ID
   const slugTaken = (t, v) => !!v && tours.some(o => o !== t && slugOf(o) === v);

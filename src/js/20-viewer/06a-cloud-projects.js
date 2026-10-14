@@ -9,14 +9,20 @@
     cpInfo: (d, n) => 'נשמר ' + d + (n ? ' · ' + n + ' תגיות' : ''), cpDelAsk: n => 'למחוק את "' + n + '" מהענן?\nקובץ הפרויקט וקובץ הסריקה במחשבים לא נמחקים, ועותק נשאר בשרת.',
     cpSaved: 'הפרויקט נשמר בענן ✓', cpSavedAlso: n => 'הפרויקט נשמר ב-"' + n + '" וגם בענן ✓', cpFail: e => 'השמירה בענן נכשלה: ' + e, cpErr: e => 'הענן לא ענה: ' + e, cpNoCloud: 'המחשב הזה לא מחובר לענן. מתחברים ב"סיורים חיים" ← אפשרויות ← ענן.',
     cpOld: 'upload.php בשרת ישן מכדי לשמור פרויקטים. פתחו פעם אחת את "סיורים חיים" במחשב הראשי והוא יתעדכן לבד.',
-    cpStale: d => 'במחשב אחר נשמרה בינתיים גרסה של הפרויקט הזה (' + d + ').\nלשמור בענן את הגרסה שכאן במקומה?', cpGot: d => 'נטענה מהענן גרסה חדשה יותר של הפרויקט (' + d + ')' });
+    cpStale: d => 'במחשב אחר נשמרה בינתיים גרסה של הפרויקט הזה (' + d + ').\nלשמור בענן את הגרסה שכאן במקומה?', cpGot: d => 'נטענה מהענן גרסה חדשה יותר של הפרויקט (' + d + ')',
+    pubAsk: 'לפרסם את החבילה גם בשרת?\nהלקוח יקבל קישור ויצפה בה בדפדפן, בלי להוריד קבצים. פרסום חוזר של אותו פרויקט מעדכן את אותו קישור.', pubYes: 'פרסום בשרת', pubNo: 'לא עכשיו',
+    pubBusy: (i, n) => 'מעלה את החבילה לשרת… ' + i + ' מתוך ' + n, pubDone: u => 'החבילה פורסמה בשרת ✓ הקישור ללקוח: ' + u, pubFail: e => 'הפרסום בשרת נכשל: ' + e + '. החבילה במחשב מוכנה ותקינה.',
+    pubBig: (f, mb) => 'הקובץ ' + f + ' גדול מדי לשרת (' + mb + 'MB, עד 45MB). אפשר לבחור איכות פנורמות נמוכה יותר או סרטון קצר יותר.' });
   Object.assign(I18N.en, { cpOpenBtn: 'Open a project from the cloud', cpH: 'Projects in the cloud', cpLoading: 'Loading the list…', cpClose: 'Close', cpDel: 'Delete from the cloud',
     cpNone: 'No projects in the cloud yet. Every project with something in it (title, tags, views, measurements) is kept in the cloud by itself while this computer is connected to the cloud.',
     cpNote: 'Only the project file is kept in the cloud, not the E57 file. On a computer without the scan file, it is picked once.',
     cpInfo: (d, n) => 'Saved ' + d + (n ? ' · ' + n + ' tags' : ''), cpDelAsk: n => 'Delete "' + n + '" from the cloud?\nThe project and scan files on the computers stay, and a copy stays on the server.',
     cpSaved: 'The project was saved in the cloud ✓', cpSavedAlso: n => 'The project was saved to "' + n + '" and in the cloud ✓', cpFail: e => 'Saving in the cloud failed: ' + e, cpErr: e => 'The cloud did not answer: ' + e, cpNoCloud: 'This computer is not connected to the cloud. Connect in Live tours, Options, Cloud.',
     cpOld: 'upload.php on the server is too old to keep projects. Open Live tours once on the main computer and it updates itself.',
-    cpStale: d => 'Meanwhile another computer saved a version of this project (' + d + ').\nSave the version here in the cloud instead?', cpGot: d => 'A newer version of the project came in from the cloud (' + d + ')' });
+    cpStale: d => 'Meanwhile another computer saved a version of this project (' + d + ').\nSave the version here in the cloud instead?', cpGot: d => 'A newer version of the project came in from the cloud (' + d + ')',
+    pubAsk: 'Publish the package on the server too?\nThe client gets a link and views it in the browser, with no files to download. Publishing the same project again updates the same link.', pubYes: 'Publish on the server', pubNo: 'Not now',
+    pubBusy: (i, n) => 'Uploading the package… ' + i + ' of ' + n, pubDone: u => 'The package is on the server ✓ The client\'s link: ' + u, pubFail: e => 'Publishing on the server failed: ' + e + '. The package on this computer is ready and fine.',
+    pubBig: (f, mb) => 'The file ' + f + ' is too large for the server (' + mb + ' MB, up to 45 MB). Choose a lower panorama quality or a shorter video.' });
   const CP_HOSTED = /^https?:$/.test(location.protocol) && /\/app\/(index\.php)?$/.test(location.pathname);   // the Studio online, at <site>/app/
   let cpCfgP = null, cpCfgAt = 0, cpLast = { name:'', saved:'', json:'' }, cpSeen = { name:'', json:'' }, cpBusy = false;   // cpLast: the copy this computer last sent to or got from the cloud
   function cpCfg(force) {   // the cloud's address and key, from the Live tours module (null when this computer is not connected)
@@ -75,7 +81,7 @@
     catch (err) { console.warn('cloud project', err); }
     finally { cpBusy = false; }
   }
-  setInterval(cpTick, 15000); window.G360_cpTick = cpTick;   // (the browser tests call it instead of waiting)
+  setInterval(cpTick, 15000); window.G360_cpTick = cpTick;   // (the browser tests call it instead of waiting, and the next one)
   addEventListener('pagehide', () => cpTick(true)); document.addEventListener('visibilitychange', () => { if (document.hidden) cpTick(true); });
   // "Save project": the cloud copy too (in the Studio online, only the cloud)
   async function cpSaveNow(d, fileName) {
@@ -91,6 +97,33 @@
     } catch (err) { const m = t('cpFail', err.message || err); pkgMsg(m); say(m); return false; }
     finally { cpBusy = false; }
   }
+
+  // ---- a client package on the site: after the package is made, the Studio asks whether the client should also get it as a link (p/<token>/index.html).
+  // The token is kept with the project, so publishing again (from any computer) updates the same link. ----
+  async function pkgPublish(entries, safe, viewerName) {
+    const c = await cpCfg(true); if (!c) return;
+    if (!(await g360Ask(t('pubAsk'), { ok:t('pubYes'), cancel:t('pubNo') }))) return;
+    let tk = pkgPubOf(currentName);
+    if (!/^p[a-z0-9]{10}$/.test(tk)) { tk = 'p' + [...crypto.getRandomValues(new Uint8Array(10))].map(b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join(''); try { localStorage.setItem('tourViewerPkgPub:' + currentName, tk); } catch (err) {} }
+    const list = entries.filter(e => e.path.startsWith(safe + '/')).map(e => { const rel = e.path.slice(safe.length + 1); return { rel:rel === viewerName ? 'index.html' : rel, fh:e.fh }; });
+    try {
+      for (let i = 0; i < list.length; i++) {
+        if (pkgAbort) throw new Error(t('pkgCancelledMsg'));
+        pkgMsg(t('pubBusy', i + 1, list.length));
+        const f = await list[i].fh.getFile();
+        if (f.size > 45 * 1048576) throw new Error(t('pubBig', list[i].rel, Math.round(f.size / 1048576)));   // the server takes up to 50MB a request
+        const j = await cpPost(c, { action:'pkgput', token:tk, path:list[i].rel }, f);
+        if (!j.ok) throw new Error(j.error + ' (' + list[i].rel + ')');
+      }
+      const j = await cpPost(c, { action:'pkgdone', token:tk, keep:JSON.stringify(list.map(x => x.rel)) }); if (!j.ok) throw new Error(j.error);
+    } catch (err) { pkgMsg(t('pubFail', err.message || err)); return; }
+    const url = c.url.replace(/upload\.php$/, '') + 'p/' + tk + '/index.html';
+    pkgMsg(t('pubDone', url)); say(t('pubDone', url));
+    $('pkgPath').textContent = url; $('pkgOpen').hidden = false;
+    $('pkgCopy').onclick = async () => { try { await navigator.clipboard.writeText(url); } catch (err) { const ta = document.createElement('textarea'); ta.value = url; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); } pkgMsg(t('pkgCopied')); };
+  }
+
+  window.G360_pkgPublish = pkgPublish;
 
   // ---- "Open a project from the cloud" on the start screen: the list, then the same way as a project file ----
   let cpDlg = null;

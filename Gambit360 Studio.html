@@ -1458,7 +1458,13 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
   $('colorBtn').onclick = () => {
     $('mpPanel').hidden = true; $('pkgPanel').hidden = true; $('planPanel').hidden = true; const cp = $('colorPanel'); cp.hidden = !cp.hidden;
     // In the Studio the Options menu stays open, so the colour panel opens beside it instead of behind it
-    if (!cp.hidden && !window.G360_CLIENT && !$('optMenu').hidden) { const r = $('optMenu').getBoundingClientRect(); cp.style.cssText = 'position:fixed;z-index:9;top:' + Math.round(r.top) + 'px;left:' + Math.round(r.right + 8) + 'px;width:220px;'; }
+    // (or on its other side; on a phone there is room for neither, so the panel takes the menu's place)
+    if (!cp.hidden && !window.G360_CLIENT && !$('optMenu').hidden) {
+      const r = $('optMenu').getBoundingClientRect(), w = 220; let left = r.right + 8;
+      if (left + w > innerWidth - 8) left = r.left - 8 - w;
+      if (left < 8) { $('optMenu').hidden = true; left = Math.max(8, Math.min(r.right, innerWidth - 8) - w); }
+      cp.style.cssText = 'position:fixed;z-index:9;top:' + Math.round(r.top) + 'px;left:' + Math.round(left) + 'px;width:' + w + 'px;max-width:calc(100vw - 16px);box-sizing:border-box;';
+    }
     else cp.style.cssText = '';
   };
   applyAccent(accent);

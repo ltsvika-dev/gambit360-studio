@@ -6,7 +6,7 @@
     const g = c.getContext('2d'); g.drawImage(src, 0, 0);
     const img = document.querySelector('#logo img'), m = 16 * k, pad = 10 * k;
     if (img && img.naturalWidth) {
-      const lw = Math.min(190 * k, W * 0.22), lh = lw * img.naturalHeight / img.naturalWidth;
+      const K = logoK(), lw = Math.min(190 * k * K, W * 0.22 * K, W * 0.6, H * 0.25 * img.naturalWidth / img.naturalHeight), lh = lw * img.naturalHeight / img.naturalWidth;
       g.fillStyle = '#fff'; g.beginPath();
       if (g.roundRect) g.roundRect(m, H - m - lh - 2 * pad, lw + 2 * pad, lh + 2 * pad, 8 * k); else g.rect(m, H - m - lh - 2 * pad, lw + 2 * pad, lh + 2 * pad);
       g.fill(); g.drawImage(img, m + pad, H - m - lh - pad, lw, lh);

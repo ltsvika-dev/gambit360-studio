@@ -132,6 +132,7 @@
     tours.sort((a, b) => (b.updated || 0) - (a.updated || 0)); trash.sort((a, b) => b.deleted - a.deleted);
     tours.forEach(t => { if (t.folder && settings.folders.indexOf(t.folder) < 0) settings.folders.push(t.folder); });
     const hit = !cur || ids.has(cur.id); if (hit) cur = (cur && tours.find(t => t.id === cur.id)) || tours[0] || null;   // nothing was open here yet: the first tour opens
+    if (setCh) brandPush();   // my logo or its width came from another computer
     if (!$('live').hidden) { if (setCh) { texts(); modLook(true); } renderList(); if (hit || setCh) { pvModel = null; renderEdit(); preview(true); } }
     if (ids.size) msg(L('syncGot', ids.size));
   }

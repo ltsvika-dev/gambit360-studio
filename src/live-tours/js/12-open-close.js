@@ -34,7 +34,12 @@
   $('lvPubAll').onclick = () => publish(tours.slice());
   // while the screen is open the Studio's keyboard shortcuts stay off (typing still works); Esc closes the settings box, then the screen
   addEventListener('keydown', e => {
-    if ($('live').hidden) return;
+    if ($('live').hidden) {   // the Options screen opened from the point-cloud module: Esc closes it, and typing in it does not reach the viewer
+      if ($('lvSet').hidden) return;
+      if (e.key === 'Escape' && $('g360Ask') && !$('g360Ask').hidden) return;
+      if (e.key === 'Escape') $('lvSet').hidden = true;
+      e.stopImmediatePropagation(); return;
+    }
     if (e.key === 'Escape') { if (!$('lvDlg').hidden) $('lvDlg').hidden = true; else if (!$('lvSet').hidden) $('lvSet').hidden = true; else close(); }
     e.stopImmediatePropagation();
   }, true);
@@ -43,7 +48,15 @@
   const startBox = $('projOpenStart');
   if (startBox) { const b = document.createElement('button'); b.type = 'button'; b.id = 'liveStartBtn'; b.className = 'resume'; b.onclick = open; startBox.insertAdjacentElement('afterend', b); }
   const menu = $('optMenu');
-  if (menu) { const b = document.createElement('button'); b.type = 'button'; b.id = 'liveMenuBtn'; b.className = 'ib'; b.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span></span>'; b.onclick = open; const pk = $('pkgTopBtn'); if (pk && pk.parentNode === menu) pk.insertAdjacentElement('afterend', b); else menu.insertBefore(b, menu.firstChild); }
+  if (menu) { const b = document.createElement('button'); b.type = 'button'; b.id = 'liveMenuBtn'; b.className = 'ib'; b.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span></span>'; b.onclick = open; const pk = $('pkgTopBtn'); if (pk && pk.parentNode === menu) pk.insertAdjacentElement('afterend', b); else menu.insertBefore(b, menu.firstChild);
+    // the Options screen (my logo, cloud, server) opens from the point-cloud module too, without opening the tours screen
+    const s = document.createElement('button'); s.type = 'button'; s.id = 'liveSetMenuBtn'; s.className = 'ib'; s.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span></span>'; s.onclick = openSetHere; b.insertAdjacentElement('afterend', s); }
+  async function openSetHere() {
+    ['optMenu', 'colorPanel', 'planPanel'].forEach(id => { const e = $(id); if (e) e.hidden = true; });
+    if ($('live').hidden) { try { const st = await db.kget('settings'); if (st) Object.assign(settings, st); } catch (e) {} }
+    await openSet();
+  }
+  window.G360_openSet = openSetHere;
   texts();
   const prevRelang = window.G360_relang;
   window.G360_relang = function () { if (prevRelang) prevRelang.apply(this, arguments); texts(); if (!$('live').hidden) { renderList(); renderEdit(); preview(); } };

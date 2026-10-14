@@ -58,6 +58,7 @@
     $('lvUpL').textContent = L('upL'); $('lvUpN').textContent = L('upN'); $('lvUpOnL').textContent = L('upOn'); $('lvKeyBtn').textContent = L(settings.upKey ? 'keyRe' : 'keyNew'); $('lvPingBtn').textContent = L('ping'); $('lvUpSt').textContent = L(settings.upKey ? 'upHasKey' : 'upNoKey');
     const sb = $('liveStartBtn'); if (sb) sb.textContent = L('startBtn');
     const mb = $('liveMenuBtn'); if (mb) mb.querySelector('span').textContent = L('menuBtn');
+    const sm = $('liveSetMenuBtn'); if (sm) { sm.querySelector('span').textContent = L('setMenu'); sm.title = L('setMenuTip'); }
   }
   let activeFolder = '', syncActs = () => {}, openSec = 'lvSecD';
   const saveSet = () => { settings.setAt = Date.now(); db.kset('settings', settings).catch(() => {}); };

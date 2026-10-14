@@ -39,13 +39,18 @@
     document.querySelector('#live .lvTop').classList.toggle('icoOnly', !!settings.topIco);
     colUI();
   }
+  // phones and narrow windows show the list or the tour's settings, never both: the two column buttons switch between them
+  const PHONE = matchMedia('(max-width:900px)'); let phMode = 'list';
   function colUI() {
-    const lv = $('live'), ui = settings.ui || {};
-    lv.classList.toggle('noEdit', !!ui.noEdit); lv.classList.toggle('noList', !!ui.noList);
+    const lv = $('live'), ui = settings.ui || {}, ph = PHONE.matches;
+    lv.classList.toggle('noEdit', !ph && !!ui.noEdit); lv.classList.toggle('noList', !ph && !!ui.noList);
+    lv.classList.toggle('phList', ph && phMode === 'list'); lv.classList.toggle('phEdit', ph && phMode === 'edit');
     const ib = (id, ic, tip, on) => { const b = $(id); b.innerHTML = '<svg viewBox="0 0 24 24">' + ic + '</svg>'; b.title = tip; b.setAttribute('aria-label', tip); b.classList.toggle('on', on); };
-    ib('lvColEdit', '<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>', L(ui.noEdit ? 'colEditShow' : 'colEditHide'), !!ui.noEdit);
-    ib('lvColList', '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16M17.5 8.5h1M17.5 12h1M17.5 15.5h1"/>', L(ui.noList ? 'colListShow' : 'colListHide'), !!ui.noList);
+    ib('lvColEdit', '<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>', L(ph ? 'colEditShow' : ui.noEdit ? 'colEditShow' : 'colEditHide'), ph ? phMode === 'edit' : !!ui.noEdit);
+    ib('lvColList', '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16M17.5 8.5h1M17.5 12h1M17.5 15.5h1"/>', L(ph ? 'colListShow' : ui.noList ? 'colListShow' : 'colListHide'), ph ? phMode === 'list' : !!ui.noList);
   }
+  function phShow(m) { phMode = m; colUI(); const b = document.querySelector('#live .lvBody'); if (b) b.scrollTop = 0; }
+  PHONE.addEventListener('change', () => colUI());
   function texts() {
     $('lvTitle').textContent = L('title'); topBtns();
     $('lvSetH').textContent = L('setH'); $('lvSdkL').textContent = L('sdkL'); $('lvSdkN').textContent = L('sdkN'); $('lvBaseL').textContent = L('baseL'); $('lvBaseN').textContent = L('baseN'); $('lvOutL').textContent = L('outL'); $('lvOutBtn').textContent = L('outBtn'); $('lvSetOk').textContent = L('ok');
@@ -151,8 +156,8 @@
     renderTrash(items);
   }
   function select(t) {
-    cur = t; pvModel = null; activeFolder = t.folder || ''; renderList(); const r = renderEdit(); preview(true);
-    if (matchMedia('(max-width:900px)').matches) Promise.resolve(r).then(() => { const e = $('lvEdit'); if (e && e.offsetParent) e.scrollIntoView({ block:'start', behavior:'smooth' }); });   // phone: the editor is below the list, so go to it
+    cur = t; pvModel = null; activeFolder = t.folder || ''; renderList(); renderEdit(); preview(true);
+    if (PHONE.matches) phShow('edit');   // phone: picking a tour opens its settings in place of the list
   }
 
   function sec(id, title, toggle) {

@@ -29,7 +29,7 @@
   $('lvSetBtn').onclick = openSet;
   $('lvStats').onclick = () => openStats(cur);
   const colTog = k => { settings.ui = settings.ui || {}; settings.ui[k] = !settings.ui[k]; saveSet(); colUI(); };
-  $('lvColEdit').onclick = () => colTog('noEdit'); $('lvColList').onclick = () => colTog('noList');
+  $('lvColEdit').onclick = () => PHONE.matches ? phShow('edit') : colTog('noEdit'); $('lvColList').onclick = () => PHONE.matches ? phShow('list') : colTog('noList');
   $('lvTopIco').onchange = () => { settings.topIco = $('lvTopIco').checked; saveSet(); topBtns(); };
   $('lvPubAll').onclick = () => publish(tours.slice());
   // while the screen is open the Studio's keyboard shortcuts stay off (typing still works); Esc closes the settings box, then the screen

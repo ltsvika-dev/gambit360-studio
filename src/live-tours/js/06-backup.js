@@ -38,7 +38,7 @@
           if (!(o && o.size === files[key].size && o.ts === files[key].ts && o.name === files[key].name)) await writeFile(fd, fn, m.blob);
         }
       }
-      { const m = await fileMeta('splash'); if (m && m.blob) { const o = pf.splash, e = files.splash = { name: m.name || '', type: m.type || '', size: m.blob.size, ts: m.ts || 0, file: 'splash.bin' }; if (!(o && o.size === e.size && o.ts === e.ts && o.name === e.name)) await writeFile(fd, 'splash.bin', m.blob); } }
+      for (const k of ['splash', 'splashLive']) { const m = await fileMeta(k); if (m && m.blob) { const o = pf[k], e = files[k] = { name: m.name || '', type: m.type || '', size: m.blob.size, ts: m.ts || 0, file: k + '.bin' }; if (!(o && o.size === e.size && o.ts === e.ts && o.name === e.name)) await writeFile(fd, k + '.bin', m.blob); } }
       await writeFile(bk, 'tours.json', new Blob([JSON.stringify({ v: 1, at: Date.now(), settings, tours: list, files }, null, 1)], { type: 'application/json' }));
       try { await db.kset('bkAt', Date.now()); } catch (e) {} checkBk();
       return list.length;

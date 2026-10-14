@@ -113,8 +113,8 @@
       }
       await db.put(rt); ids.add(rt.id);
     }
-    { const e = rf.splash, m = await fileMeta('splash');
-      if (e && !fsame(e, fmeta(m)) && (e.ts || 0) > ((m && m.ts) || 0)) { const b = await (await srvPost('bkget', 'files/' + e.file)).blob(); await db.fset('splash', { blob: new Blob([b], { type: e.type || b.type }), name: e.name, type: e.type, ts: e.ts || 0 }); forgetUrl('splash'); setCh = true; } }
+    for (const sk of ['splash', 'splashLive']) { const e = rf[sk], m = await fileMeta(sk);
+      if (e && !fsame(e, fmeta(m)) && (e.ts || 0) > ((m && m.ts) || 0)) { const b = await (await srvPost('bkget', 'files/' + e.file)).blob(); await db.fset(sk, { blob: new Blob([b], { type: e.type || b.type }), name: e.name, type: e.type, ts: e.ts || 0 }); forgetUrl(sk); setCh = true; } }
     const rs = rd.settings;
     if (rs && (rs.setAt || 0) > (settings.setAt || 0)) {
       const fo = settings.folders || [];
@@ -138,7 +138,7 @@
   }
   async function pushAll(rd) {
     const prev = rd && rd.files || {}, list = await db.all(), files = {}, pg = await purgedMap(), ups = [];
-    const keys = ['splash']; list.forEach(t => { normTour(t); fileKeys(t).forEach(k => keys.push(t.id + ':' + k)); });
+    const keys = ['splash', 'splashLive']; list.forEach(t => { normTour(t); fileKeys(t).forEach(k => keys.push(t.id + ':' + k)); });
     for (const key of keys) {
       const m = await fileMeta(key); if (!m || !m.blob) continue;
       const fn = key.replace(/[^A-Za-z0-9_.-]/g, '_') + '.bin', e = files[key] = { name: m.name || '', type: m.type || '', size: m.blob.size, ts: m.ts || 0, file: fn };

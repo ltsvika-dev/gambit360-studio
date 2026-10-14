@@ -150,7 +150,10 @@
     if (!shown && !rest.length) { const e = document.createElement('div'); e.className = 'empty'; e.textContent = L('noRes'); items.appendChild(e); }
     renderTrash(items);
   }
-  function select(t) { cur = t; pvModel = null; activeFolder = t.folder || ''; renderList(); renderEdit(); preview(true); }
+  function select(t) {
+    cur = t; pvModel = null; activeFolder = t.folder || ''; renderList(); const r = renderEdit(); preview(true);
+    if (matchMedia('(max-width:900px)').matches) Promise.resolve(r).then(() => { const e = $('lvEdit'); if (e && e.offsetParent) e.scrollIntoView({ block:'start', behavior:'smooth' }); });   // phone: the editor is below the list, so go to it
+  }
 
   function sec(id, title, toggle) {
     const s = document.createElement('div'); s.className = 'sec'; s.id = id;

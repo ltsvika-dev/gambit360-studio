@@ -3,7 +3,8 @@
 //  2. a new tour has every field from the start (the same as a tour that was loaded again);
 //  3. publishing uploads it to a local PHP site, and the published page's details card is the card the preview shows;
 //  4. a second computer with the same key gets the tour from the server (cloud sync);
-//  5. point cloud: tag types (infrastructure set), quick mode, layers, and the PDF tag report.
+//  5. point cloud: tag types (infrastructure set), quick mode, layers, and the PDF tag report;
+//  6. point-cloud projects in the cloud: computer A's tags reach the server, computer B opens the project from the cloud, and B's change comes back to A.
 // Needs node, php and the built "Gambit360 Studio.html". Run:  npm install  then  npm test   (in this folder)
 import { chromium } from 'playwright';
 import { spawn, execFileSync } from 'node:child_process';
@@ -31,7 +32,7 @@ const html = fs.readFileSync(HTML, 'utf8'), tpl = id => html.match(new RegExp('<
 fs.writeFileSync(path.join(siteDir, 'upload.php'), tpl('g360UploadTpl').replace('@@KEYHASH@@', crypto.createHash('sha256').update(KEY).digest('hex')).replace('@@LOGO@@', ''));
 fs.writeFileSync(path.join(tmp, 'router.php'), `<?php
 $p = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-if ($p !== '/' && is_file(__DIR__ . '/site' . $p)) return false;
+if ($p !== '/' && (is_file(__DIR__ . '/site' . $p) || is_dir(__DIR__ . '/site' . $p))) return false;   // as RewriteCond !-f and !-d
 if (preg_match('#^/([A-Za-z0-9][A-Za-z0-9_-]*)/?$#', $p, $m)) { $_GET['t'] = $m[1]; chdir(__DIR__ . '/site'); require __DIR__ . '/site/index.php'; return true; }
 return false;
 `);
@@ -163,6 +164,66 @@ try {
   const rep = await s.page.evaluate(async () => { const b = window.G360_lastReport; if (!b) return null; const u = new Uint8Array(await b.arrayBuffer()); const txt = new TextDecoder('latin1').decode(u); return { head: txt.slice(0, 5), pages: (txt.match(/\/Type \/Page\b/g) || []).length }; });
   ok(!!rep && rep.head === '%PDF-' && rep.pages === 1 + Math.ceil((made - elec) / 2), 'the PDF report has a cover and the shown tags, two to a page', JSON.stringify(rep));
   ok(s.errors.length === 0, 'no errors in the point cloud tags', s.errors.join('\n'));
+
+  // ---- 6. point-cloud projects in the cloud (only the project, the E57 stays on each computer) ----
+  const tagCount = pg => pg.evaluate(() => (window.G360_extrasData().tags || []).length);
+  const sTags = await tagCount(s.page);
+  await s.page.evaluate(() => window.G360_cpTick()); await s.page.waitForTimeout(500);
+  const pcDir = fs.readdirSync(siteDir).filter(f => f.startsWith('_bk_')).map(f => path.join(siteDir, f, 'pc'))[0];
+  const pcFiles = pcDir && fs.existsSync(pcDir) ? fs.readdirSync(pcDir).filter(f => f.endsWith('.json')) : [];
+  const onSrv = pcFiles.length === 1 ? JSON.parse(fs.readFileSync(path.join(pcDir, pcFiles[0]), 'utf8')) : null;
+  ok(!!onSrv && onSrv.extras.tags.length === sTags && sTags >= 3, 'computer A keeps the project and its tags in the cloud by itself', pcFiles.join(', ') + ' tags here ' + sTags);
+  ok(!fs.readdirSync(pcDir || siteDir).some(f => /\.e57/i.test(f)), 'the E57 itself is not uploaded');
+  const c = await computer(browser, 'computer C');
+  await c.page.waitForSelector('#cpOpenBtn:not([hidden])', { timeout: 10000 }).catch(() => {});
+  ok(await c.page.locator('#cpOpenBtn').isVisible(), 'a computer connected to the cloud has "Open a project from the cloud" on the start screen');
+  await c.page.click('#cpOpenBtn');
+  await c.page.waitForSelector('#cpDlg .it', { timeout: 10000 }).catch(() => {});
+  ok(await c.page.locator('#cpDlg .it').count() === 1, 'the cloud list shows the project');
+  await c.page.click('#cpDlg .it .go');
+  await c.page.waitForSelector('#resumeBox:not([hidden])', { timeout: 10000 }).catch(() => {});
+  ok(await c.page.locator('#resumeBox').isVisible(), 'a computer without the scan file is asked to pick it once');
+  await c.page.setInputFiles('#pickerE57', path.join(HERE, 'fixtures', 'room.e57'));
+  await c.page.waitForSelector('#mbtn', { state: 'visible', timeout: 60000 });
+  await c.page.waitForTimeout(2500);
+  ok(await tagCount(c.page) === sTags, 'computer C gets the project from the cloud: the same tags', 'C has ' + await tagCount(c.page));
+  await c.page.evaluate(() => { document.getElementById('pkgName').value = 'From computer C'; });
+  await c.page.evaluate(() => window.G360_cpTick()); await c.page.waitForTimeout(500);
+  await s.page.evaluate(() => { localStorage.setItem('g360pcAt:room', '1'); });   // A's own last change was long ago
+  await s.page.reload(); await s.page.setInputFiles('#pickerE57', path.join(HERE, 'fixtures', 'room.e57'));
+  await s.page.waitForSelector('#mbtn', { state: 'visible', timeout: 60000 });
+  await s.page.waitForFunction(() => document.getElementById('pkgName').value === 'From computer C', null, { timeout: 15000 }).catch(() => {});
+  ok(await s.page.evaluate(() => document.getElementById('pkgName').value) === 'From computer C' && await tagCount(s.page) === sTags, 'the newer copy from computer C comes back to computer A when the scan opens', JSON.stringify({ sTags, title: await s.page.evaluate(() => document.getElementById('pkgName').value), a: await s.page.evaluate(() => window.G360_extrasData().tags.map(x => x.n)), srv: JSON.parse(fs.readFileSync(path.join(pcDir, pcFiles[0]), 'utf8')).extras.tags.map(x => x.n) }));
+  // a client package published on the site: the Studio asks, uploads the files, and gives the client's link
+  const pub = c.page.evaluate(async () => {
+    const root = await navigator.storage.getDirectory(), d = await root.getDirectoryHandle('pkg', { create: true }), entries = [];
+    const put = async (dir, name, text, rel) => { const fh = await dir.getFileHandle(name, { create: true }); const w = await fh.createWritable(); await w.write(text); await w.close(); entries.push({ path: 'Room/' + rel, fh }); };
+    await put(d, 'Room.html', '<!doctype html><title>client</title>', 'Room.html');
+    await put(await d.getDirectoryHandle('lib', { create: true }), 'three.min.js', '//three', 'lib/three.min.js');
+    await put(await d.getDirectoryHandle('model', { create: true }), 'manifest.js', 'window.G360PKG={}', 'model/manifest.js');
+    await window.G360_pkgPublish(entries, 'Room', 'Room.html');
+    return document.getElementById('pkgPath').textContent;
+  });
+  await c.page.waitForFunction(() => { const a = document.getElementById('g360Ask'); return a && !a.hidden; }, null, { timeout: 15000 });
+  const asked = await c.page.evaluate(() => document.querySelector('#g360Ask p').textContent); await c.page.evaluate(() => document.querySelector('#g360Ask .ok').click());
+  const link = (await pub.catch(e => String(e))).split('\n')[0];
+  const got = /\/p\/p[a-z0-9]{10}\/index\.html$/.test(link) ? await (await fetch(link)).text() : '';
+  ok(got.includes('<title>client</title>') && (await (await fetch(link.replace('index.html', 'model/manifest.js'))).text()).includes('G360PKG'), 'after asking, a client package is published on the site and the client\'s link opens it', asked + ' ' + link);
+  // the client downloads it as a ZIP with the code the Studio gave: the server builds the ZIP from the published files
+  const code = ((await c.page.locator('#pkgPath').textContent()).match(/[A-Z2-9]{4}-[A-Z2-9]{4}/) || [])[0] || '', tok = (link.match(/\/p\/(p[a-z0-9]{10})\//) || [])[1] || '';
+  const ask = async f => { const fd = new FormData(); fd.append('token', tok); Object.entries(f).forEach(([k, v]) => fd.append(k, v)); return (await fetch(SITE + 'upload.php', { method: 'POST', body: fd })).json(); };
+  const info = await ask({ action: 'pkginfo' }), bad = await ask({ action: 'pkgdl', code: 'WRONG-CODE' }), good = await ask({ action: 'pkgdl', code: code.toLowerCase() });
+  let zipOk = false, zipNote = '';
+  if (good.ok) {
+    const zb = Buffer.from(await (await fetch(SITE + good.url)).arrayBuffer()), zp = path.join(tmp, 'pkg.zip'); fs.writeFileSync(zp, zb);
+    try { zipNote = execFileSync('python3', ['-c', 'import sys,zipfile; z=zipfile.ZipFile(sys.argv[1]); bad=z.testzip(); print(sorted(z.namelist()), bad, [(i.filename,i.CRC,i.file_size) for i in z.infolist()]); assert bad is None; print(z.read("Room/Room.html").decode())', zp]).toString(); zipOk = zipNote.includes("'Room/lib/three.min.js'") && zipNote.includes("'Room/model/manifest.js'") && zipNote.includes('<title>client</title>'); } catch (e) { zipNote = String(e.stderr || e); }
+  }
+  ok(info.dl === true && bad.error === 'code' && zipOk, 'the client downloads the package as a ZIP only with the right code', JSON.stringify({ code, info, bad, good }) + ' ' + zipNote);
+  const lists = await Promise.all(['p/', 'p/' + tok + '/lib/', 'p/' + tok + '/model/'].map(async u => (await (await fetch(SITE + u)).text()).length));
+  ok(lists.every(n => n === 0), 'the package folders show an empty page, never a list of the files', JSON.stringify(lists));
+  const expired = await (await fetch(SITE + 'upload.php?pkgget=' + tok + '&e=1&s=x')).status;
+  ok(expired === 403, 'a download link without a valid signature is refused');
+  ok(c.errors.length === 0 && s.errors.length === 0, 'no errors with projects in the cloud', c.errors.concat(s.errors).join('\n'));
 
   // ---- 7. the Options screen opens from the point-cloud module; my logo there becomes the Studio's logo; its width is for outputs only ----
   const logoBox = () => s.page.evaluate(() => { const r = document.querySelector('#logo').getBoundingClientRect(); return Math.round(r.width) + 'x' + Math.round(r.height); });

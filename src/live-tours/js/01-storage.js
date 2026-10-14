@@ -30,7 +30,7 @@
   const modelId = s => { s = String(s || '').trim(); const m = s.match(/[?&]m=([A-Za-z0-9]{6,})/) || s.match(/^([A-Za-z0-9]{6,})$/); return m ? m[1] : ''; };
   // a jump point from a Matterport "link to this location" (…&ss=19&sr=-3.05,.57) or just its ss=…&sr=… part
   const spotParse = v => { v = String(v || '').trim(); const q = new URLSearchParams((v.indexOf('?') >= 0 ? v.slice(v.indexOf('?') + 1) : v).replace(/^[?&#]+/, '').replace(/#.*$/, '')), ss = q.get('ss'), sr = q.get('sr') || ''; if (!/^\d{1,4}$/.test(ss || '')) return null; return { ss, sr: /^-?[0-9.]+,-?[0-9.]+$/.test(sr) ? sr : '', m: modelId(v) }; };
-  const slugOk = s => /^[a-z0-9][a-z0-9-]*$/.test(s || '') && s !== 'show' && s !== 'app';   // 'show' is the old MPEmbed address (/show/?m=...), 'app' the Studio online
+  const slugOk = s => /^[a-z0-9][a-z0-9-]*$/.test(s || '') && s !== 'show' && s !== 'app' && s !== 'p';   // 'show' is the old MPEmbed address (/show/?m=...), 'app' the Studio online, 'p' the client packages
   const slugify = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48);
   const slugOf = t => { const s = String(t.slug || '').trim().toLowerCase(); if (s) return s; const m = String(t.model || '').toLowerCase(); return slugOk(m) ? m : ''; };   // no address typed: the Matterport model ID
   const slugTaken = (t, v) => !!v && tours.some(o => o !== t && slugOf(o) === v);

@@ -24,7 +24,7 @@
   #logo { width:var(--logoW, auto); max-width:calc(100vw - 24px); box-sizing:border-box; }   /* a client package can show my logo at the width chosen in the Studio */
   #logo.brand img { max-height:var(--logoMH, 64px); }
   #pkgLogoSt { font-size:.85rem; opacity:.85; margin-inline:6px; }
-  #projOpenStart { margin-top:8px; }
+  #projOpenStart, #cpOpenBtn { margin-top:8px; }
   #promoBox { position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.82); display:flex; align-items:center; justify-content:center; padding:16px; }
   #promoBox[hidden] { display:none; }
   #promoBox .pbWrap { max-width:min(96vw,1280px); width:100%; display:flex; flex-direction:column; gap:10px; }
@@ -351,8 +351,25 @@
   .loadBtn.main { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
   .loadBtn.main:hover:not(:disabled) { filter:brightness(1.08); background:var(--accent); }
   #start .welcome, #start h1 { text-align:center; }
-  #projOpenStart { background:transparent; color:var(--ink); border:1.5px solid var(--line); border-radius:10px; padding:13px 16px; }
-  #projOpenStart:hover { border-color:var(--accent); background:var(--hov); }
+  #projOpenStart, #cpOpenBtn { background:transparent; color:var(--ink); border:1.5px solid var(--line); border-radius:10px; padding:13px 16px; }
+  #projOpenStart:hover, #cpOpenBtn:hover { border-color:var(--accent); background:var(--hov); }
+  #cpOpenBtn[hidden] { display:none; }
+  /* projects in the cloud: the list window (06a-cloud-projects.js) */
+  #cpDlg { position:fixed; inset:0; z-index:990; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; padding:16px; }
+  #cpDlg[hidden] { display:none; }
+  #cpDlg .box { background:var(--panel); color:var(--ink); border:1px solid var(--accent); border-radius:14px; padding:20px; width:min(520px, 100%); max-height:85vh; display:flex; flex-direction:column; gap:10px; box-shadow:0 18px 60px rgba(0,0,0,.55); box-sizing:border-box; }
+  #cpDlg h3 { margin:0; font-size:1.15rem; }
+  #cpDlg .note { color:var(--mute); font-size:.88rem; line-height:1.5; }
+  #cpDlg .list { overflow:auto; display:flex; flex-direction:column; gap:6px; min-height:2em; }
+  #cpDlg .it { display:flex; align-items:stretch; gap:4px; border:1px solid var(--line2); border-radius:10px; }
+  #cpDlg .it:hover { border-color:var(--accent); }
+  #cpDlg .go { flex:1; min-width:0; text-align:start; background:none; border:0; color:inherit; font:inherit; padding:9px 12px; cursor:pointer; display:flex; flex-direction:column; gap:2px; border-radius:10px; }
+  #cpDlg .go:hover { background:var(--hov); }
+  #cpDlg .go b { overflow-wrap:anywhere; } #cpDlg .go small { color:var(--mute); font-size:.82rem; } #cpDlg .go small:empty { display:none; }
+  #cpDlg .del { flex:0 0 auto; width:42px; background:none; border:0; color:var(--mute); cursor:pointer; border-radius:10px; display:flex; align-items:center; justify-content:center; }
+  #cpDlg .del:hover { color:#ff8a7a; background:var(--hov); }
+  #cpDlg .row { display:flex; justify-content:flex-end; }
+  #cpDlg .row button { min-width:96px; padding:8px 18px; border-radius:8px; font:inherit; font-weight:600; cursor:pointer; background:var(--btn); color:var(--ink); border:1px solid var(--line2); }
   .loadBtn:disabled { opacity:.5; cursor:default; }
   .q { display:flex; align-items:center; justify-content:center; gap:10px; color:var(--mute); margin:0 0 12px; }
   .q select { background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:6px 10px; font:inherit; }

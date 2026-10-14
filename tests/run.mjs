@@ -138,6 +138,30 @@ try {
   await openLive(b.page);
   await b.page.waitForFunction(name => (document.getElementById('lvList').textContent || '').includes(name), OLD_TOUR.name, { timeout: 15000 }).catch(() => {});
   ok((await b.page.locator('#lvList').textContent()).includes(OLD_TOUR.name), 'computer B gets the tour from the server');
+
+  // my logo through the cloud: a logo removed on one computer stays removed on both (it used to come back from the server)
+  const splashOn = pg => pg.evaluate(async () => { const d = await new Promise(res => { const r = indexedDB.open('gambit360live', 1); r.onsuccess = () => res(r.result); }); const v = await new Promise(res => { const q = d.transaction('files', 'readonly').objectStore('files').get('splash'); q.onsuccess = () => res(q.result); }); d.close(); return !!(v && v.blob); });
+  const resync = async pg => { await pg.evaluate(() => { document.getElementById('lvClose').click(); }); await openLive(pg); await pg.waitForTimeout(2500); };
+  await a.page.evaluate(async () => { const c = document.createElement('canvas'); c.width = 120; c.height = 40; const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+    const d = await new Promise(res => { const r = indexedDB.open('gambit360live', 1); r.onsuccess = () => res(r.result); }); await new Promise(res => { const q = d.transaction('files', 'readwrite').objectStore('files').put({ blob, name: 'mine.png', type: 'image/png', ts: Date.now() }, 'splash'); q.onsuccess = res; }); d.close(); });
+  await resync(a.page); await resync(b.page);
+  ok(await splashOn(b.page), 'my logo from computer A reaches computer B through the cloud');
+  await b.page.click('#lvSetBtn'); await b.page.waitForSelector('#lvSplRm:not([hidden])'); await b.page.click('#lvSplRm'); await b.page.waitForTimeout(300); await b.page.click('#lvSetOk');
+  await resync(b.page); await resync(a.page); await resync(b.page);
+  ok(!(await splashOn(a.page)) && !(await splashOn(b.page)), 'removing my logo on computer B removes it on A too, and it does not come back');
+  // the same from the point-cloud side: computer A opens the Options screen without the tours screen, picks a new logo, then removes it
+  const splashName = pg => pg.evaluate(async () => { const d = await new Promise(res => { const r = indexedDB.open('gambit360live', 1); r.onsuccess = () => res(r.result); }); const v = await new Promise(res => { const q = d.transaction('files', 'readonly').objectStore('files').get('splash'); q.onsuccess = () => res(q.result); }); d.close(); return v && v.blob ? v.name : ''; });
+  await a.page.evaluate(() => document.getElementById('lvClose').click());
+  await a.page.evaluate(() => window.G360_openSet()); await a.page.waitForSelector('#lvSet:not([hidden])');
+  const pngA = Buffer.from(await a.page.evaluate(() => { const c = document.createElement('canvas'); c.width = 90; c.height = 30; c.getContext('2d').fillRect(0, 0, 90, 30); return c.toDataURL('image/png').split(',')[1]; }), 'base64');
+  const [fcA] = await Promise.all([a.page.waitForEvent('filechooser'), a.page.click('#lvSplPick')]);
+  await fcA.setFiles({ name: 'from-cloud-module.png', mimeType: 'image/png', buffer: pngA });
+  await a.page.waitForSelector('#lvSplRm:not([hidden])'); await a.page.click('#lvSetOk'); await a.page.waitForTimeout(6000);   // the change goes up by itself a few seconds later
+  await resync(b.page);
+  ok(await splashName(b.page) === 'from-cloud-module.png', 'a logo picked from the point-cloud module reaches the other computer', await splashName(b.page));
+  await a.page.evaluate(() => window.G360_openSet()); await a.page.waitForSelector('#lvSplRm:not([hidden])'); await a.page.click('#lvSplRm'); await a.page.waitForTimeout(300); await a.page.click('#lvSetOk'); await a.page.waitForTimeout(6000);
+  await resync(b.page); await resync(a.page); await resync(b.page);
+  ok(!(await splashOn(a.page)) && !(await splashOn(b.page)), 'a logo removed from the point-cloud module stays removed on both computers');
   ok(b.errors.length === 0 && a.errors.length === 0, 'no errors on either computer', a.errors.concat(b.errors).join('\n'));
 
   // ---- 5. point cloud: tag types, quick mode, layers and the PDF report (fixtures/room.e57: a small box room) ----

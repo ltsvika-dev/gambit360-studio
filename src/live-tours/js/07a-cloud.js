@@ -113,13 +113,17 @@
       }
       await db.put(rt); ids.add(rt.id);
     }
-    for (const sk of ['splash', 'splashLive']) { const e = rf[sk], m = await fileMeta(sk);
-      if (e && !fsame(e, fmeta(m)) && (e.ts || 0) > ((m && m.ts) || 0)) { const b = await (await srvPost('bkget', 'files/' + e.file)).blob(); await db.fset(sk, { blob: new Blob([b], { type: e.type || b.type }), name: e.name, type: e.type, ts: e.ts || 0 }); forgetUrl(sk); setCh = true; } }
+    // my logos: a logo removed on one computer stays removed (settings.splGone keeps when), a newer one comes in
+    const gone = Object.assign({}, settings.splGone || {}); { const rg = (rd.settings && rd.settings.splGone) || {}; Object.keys(rg).forEach(k => { if ((+rg[k] || 0) > (gone[k] || 0)) gone[k] = +rg[k]; }); }
+    for (const sk of ['splash', 'splashLive']) { const e = rf[sk], m = await fileMeta(sk), g = gone[sk] || 0;
+      if (e && (e.ts || 0) > g && !fsame(e, fmeta(m)) && (e.ts || 0) > ((m && m.ts) || 0)) { const b = await (await srvPost('bkget', 'files/' + e.file)).blob(); await db.fset(sk, { blob: new Blob([b], { type: e.type || b.type }), name: e.name, type: e.type, ts: e.ts || 0 }); forgetUrl(sk); setCh = true; }
+      else if (!e && m && m.blob && (m.ts || 0) <= g) { try { await db.fdel(sk); } catch (x) {} forgetUrl(sk); setCh = true; } }
     const rs = rd.settings;
     if (rs && (rs.setAt || 0) > (settings.setAt || 0)) {
       const fo = settings.folders || [];
       Object.keys(rs).forEach(k => { if (k !== 'upKey' && k !== 'ui' && k !== 'base') settings[k] = rs[k]; });
       settings.folders = [...new Set((rs.folders || []).concat(fo))];
+      settings.splGone = gone;
       try { await db.kset('settings', settings); } catch (e) {} setCh = true;
     }
     return { ids, setCh };

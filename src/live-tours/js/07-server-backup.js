@@ -98,6 +98,8 @@
     inp.onchange = async () => { const f = inp.files && inp.files[0]; if (!f) return; if (!pngOk(f)) { msg(L('pngBad'), true); return; } await db.fset('splashLive', { blob: f, name: f.name, type: f.type, ts: Date.now() }); bkSoon(); refreshSplash(); };
     inp.click();
   };
-  $('lvSplLiveRm').onclick = async () => { try { await db.fdel('splashLive'); } catch (e) {} forgetUrl('splashLive'); bkSoon(); refreshSplash(); };
-  $('lvSplRm').onclick = async () => { try { await db.fdel('splash'); } catch (e) {} forgetUrl('splash'); bkSoon(); refreshSplash(); };
+  $('lvSplLiveRm').onclick = () => splRemove('splashLive');
+  // a removed logo is remembered (with when), so the cloud does not bring it back from another computer's copy
+  async function splRemove(k) { try { await db.fdel(k); } catch (e) {} forgetUrl(k); settings.splGone = Object.assign({}, settings.splGone, { [k]: Date.now() }); saveSet(); bkSoon(); refreshSplash(); }
+  $('lvSplRm').onclick = () => splRemove('splash');
 

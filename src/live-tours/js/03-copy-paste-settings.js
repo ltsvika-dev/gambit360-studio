@@ -158,7 +158,13 @@
       const cvl = field(parent, L('cValue'), '<input type="text" dir="ltr" data-ct="value">'); cvl.oninput = () => { t.contact.value = cvl.value; ctSync(); save(t); preview(); };
       const cmw = document.createElement('div'); cmw.dataset.ctmsg = '1'; parent.appendChild(cmw);
       const cms = field(cmw, L('cMsg'), '<input type="text" data-ct="msg">'); cms.oninput = () => { t.contact.msg = cms.value; ctSync(); save(t); };
-      if (withLabel) { const clb = field(parent, L('cLabel'), '<input type="text" data-ct="label">'); clb.oninput = () => { t.contact.label = clb.value; ctSync(); save(t); preview(); }; }
+      if (withLabel) { const clb = field(parent, L('cLabel'), '<input type="text" data-ct="label">'); clb.oninput = () => { t.contact.label = clb.value; ctSync(); save(t); preview(); };
+        const cr = document.createElement('div'); cr.className = 'row'; cr.innerHTML = '<label class="f" style="margin:0"></label><input type="color"><button type="button"></button>'; parent.appendChild(cr);   // the button's colour (WhatsApp green etc. by default)
+        cr.children[0].textContent = L('cCol'); cr.children[2].textContent = L('bsDef'); const ci = cr.children[1], cdef = () => { ci.value = G360Card.colOf(Object.assign({}, t.contact, { col: '' })); };
+        if (/^#[0-9a-f]{6}$/i.test(t.contact.col || '')) ci.value = t.contact.col; else cdef();
+        ci.oninput = () => { t.contact.col = ci.value; save(t); openInfoCard(); };
+        cr.children[2].onclick = () => { t.contact.col = ''; cdef(); save(t); openInfoCard(); };
+        cty.addEventListener('change', () => { if (!t.contact.col) cdef(); }); }
       ctSync();
     };
     // details card: hide Matterport's own card and/or build ours as a layer over the tour
@@ -249,6 +255,8 @@
         const cn = document.createElement('div'); cn.className = 'note'; cn.textContent = L('ctBtnNote'); cf.appendChild(cn);
       }
       if (k === 'spots') { const sn = document.createElement('div'); sn.className = 'note'; sn.textContent = L('spBtnNote'); bx.appendChild(sn); }
+      if (k !== 'music' && k !== 'title') { const nl = document.createElement('label'); nl.className = 'tgl'; nl.style.marginTop = '6px'; nl.innerHTML = '<input type="checkbox"> ' + esc(L('bsNoLbl')); bx.appendChild(nl);   // this one button with its icon only
+        nl.querySelector('input').checked = !!bs.noLbl; nl.querySelector('input').onchange = e => { bs.noLbl = e.target.checked; save(t); preview(); }; }
       if (k !== 'music') { const ln = field(bx, L('bsLbl'), '<input type="text" dir="auto" spellcheck="false">'); ln.placeholder = k === 'contact' ? (t.contact.label || L('cD_' + t.contact.type)) : L(k === 'title' ? 'ttlPh' : 'bsLblPh'); ln.value = bs.lbl || ''; ln.oninput = () => { bs.lbl = ln.value.trim(); save(t); preview(); }; }
       if (k === 'title') { const li = field(bx, L('ttlLink'), '<input type="url" dir="ltr" spellcheck="false" placeholder="https://">'); li.value = bs.link || ''; li.oninput = () => { bs.link = li.value.trim(); save(t); }; }
       const cr = document.createElement('div'); cr.className = 'row'; cr.innerHTML = '<label class="f" style="margin:0"></label><input type="color"><button type="button"></button>'; bx.appendChild(cr);

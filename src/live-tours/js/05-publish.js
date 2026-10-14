@@ -53,7 +53,7 @@
         { const sp = await fileMeta(t.logo.on && t.logo.asSplash ? t.id + ':logo' : 'splash'); if (sp && sp.blob) { files.push([pre + 'splash.png', sp.blob, true]); cfg.splash = 'splash.png'; cfg.splashW = +settings.splW || 260; } }
         cfg.icons = t.icons; cfg.btnPos = t.btnPos; cfg.btnOff = t.btnOff; cfg.vidMode = t.vidMode === 'menu' ? 'menu' : 'player'; cfg.uiLang = ['he', 'en'].includes(t.uiLang) ? t.uiLang : 'auto'; cfg.btnLbl = t.btnLbl === 'icon' ? 'icon' : 'both'; cfg.btnSty = t.btnSty; cfg.btnOrder = t.btnOrder;
         { const inCard = !!(t.info && t.info.on && t.contact && t.contact.on), asBtn = !!(t.btnSty.contact && t.btnSty.contact.on);   // the contact button: in the details card, as a round button in the row, or both
-          cfg.contact = (inCard || asBtn) && t.contact && String(t.contact.value || '').trim() ? { type: t.contact.type, value: String(t.contact.value).trim(), msg: t.contact.msg || '', label: t.contact.label || '' } : null;
+          cfg.contact = (inCard || asBtn) && t.contact && String(t.contact.value || '').trim() ? { type: t.contact.type, value: String(t.contact.value).trim(), msg: t.contact.msg || '', label: t.contact.label || '', col: /^#[0-9a-f]{6}$/i.test(t.contact.col || '') ? t.contact.col : '' } : null;
           if (cfg.contact && !inCard) cfg.contactCard = false; }   /* a page published earlier reads every contact as one for the card */
         cfg.spotOn = !!t.spots.on; cfg.spots = t.spots.on ? t.spots.list.filter(x => x && x.ss).map(x => ({ name: x.name || '', ss: x.ss, sr: x.sr || '', m: x.m || '' })) : [];   // jump points
         cfg.mainName = t.mainName || t.name || '';

@@ -485,10 +485,31 @@
     const md = $('pkgPartModel').checked, ui = $('pkgPartUi').checked, st = $('pkgPartSet').checked;
     if (md) return makePackage();
     if (!ui && !st) { pkgMsg(t('pkgPartNone')); return; }
-    if (ui && st) { const r = await syncPackage(true); if (r === true) await createHtmlFile({ both:true }); return; }   // 'full' = the package was missing and has just been built whole
-    if (st) return syncPackage();
-    return createHtmlFile({ noSettings:true });
+    let ok;
+    if (ui && st) { const r = await syncPackage(true); if (r !== true) return; ok = await createHtmlFile({ both:true }); }   // 'full' = the package was missing and has just been built whole (and already asked about the server)
+    else if (st) ok = (await syncPackage()) === true;
+    else ok = await createHtmlFile({ noSettings:true });
+    if (ok) await pkgPublishFolder();   // the package on this computer changed: asks whether the server copy should change too
   };
+  // The package already in Export\Client Packages\<name> goes up to the server as it is (no need to make it again): the button "Publish the package on the server", and after an update of the viewer or the settings.
+  async function pkgPublishFolder(o) {
+    if (typeof pkgPublish !== 'function') return;
+    const safe = safeName(); let root = null;
+    if (CP_HOSTED) { try { root = await g360Pick.dir({ id:'g360pkg', mode:'readwrite' }); } catch (err) { return; } }
+    else { const sf = await srcForFiles(false); if (!sf) return; try { root = await exportDir(sf.src, 'Client Packages'); } catch (err) { pkgMsg(t('pubNoPkg', safe)); return; } }
+    let pdir = null; try { pdir = await root.getDirectoryHandle(safe); } catch (err) { if (root.name === safe) pdir = root; }   // (the Studio online: the package folder itself may have been picked)
+    const viewerName = safe + '.html', entries = [];
+    try {
+      if (!pdir) throw 0;
+      entries.push({ path:safe + '/' + viewerName, fh:await pdir.getFileHandle(viewerName) });
+      for (const sub of ['lib', 'model']) {
+        const d = await pdir.getDirectoryHandle(sub);
+        for await (const [n, h] of d.entries()) if (h.kind === 'file' && (/\.js$/i.test(n) || /^promo\.(mp4|webm|mov|m4v)$/i.test(n))) entries.push({ path:safe + '/' + sub + '/' + n, fh:h });
+      }
+      if (!entries.some(e => e.path === safe + '/model/manifest.js')) throw 0;
+    } catch (err) { pkgMsg(t('pubNoPkg', safe)); return; }
+    await pkgPublish(entries, safe, viewerName, o);
+  }
   try { $('pkgObf').checked = localStorage.getItem('g360Obf') !== '0'; } catch (err) {}
   const obfSync = () => { $('obfWarn').hidden = $('pkgObf').checked; };   // unticked: a warning stays on the screen
   $('pkgObf').onchange = () => { try { localStorage.setItem('g360Obf', $('pkgObf').checked ? '1' : '0'); } catch (err) {} obfSync(); };

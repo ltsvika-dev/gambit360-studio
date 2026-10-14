@@ -247,6 +247,18 @@ try {
   ok(lists.every(n => n === 0), 'the package folders show an empty page, never a list of the files', JSON.stringify(lists));
   const expired = await (await fetch(SITE + 'upload.php?pkgget=' + tok + '&e=1&s=x')).status;
   ok(expired === 403, 'a download link without a valid signature is refused');
+  // publishing again (the button in the package panel, or after updating the settings) keeps the link and sends only the files that changed
+  ok(await c.page.locator('#pkgPubBtn').count() === 1, 'the package panel has a "publish the package on the server" button');
+  const link2 = await c.page.evaluate(async () => {
+    const d = await (await navigator.storage.getDirectory()).getDirectoryHandle('pkg'), md = await d.getDirectoryHandle('model'), entries = [];
+    const w = await (await md.getFileHandle('manifest.js')).createWritable(); await w.write('window.G360PKG={v:2}'); await w.close();
+    entries.push({ path: 'Room/Room.html', fh: await d.getFileHandle('Room.html') }, { path: 'Room/lib/three.min.js', fh: await (await d.getDirectoryHandle('lib')).getFileHandle('three.min.js') }, { path: 'Room/model/manifest.js', fh: await md.getFileHandle('manifest.js') });
+    const puts = []; const f0 = window.fetch; window.fetch = function (u, o) { if (/upload\.php/.test(String(u)) && o && o.method === 'POST') puts.push(o.body.get('action') + ':' + (o.body.get('path') || '')); return f0.apply(this, arguments); };   // pkglist, one pkgput, pkgdone and pkgcode
+    try { await window.G360_pkgPublish(entries, 'Room', 'Room.html', { noAsk: true }); } finally { window.fetch = f0; }
+    return { link: document.getElementById('pkgPath').textContent.split('\n')[0], puts };
+  });
+  const puts = link2.puts.filter(a => /^pkg/.test(a)).length;
+  ok(link2.link === link && puts === 4 && (await (await fetch(link.replace('index.html', 'model/manifest.js'))).text()).includes('v:2'), 'publishing again keeps the same link and uploads only the changed file', JSON.stringify({ link2, puts }));
   ok(c.errors.length === 0 && s.errors.length === 0, 'no errors with projects in the cloud', c.errors.concat(s.errors).join('\n'));
 
   // ---- 7. the Options screen opens from the point-cloud module; my logo there becomes the Studio's logo; its width is for outputs only ----

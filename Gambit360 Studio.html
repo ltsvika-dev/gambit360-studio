@@ -2365,10 +2365,31 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
     const md = $('pkgPartModel').checked, ui = $('pkgPartUi').checked, st = $('pkgPartSet').checked;
     if (md) return makePackage();
     if (!ui && !st) { pkgMsg(t('pkgPartNone')); return; }
-    if (ui && st) { const r = await syncPackage(true); if (r === true) await createHtmlFile({ both:true }); return; }   // 'full' = the package was missing and has just been built whole
-    if (st) return syncPackage();
-    return createHtmlFile({ noSettings:true });
+    let ok;
+    if (ui && st) { const r = await syncPackage(true); if (r !== true) return; ok = await createHtmlFile({ both:true }); }   // 'full' = the package was missing and has just been built whole (and already asked about the server)
+    else if (st) ok = (await syncPackage()) === true;
+    else ok = await createHtmlFile({ noSettings:true });
+    if (ok) await pkgPublishFolder();   // the package on this computer changed: asks whether the server copy should change too
   };
+  // The package already in Export\Client Packages\<name> goes up to the server as it is (no need to make it again): the button "Publish the package on the server", and after an update of the viewer or the settings.
+  async function pkgPublishFolder(o) {
+    if (typeof pkgPublish !== 'function') return;
+    const safe = safeName(); let root = null;
+    if (CP_HOSTED) { try { root = await g360Pick.dir({ id:'g360pkg', mode:'readwrite' }); } catch (err) { return; } }
+    else { const sf = await srcForFiles(false); if (!sf) return; try { root = await exportDir(sf.src, 'Client Packages'); } catch (err) { pkgMsg(t('pubNoPkg', safe)); return; } }
+    let pdir = null; try { pdir = await root.getDirectoryHandle(safe); } catch (err) { if (root.name === safe) pdir = root; }   // (the Studio online: the package folder itself may have been picked)
+    const viewerName = safe + '.html', entries = [];
+    try {
+      if (!pdir) throw 0;
+      entries.push({ path:safe + '/' + viewerName, fh:await pdir.getFileHandle(viewerName) });
+      for (const sub of ['lib', 'model']) {
+        const d = await pdir.getDirectoryHandle(sub);
+        for await (const [n, h] of d.entries()) if (h.kind === 'file' && (/\.js$/i.test(n) || /^promo\.(mp4|webm|mov|m4v)$/i.test(n))) entries.push({ path:safe + '/' + sub + '/' + n, fh:h });
+      }
+      if (!entries.some(e => e.path === safe + '/model/manifest.js')) throw 0;
+    } catch (err) { pkgMsg(t('pubNoPkg', safe)); return; }
+    await pkgPublish(entries, safe, viewerName, o);
+  }
   try { $('pkgObf').checked = localStorage.getItem('g360Obf') !== '0'; } catch (err) {}
   const obfSync = () => { $('obfWarn').hidden = $('pkgObf').checked; };   // unticked: a warning stays on the screen
   $('pkgObf').onchange = () => { try { localStorage.setItem('g360Obf', $('pkgObf').checked ? '1' : '0'); } catch (err) {} obfSync(); };
@@ -2825,6 +2846,8 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
     cpOld: 'upload.php בשרת ישן מכדי לשמור פרויקטים. פתחו פעם אחת את "סיורים חיים" במחשב הראשי והוא יתעדכן לבד.',
     cpStale: d => 'במחשב אחר נשמרה בינתיים גרסה של הפרויקט הזה (' + d + ').\nלשמור בענן את הגרסה שכאן במקומה?', cpGot: d => 'נטענה מהענן גרסה חדשה יותר של הפרויקט (' + d + ')',
     pubAsk: 'לפרסם את החבילה גם בשרת?\nהלקוח יקבל קישור ויצפה בה בדפדפן, ועם הקוד שהסטודיו ייתן לך הוא יוכל גם להוריד אותה. פרסום חוזר של אותו פרויקט מעדכן את אותו קישור.', pubYes: 'פרסום בשרת', pubNo: 'לא עכשיו',
+    pubAskUpd: 'לעדכן גם את החבילה בשרת?\nהלקוח יראה את השינויים באותו קישור. עולים רק הקבצים שהשתנו.', pubSame: 'כבר בשרת', pkgPubBtn: 'פרסום החבילה בשרת', pkgPubTip: 'מעלה לשרת את החבילה שכבר נמצאת במחשב (Export\\Client Packages) ונותן קישור ללקוח וקוד הורדה. עולים רק הקבצים שהשתנו.',
+    pubNoPkg: n => 'לא נמצאה חבילה בשם "' + n + '" בתיקייה Export\\Client Packages. צרו אותה קודם בלחיצה על "יצירת חבילה ללקוח" כש"מודל" מסומן.',
     pubBusy: (i, n) => 'מעלה את החבילה לשרת… ' + i + ' מתוך ' + n, pubDone: (u, c) => 'החבילה פורסמה בשרת ✓ הקישור ללקוח: ' + u + ' · קוד להורדת החבילה: ' + c, pubCodeLine: c => 'קוד להורדת החבילה: ' + c, pubFail: e => 'הפרסום בשרת נכשל: ' + e + '. החבילה במחשב מוכנה ותקינה.',
     pubBig: (f, mb) => 'הקובץ ' + f + ' גדול מדי לשרת (' + mb + 'MB, עד 45MB). אפשר לבחור איכות פנורמות נמוכה יותר או סרטון קצר יותר.' });
   Object.assign(I18N.en, { cpOpenBtn: 'Open a project from the cloud', cpH: 'Projects in the cloud', cpLoading: 'Loading the list…', cpClose: 'Close', cpDel: 'Delete from the cloud',
@@ -2835,6 +2858,8 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
     cpOld: 'upload.php on the server is too old to keep projects. Open Live tours once on the main computer and it updates itself.',
     cpStale: d => 'Meanwhile another computer saved a version of this project (' + d + ').\nSave the version here in the cloud instead?', cpGot: d => 'A newer version of the project came in from the cloud (' + d + ')',
     pubAsk: 'Publish the package on the server too?\nThe client gets a link to view it in the browser, and with the code the Studio gives you, can also download it. Publishing the same project again updates the same link.', pubYes: 'Publish on the server', pubNo: 'Not now',
+    pubAskUpd: 'Update the package on the server too?\nThe client sees the changes at the same link. Only the files that changed are sent.', pubSame: 'already on the server', pkgPubBtn: 'Publish the package on the server', pkgPubTip: 'Uploads the package already on this computer (Export\\Client Packages) and gives a link for the client and a download code. Only the files that changed are sent.',
+    pubNoPkg: n => 'No package named "' + n + '" was found in Export\\Client Packages. Create it first with "Create client package" with "Model" ticked.',
     pubBusy: (i, n) => 'Uploading the package… ' + i + ' of ' + n, pubDone: (u, c) => 'The package is on the server ✓ The client\'s link: ' + u + ' · Code to download the package: ' + c, pubCodeLine: c => 'Code to download the package: ' + c, pubFail: e => 'Publishing on the server failed: ' + e + '. The package on this computer is ready and fine.',
     pubBig: (f, mb) => 'The file ' + f + ' is too large for the server (' + mb + ' MB, up to 45 MB). Choose a lower panorama quality or a shorter video.' });
   const CP_HOSTED = /^https?:$/.test(location.protocol) && /\/app\/(index\.php)?$/.test(location.pathname);   // the Studio online, at <site>/app/
@@ -2914,18 +2939,22 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
 
   // ---- a client package on the site: after the package is made, the Studio asks whether the client should also get it as a link (p/<token>/index.html).
   // The token is kept with the project, so publishing again (from any computer) updates the same link. ----
-  async function pkgPublish(entries, safe, viewerName) {
-    const c = await cpCfg(true); if (!c) return;
-    if (!(await g360Ask(t('pubAsk'), { ok:t('pubYes'), cancel:t('pubNo') }))) return;
-    let tk = pkgPubOf(currentName), code = ''; try { code = localStorage.getItem('tourViewerPkgCode:' + currentName) || ''; } catch (err) {}
+  async function pkgPublish(entries, safe, viewerName, o) {
+    o = o || {};
+    const c = await cpCfg(true); if (!c) { if (o.noAsk) pkgMsg(t('cpNoCloud')); return; }
+    let tk = pkgPubOf(currentName), code = '';
+    if (!o.noAsk && !(await g360Ask(t(/^p[a-z0-9]{10}$/.test(tk) ? 'pubAskUpd' : 'pubAsk'), { ok:t('pubYes'), cancel:t('pubNo') }))) return; try { code = localStorage.getItem('tourViewerPkgCode:' + currentName) || ''; } catch (err) {}
     if (!/^p[a-z0-9]{10}$/.test(tk)) { tk = 'p' + [...crypto.getRandomValues(new Uint8Array(10))].map(b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join(''); try { localStorage.setItem('tourViewerPkgPub:' + currentName, tk); } catch (err) {} }
     const list = entries.filter(e => e.path.startsWith(safe + '/')).map(e => { const rel = e.path.slice(safe.length + 1); return { rel:rel === viewerName ? 'index.html' : rel, fh:e.fh }; });
     try {
+      let have = {}; try { const h = await cpPost(c, { action:'pkglist', token:tk }); if (h && h.ok && h.have) have = h.have; } catch (err) {}   // what the server already has: a file that did not change is not sent again
+      const sha = async f => [...new Uint8Array(await crypto.subtle.digest('SHA-256', await f.arrayBuffer()))].map(x => x.toString(16).padStart(2, '0')).join('');
       for (let i = 0; i < list.length; i++) {
         if (pkgAbort) throw new Error(t('pkgCancelledMsg'));
         pkgMsg(t('pubBusy', i + 1, list.length));
-        const f = await list[i].fh.getFile();
+        const f = await list[i].fh.getFile(), was = have[list[i].rel];
         if (f.size > 45 * 1048576) throw new Error(t('pubBig', list[i].rel, Math.round(f.size / 1048576)));   // the server takes up to 50MB a request
+        if (was && was[0] === f.size && was[1] === await sha(f)) continue;
         const j = await cpPost(c, { action:'pkgput', token:tk, path:list[i].rel }, f);
         if (!j.ok) throw new Error(j.error + ' (' + list[i].rel + ')');
       }
@@ -2940,6 +2969,19 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
   }
 
   window.G360_pkgPublish = pkgPublish;
+  // "Publish the package on the server" in the package panel: the package already made on this computer goes up as it is (and again after a change, only what changed)
+  { const pb = $('pkgBtn'), row = pb && pb.closest('.mprow');
+    if (row) {
+      const b = document.createElement('button'); b.type = 'button'; b.id = 'pkgPubBtn';
+      const lbl = () => { b.textContent = t('pkgPubBtn'); b.title = t('pkgPubTip'); }; lbl();
+      b.onclick = async () => {
+        if (pkgBusy) return;
+        if (!(await cpCfg(true))) { pkgMsg(t('cpNoCloud')); return; }
+        b.disabled = true; try { await pkgPublishFolder({ noAsk:true }); } finally { b.disabled = false; }
+      };
+      const r2 = document.createElement('div'); r2.className = 'mprow'; r2.appendChild(b); row.insertAdjacentElement('afterend', r2);
+      const prev = window.G360_relang; window.G360_relang = function () { if (prev) prev.apply(this, arguments); lbl(); };
+    } }
 
   // ---- "Open a project from the cloud" on the start screen: the list, then the same way as a project file ----
   let cpDlg = null;
@@ -6930,7 +6972,7 @@ const G360Card = (() => {
 // It also keeps the Studio's synced data (a private _bk_ folder: the live tours and the point-cloud projects), lets another computer connect with a password,
 // serves the Studio online at /app/ after that password, replaces itself when the Studio has a newer copy, and emails the clients' view reports.
 $KEY_SHA256 = '@@KEYHASH@@';
-$VER = 8;   // grows with every change to this file: the Studio replaces an older copy on the server by itself
+$VER = 9;   // grows with every change to this file: the Studio replaces an older copy on the server by itself
 $LOGO = '@@LOGO@@';   // the Gambit360 logo for the sign-in page, filled in by the Studio
 $MAX_BYTES = 500 * 1024 * 1024;
 
@@ -7400,7 +7442,7 @@ if ($action === 'pclist' || $action === 'pcget' || $action === 'pcput' || $actio
   if (!@rename($f . '.part', $f)) { @unlink($f); if (!@rename($f . '.part', $f)) out(500, array('ok' => false, 'error' => 'rename')); }
   out(200, array('ok' => true, 'saved' => isset($j['saved']) ? (string)$j['saved'] : ''));
 }
-if ($action === 'pkgput' || $action === 'pkgdone' || $action === 'pkgcode') {   // a client package published on the site: p/<token>/index.html with its lib/ and model/ files, the link the client gets
+if ($action === 'pkgput' || $action === 'pkgdone' || $action === 'pkgcode' || $action === 'pkglist') {   // a client package published on the site: p/<token>/index.html with its lib/ and model/ files, the link the client gets
   $tk = isset($_POST['token']) ? (string)$_POST['token'] : '';
   if (!preg_match('#^p[a-z0-9]{10}$#', $tk)) out(400, array('ok' => false, 'error' => 'path'));
   $pd = $root . '/p/' . $tk;
@@ -7412,6 +7454,11 @@ if ($action === 'pkgput' || $action === 'pkgdone' || $action === 'pkgcode') {   
     $nm = mb_substr(trim(isset($_POST['name']) ? (string)$_POST['name'] : ''), 0, 100);
     if (!@file_put_contents($bd . '/pkg/' . $tk . '.json', json_encode(array('hash' => password_hash($code, PASSWORD_DEFAULT), 'exp' => $exp, 'name' => $nm, 'at' => time())))) out(500, array('ok' => false, 'error' => 'write'));
     out(200, array('ok' => true));
+  }
+  if ($action === 'pkglist') {   // what is already there (size and sha256 of each file), so publishing again sends only the files that changed
+    $have = array();
+    foreach (array('', '/lib', '/model') as $sub) foreach ((array)glob($pd . $sub . '/*') as $g) { if (!is_file($g) || substr($g, -5) === '.part' || ($sub !== '' && basename($g) === 'index.html')) continue; $have[ltrim($sub . '/' . basename($g), '/')] = array(filesize($g), hash_file('sha256', $g)); }
+    out(200, array('ok' => true, 'have' => (object)$have));
   }
   if ($action === 'pkgdone') {   // the files of an older version of the package that this one no longer has are taken away
     $keep = json_decode(isset($_POST['keep']) ? (string)$_POST['keep'] : '', true); if (!is_array($keep)) out(400, array('ok' => false, 'error' => 'json'));

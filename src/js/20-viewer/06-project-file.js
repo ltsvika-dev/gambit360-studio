@@ -11,6 +11,7 @@
   async function saveProject() {
     if (!currentName || window.G360_CLIENT || fromPkg) return;
     const d = projectData(), text = JSON.stringify(d), safe = (d.title || currentName).replace(/[\\/:*?"<>|]+/g, '_').trim() || 'Gambit360-project';
+    if (CP_HOSTED) { await cpSaveNow(d, ''); return; }   // the Studio online keeps the project in the cloud only (there is no Studio folder on this computer)
     try {
       if (window.showSaveFilePicker) {
         if (!projHandle || projHandle.__for !== currentName) {
@@ -18,10 +19,10 @@
           projHandle.__for = currentName;
         }
         const w = await projHandle.createWritable(); await w.write(text); await w.close();
-        pkgMsg(t('projSaved', projHandle.name)); say(t('projSaved', projHandle.name));
+        pkgMsg(t('projSaved', projHandle.name)); say(t('projSaved', projHandle.name)); cpSaveNow(d, projHandle.name);
       } else {
         const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type:'application/json' })); a.download = safe + '.g360'; document.body.appendChild(a); a.click(); a.remove();
-        pkgMsg(t('projSaved', safe + '.g360')); say(t('projSaved', safe + '.g360'));
+        pkgMsg(t('projSaved', safe + '.g360')); say(t('projSaved', safe + '.g360')); cpSaveNow(d, safe + '.g360');
       }
     } catch (err) { if (err && err.name === 'AbortError') return; projHandle = null; console.error(err); pkgMsg(t('projSaveFail') + err.message); say(t('projSaveFail') + err.message); }
   }
@@ -58,6 +59,9 @@
   }
   async function openProjectFile(file) {
     let d = null; try { d = JSON.parse(await file.text()); } catch (err) {}
+    return openProjectData(d);
+  }
+  async function openProjectData(d) {   // a project file, or a project from the cloud (06a-cloud-projects.js)
     if (!d || d.g360project !== 1 || !d.model) { msg(t('projBad'), true); return false; }
     if (projHandle) projHandle.__for = d.model;
     if (started && d.model === currentName) { applyProject(d); closeImport(); return true; }

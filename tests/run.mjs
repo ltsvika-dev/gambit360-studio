@@ -3,7 +3,8 @@
 //  2. a new tour has every field from the start (the same as a tour that was loaded again);
 //  3. publishing uploads it to a local PHP site, and the published page's details card is the card the preview shows;
 //  4. a second computer with the same key gets the tour from the server (cloud sync);
-//  5. point cloud: tag types (infrastructure set), quick mode, layers, and the PDF tag report.
+//  5. point cloud: tag types (infrastructure set), quick mode, layers, and the PDF tag report;
+//  6. point-cloud projects in the cloud: computer A's tags reach the server, computer B opens the project from the cloud, and B's change comes back to A.
 // Needs node, php and the built "Gambit360 Studio.html". Run:  npm install  then  npm test   (in this folder)
 import { chromium } from 'playwright';
 import { spawn, execFileSync } from 'node:child_process';
@@ -163,6 +164,36 @@ try {
   const rep = await s.page.evaluate(async () => { const b = window.G360_lastReport; if (!b) return null; const u = new Uint8Array(await b.arrayBuffer()); const txt = new TextDecoder('latin1').decode(u); return { head: txt.slice(0, 5), pages: (txt.match(/\/Type \/Page\b/g) || []).length }; });
   ok(!!rep && rep.head === '%PDF-' && rep.pages === 1 + Math.ceil((made - elec) / 2), 'the PDF report has a cover and the shown tags, two to a page', JSON.stringify(rep));
   ok(s.errors.length === 0, 'no errors in the point cloud tags', s.errors.join('\n'));
+
+  // ---- 6. point-cloud projects in the cloud (only the project, the E57 stays on each computer) ----
+  const tagCount = pg => pg.evaluate(() => (window.G360_extrasData().tags || []).length);
+  const sTags = await tagCount(s.page);
+  await s.page.evaluate(() => window.G360_cpTick()); await s.page.waitForTimeout(500);
+  const pcDir = fs.readdirSync(siteDir).filter(f => f.startsWith('_bk_')).map(f => path.join(siteDir, f, 'pc'))[0];
+  const pcFiles = pcDir && fs.existsSync(pcDir) ? fs.readdirSync(pcDir).filter(f => f.endsWith('.json')) : [];
+  const onSrv = pcFiles.length === 1 ? JSON.parse(fs.readFileSync(path.join(pcDir, pcFiles[0]), 'utf8')) : null;
+  ok(!!onSrv && onSrv.extras.tags.length === sTags && sTags >= 3, 'computer A keeps the project and its tags in the cloud by itself', pcFiles.join(', ') + ' tags here ' + sTags);
+  ok(!fs.readdirSync(pcDir || siteDir).some(f => /\.e57/i.test(f)), 'the E57 itself is not uploaded');
+  const c = await computer(browser, 'computer C');
+  await c.page.waitForSelector('#cpOpenBtn:not([hidden])', { timeout: 10000 }).catch(() => {});
+  ok(await c.page.locator('#cpOpenBtn').isVisible(), 'a computer connected to the cloud has "Open a project from the cloud" on the start screen');
+  await c.page.click('#cpOpenBtn');
+  await c.page.waitForSelector('#cpDlg .it', { timeout: 10000 }).catch(() => {});
+  ok(await c.page.locator('#cpDlg .it').count() === 1, 'the cloud list shows the project');
+  await c.page.click('#cpDlg .it .go');
+  await c.page.waitForSelector('#resumeBox:not([hidden])', { timeout: 10000 }).catch(() => {});
+  ok(await c.page.locator('#resumeBox').isVisible(), 'a computer without the scan file is asked to pick it once');
+  await c.page.setInputFiles('#pickerE57', path.join(HERE, 'fixtures', 'room.e57'));
+  await c.page.waitForSelector('#mbtn', { state: 'visible', timeout: 60000 });
+  await c.page.waitForTimeout(2500);
+  ok(await tagCount(c.page) === sTags, 'computer C gets the project from the cloud: the same tags', 'C has ' + await tagCount(c.page));
+  await c.page.evaluate(() => { document.getElementById('pkgName').value = 'From computer C'; });
+  await c.page.evaluate(() => window.G360_cpTick()); await c.page.waitForTimeout(500);
+  await s.page.evaluate(() => { localStorage.setItem('g360pcAt:room', '1'); });   // A's own last change was long ago
+  await s.page.reload(); await s.page.setInputFiles('#pickerE57', path.join(HERE, 'fixtures', 'room.e57'));
+  await s.page.waitForSelector('#mbtn', { state: 'visible', timeout: 60000 }); await s.page.waitForTimeout(2500);
+  ok(await s.page.evaluate(() => document.getElementById('pkgName').value) === 'From computer C' && await tagCount(s.page) === sTags, 'the newer copy from computer C comes back to computer A when the scan opens', JSON.stringify([await s.page.evaluate(() => [document.getElementById('pkgName').value, Object.keys(localStorage).filter(k => /room/.test(k))]), await tagCount(s.page), fs.readFileSync(path.join(pcDir, pcFiles[0]), 'utf8').slice(0, 300)]));
+  ok(c.errors.length === 0 && s.errors.length === 0, 'no errors with projects in the cloud', c.errors.concat(s.errors).join('\n'));
 } catch (e) { ok(false, 'the test itself ran to the end', e.stack || e); }
 finally {
   if (browser) await browser.close();

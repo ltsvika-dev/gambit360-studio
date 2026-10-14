@@ -33,7 +33,7 @@
   #logo.custom { cursor:default; }
   #logo.custom img { width:auto; max-width:100%; max-height:64px; margin:0 auto; }
   #pkgLogoSt { font-size:.85rem; opacity:.85; margin-inline:6px; }
-  #projOpenStart { margin-top:8px; }
+  #projOpenStart, #cpOpenBtn { margin-top:8px; }
   #promoBox { position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.82); display:flex; align-items:center; justify-content:center; padding:16px; }
   #promoBox[hidden] { display:none; }
   #promoBox .pbWrap { max-width:min(96vw,1280px); width:100%; display:flex; flex-direction:column; gap:10px; }
@@ -360,8 +360,25 @@
   .loadBtn.main { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
   .loadBtn.main:hover:not(:disabled) { filter:brightness(1.08); background:var(--accent); }
   #start .welcome, #start h1 { text-align:center; }
-  #projOpenStart { background:transparent; color:var(--ink); border:1.5px solid var(--line); border-radius:10px; padding:13px 16px; }
-  #projOpenStart:hover { border-color:var(--accent); background:var(--hov); }
+  #projOpenStart, #cpOpenBtn { background:transparent; color:var(--ink); border:1.5px solid var(--line); border-radius:10px; padding:13px 16px; }
+  #projOpenStart:hover, #cpOpenBtn:hover { border-color:var(--accent); background:var(--hov); }
+  #cpOpenBtn[hidden] { display:none; }
+  /* projects in the cloud: the list window (06a-cloud-projects.js) */
+  #cpDlg { position:fixed; inset:0; z-index:990; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; padding:16px; }
+  #cpDlg[hidden] { display:none; }
+  #cpDlg .box { background:var(--panel); color:var(--ink); border:1px solid var(--accent); border-radius:14px; padding:20px; width:min(520px, 100%); max-height:85vh; display:flex; flex-direction:column; gap:10px; box-shadow:0 18px 60px rgba(0,0,0,.55); box-sizing:border-box; }
+  #cpDlg h3 { margin:0; font-size:1.15rem; }
+  #cpDlg .note { color:var(--mute); font-size:.88rem; line-height:1.5; }
+  #cpDlg .list { overflow:auto; display:flex; flex-direction:column; gap:6px; min-height:2em; }
+  #cpDlg .it { display:flex; align-items:stretch; gap:4px; border:1px solid var(--line2); border-radius:10px; }
+  #cpDlg .it:hover { border-color:var(--accent); }
+  #cpDlg .go { flex:1; min-width:0; text-align:start; background:none; border:0; color:inherit; font:inherit; padding:9px 12px; cursor:pointer; display:flex; flex-direction:column; gap:2px; border-radius:10px; }
+  #cpDlg .go:hover { background:var(--hov); }
+  #cpDlg .go b { overflow-wrap:anywhere; } #cpDlg .go small { color:var(--mute); font-size:.82rem; } #cpDlg .go small:empty { display:none; }
+  #cpDlg .del { flex:0 0 auto; width:42px; background:none; border:0; color:var(--mute); cursor:pointer; border-radius:10px; display:flex; align-items:center; justify-content:center; }
+  #cpDlg .del:hover { color:#ff8a7a; background:var(--hov); }
+  #cpDlg .row { display:flex; justify-content:flex-end; }
+  #cpDlg .row button { min-width:96px; padding:8px 18px; border-radius:8px; font:inherit; font-weight:600; cursor:pointer; background:var(--btn); color:var(--ink); border:1px solid var(--line2); }
   .loadBtn:disabled { opacity:.5; cursor:default; }
   .q { display:flex; align-items:center; justify-content:center; gap:10px; color:var(--mute); margin:0 0 12px; }
   .q select { background:var(--bg); color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:6px 10px; font:inherit; }
@@ -1569,6 +1586,7 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
     } catch (err) { console.warn('could not remember the file', err); }
     if (rec.handle && !window.G360_CLIENT) { try { await idb.set('model:' + rec.name, { kind:rec.kind, name:rec.name, handle:rec.handle, quality:rec.quality || null }); } catch (err) {} }
     if (pendingProject) { const d = pendingProject; pendingProject = null; if (d.model === currentName || legacyOf(d.model, currentName)) applyProject(d); else msg(t('projMismatch', currentName, d.model), true); }
+    if (typeof cpLink === 'function') setTimeout(cpLink, 1200);   // the project's copy in the cloud: the newer one wins
   }
 
   // "Continue where you left off": where you stood and looked, and which view was open (inside, plan or 3D), is kept per model
@@ -2057,25 +2075,39 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
     return out;
   }
   let pkgAbort = false;
+  async function siteViewer() {   // the Studio online has no Studio folder: its own page and lib/*.js are read back from the site (signed in, so the page comes back)
+    const get = async u => { const r = await fetch(u, { cache:'no-store', credentials:'same-origin' }); if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + u); return r.blob(); };
+    const page = await get(location.href.split('#')[0]), lib = [];
+    if (!/G360_CLIENT\s*=\s*false/.test(await page.slice(0, 4000).text())) throw new Error(t('pkgNeedSrc'));
+    for (const sc of document.querySelectorAll('script[src]')) {
+      const u = new URL(sc.getAttribute('src'), location.href); if (!/\/lib\/[^/]+\.js$/i.test(u.pathname)) continue;
+      const b = await get(u.href), n = decodeURIComponent(u.pathname.split('/').pop()); lib.push({ name:n, getFile:async () => new File([b], n) });
+    }
+    return { html:{ getFile:async () => new File([page], 'Gambit360 Studio.html') }, lib, obf:null, name:'' };
+  }
   async function makePackage() {
     if ((!lastObjFiles && !lastE57) || !window.showDirectoryPicker) { pkgMsg(t('pkgNoFS')); return; }
     // The viewer file and its lib folder are copied too. The page cannot read its own file, so the folder that holds them is chosen once and remembered.
-    let src = null;
-    try { src = await idb.get('srcDir'); } catch (err) {}
-    if (src) {
-      try {
-        let p = await src.queryPermission({ mode:'readwrite' });
-        if (p !== 'granted') p = await src.requestPermission({ mode:'readwrite' });
-        if (p !== 'granted') src = null;
-      } catch (err) { pkgMsg(t('pkgAgain')); return; }
-      if (src) src = await alignSrc(src);
+    let src = null, found = null, root = null;
+    if (CP_HOSTED) {   // the Studio online: the viewer and its lib come from the site, and the package goes into a folder picked on this computer
+      try { found = await siteViewer(); } catch (err) { pkgMsg(t('pkgFail') + err.message); return; }
+      try { root = await g360Pick.dir({ id:'g360pkg', mode:'readwrite' }); } catch (err) { if (!(err && err.name === 'AbortError')) pkgMsg(t('pkgNeedRW')); return; }
+    } else {
+      try { src = await idb.get('srcDir'); } catch (err) {}
+      if (src) {
+        try {
+          let p = await src.queryPermission({ mode:'readwrite' });
+          if (p !== 'granted') p = await src.requestPermission({ mode:'readwrite' });
+          if (p !== 'granted') src = null;
+        } catch (err) { pkgMsg(t('pkgAgain')); return; }
+        if (src) src = await alignSrc(src);
+      }
+      if (!src) { pkgMsg(t('pkgNeedSrc')); return; }
+      found = await findViewer(src);
+      if (!found.html || !found.lib.length) { try { await idb.del('srcDir'); } catch (err) {} pkgMsg(t('pkgBadSrc', found.name, !!found.html, found.lib.length)); return; }
+      try { root = await exportDir(src, 'Client Packages', true); }
+      catch (err) { pkgMsg(t('pkgNeedRW')); return; }
     }
-    if (!src) { pkgMsg(t('pkgNeedSrc')); return; }
-    const found = await findViewer(src);
-    if (!found.html || !found.lib.length) { try { await idb.del('srcDir'); } catch (err) {} pkgMsg(t('pkgBadSrc', found.name, !!found.html, found.lib.length)); return; }
-    let root;
-    try { root = await exportDir(src, 'Client Packages', true); }
-    catch (err) { pkgMsg(t('pkgNeedRW')); return; }
     const projName = $('pkgName').value.trim();
     const mgr = $('pkgMgr').value.trim();
     const expires = expiryEnd();
@@ -2391,6 +2423,7 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
   async function saveProject() {
     if (!currentName || window.G360_CLIENT || fromPkg) return;
     const d = projectData(), text = JSON.stringify(d), safe = (d.title || currentName).replace(/[\\/:*?"<>|]+/g, '_').trim() || 'Gambit360-project';
+    if (CP_HOSTED) { await cpSaveNow(d, ''); return; }   // the Studio online keeps the project in the cloud only (there is no Studio folder on this computer)
     try {
       if (window.showSaveFilePicker) {
         if (!projHandle || projHandle.__for !== currentName) {
@@ -2398,10 +2431,10 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
           projHandle.__for = currentName;
         }
         const w = await projHandle.createWritable(); await w.write(text); await w.close();
-        pkgMsg(t('projSaved', projHandle.name)); say(t('projSaved', projHandle.name));
+        pkgMsg(t('projSaved', projHandle.name)); say(t('projSaved', projHandle.name)); cpSaveNow(d, projHandle.name);
       } else {
         const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type:'application/json' })); a.download = safe + '.g360'; document.body.appendChild(a); a.click(); a.remove();
-        pkgMsg(t('projSaved', safe + '.g360')); say(t('projSaved', safe + '.g360'));
+        pkgMsg(t('projSaved', safe + '.g360')); say(t('projSaved', safe + '.g360')); cpSaveNow(d, safe + '.g360');
       }
     } catch (err) { if (err && err.name === 'AbortError') return; projHandle = null; console.error(err); pkgMsg(t('projSaveFail') + err.message); say(t('projSaveFail') + err.message); }
   }
@@ -2438,6 +2471,9 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
   }
   async function openProjectFile(file) {
     let d = null; try { d = JSON.parse(await file.text()); } catch (err) {}
+    return openProjectData(d);
+  }
+  async function openProjectData(d) {   // a project file, or a project from the cloud (06a-cloud-projects.js)
     if (!d || d.g360project !== 1 || !d.model) { msg(t('projBad'), true); return false; }
     if (projHandle) projHandle.__for = d.model;
     if (started && d.model === currentName) { applyProject(d); closeImport(); return true; }
@@ -2758,6 +2794,151 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
     }, 900);
   }
 
+  /*@STUDIO*/
+  // ---- Projects in the cloud: when this computer is connected to the cloud (Live tours, Options, Cloud), every project with something in it
+  // (title, tags, views, measurements) is kept on the server too, one per model, and opens from any computer and from the Studio online.
+  // Only the project goes up, never the E57 itself: on another computer the scan file is picked once and remembered there.
+  // Each computer keeps up by itself: a change here goes up within seconds, and a newer copy from another computer comes in when the model opens. ----
+  Object.assign(I18N.he, { cpOpenBtn: 'פתיחת פרויקט מהענן', cpH: 'פרויקטים בענן', cpLoading: 'טוען את הרשימה…', cpClose: 'סגירה', cpDel: 'מחיקה מהענן',
+    cpNone: 'עוד אין פרויקטים בענן. כל פרויקט שיש בו משהו (כותרת, תגיות, נקודות מבט, מדידות) נשמר בענן לבד כשהמחשב מחובר לענן.',
+    cpNote: 'רק קובץ הפרויקט נשמר בענן, לא קובץ ה-E57. במחשב שאין בו את קובץ הסריקה בוחרים אותו פעם אחת.',
+    cpInfo: (d, n) => 'נשמר ' + d + (n ? ' · ' + n + ' תגיות' : ''), cpDelAsk: n => 'למחוק את "' + n + '" מהענן?\nקובץ הפרויקט וקובץ הסריקה במחשבים לא נמחקים, ועותק נשאר בשרת.',
+    cpSaved: 'הפרויקט נשמר בענן ✓', cpSavedAlso: n => 'הפרויקט נשמר ב-"' + n + '" וגם בענן ✓', cpFail: e => 'השמירה בענן נכשלה: ' + e, cpErr: e => 'הענן לא ענה: ' + e, cpNoCloud: 'המחשב הזה לא מחובר לענן. מתחברים ב"סיורים חיים" ← אפשרויות ← ענן.',
+    cpOld: 'upload.php בשרת ישן מכדי לשמור פרויקטים. פתחו פעם אחת את "סיורים חיים" במחשב הראשי והוא יתעדכן לבד.',
+    cpStale: d => 'במחשב אחר נשמרה בינתיים גרסה של הפרויקט הזה (' + d + ').\nלשמור בענן את הגרסה שכאן במקומה?', cpGot: d => 'נטענה מהענן גרסה חדשה יותר של הפרויקט (' + d + ')' });
+  Object.assign(I18N.en, { cpOpenBtn: 'Open a project from the cloud', cpH: 'Projects in the cloud', cpLoading: 'Loading the list…', cpClose: 'Close', cpDel: 'Delete from the cloud',
+    cpNone: 'No projects in the cloud yet. Every project with something in it (title, tags, views, measurements) is kept in the cloud by itself while this computer is connected to the cloud.',
+    cpNote: 'Only the project file is kept in the cloud, not the E57 file. On a computer without the scan file, it is picked once.',
+    cpInfo: (d, n) => 'Saved ' + d + (n ? ' · ' + n + ' tags' : ''), cpDelAsk: n => 'Delete "' + n + '" from the cloud?\nThe project and scan files on the computers stay, and a copy stays on the server.',
+    cpSaved: 'The project was saved in the cloud ✓', cpSavedAlso: n => 'The project was saved to "' + n + '" and in the cloud ✓', cpFail: e => 'Saving in the cloud failed: ' + e, cpErr: e => 'The cloud did not answer: ' + e, cpNoCloud: 'This computer is not connected to the cloud. Connect in Live tours, Options, Cloud.',
+    cpOld: 'upload.php on the server is too old to keep projects. Open Live tours once on the main computer and it updates itself.',
+    cpStale: d => 'Meanwhile another computer saved a version of this project (' + d + ').\nSave the version here in the cloud instead?', cpGot: d => 'A newer version of the project came in from the cloud (' + d + ')' });
+  const CP_HOSTED = /^https?:$/.test(location.protocol) && /\/app\/(index\.php)?$/.test(location.pathname);   // the Studio online, at <site>/app/
+  let cpCfgP = null, cpCfgAt = 0, cpLast = { name:'', saved:'', json:'' }, cpSeen = { name:'', json:'' }, cpBusy = false;   // cpLast: the copy this computer last sent to or got from the cloud
+  function cpCfg(force) {   // the cloud's address and key, from the Live tours module (null when this computer is not connected)
+    if (force || !cpCfgP || Date.now() - cpCfgAt > 5 * 60e3) { cpCfgAt = Date.now(); cpCfgP = (window.G360_cloud ? window.G360_cloud() : Promise.resolve(null)).catch(() => null); }
+    return cpCfgP;
+  }
+  async function cpId(name) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('g360pc:' + name)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('').slice(0, 24); }
+  const cpNorm = d => JSON.stringify(Object.assign({}, d, { saved:undefined }));   // the project without its save time: equal means nothing changed
+  const cpHas = d => !!(d.title || d.manager || d.views.length || d.measures.length || d.areas.length || (d.extras && d.extras.tags && d.extras.tags.length));
+  const cpWhen = s => { const x = Date.parse(s); return x ? new Date(x).toLocaleString() : ''; };
+  const cpAtKey = name => 'g360pcAt:' + name;   // when the project last changed on this computer: decides which copy is newer when the model opens
+  const cpAt = name => { try { return +localStorage.getItem(cpAtKey(name)) || 0; } catch (err) { return 0; } };
+  const cpSetAt = (name, v) => { try { localStorage.setItem(cpAtKey(name), String(v)); } catch (err) {} };
+  async function cpPost(c, fields, blob, ka) {
+    const fd = new FormData(); fd.append('key', c.key); Object.keys(fields).forEach(k => { if (fields[k] != null) fd.append(k, fields[k]); }); if (blob) fd.append('file', blob, 'project.g360');
+    const r = await fetch(c.url, { method:'POST', body:fd, cache:'no-store', keepalive:!!ka });
+    if (fields.action === 'pcget') { if (r.status === 404) return null; if (r.ok) return r.json(); }
+    let j = null; try { j = await r.json(); } catch (err) {}
+    if (!j) throw new Error('HTTP ' + r.status);
+    if (!j.ok && j.error === 'action') throw new Error(t('cpOld'));
+    return j;
+  }
+  // sends this project; prev = the save time of the cloud copy this one was based on (the server refuses when another computer saved after it)
+  async function cpPush(d, force, ka) {
+    const c = await cpCfg(); if (!c) return null;
+    const name = d.model, id = await cpId(name), text = JSON.stringify(d);
+    const j = await cpPost(c, { action:'pcput', id, prev:force ? null : (cpLast.name === name ? cpLast.saved : '') }, new Blob([text], { type:'application/json' }), ka && text.length < 60000);
+    if (j.ok) { cpLast = { name, saved:d.saved, json:cpNorm(d) }; cpSetAt(name, Date.parse(d.saved) || Date.now()); }
+    else if (j.error !== 'stale') throw new Error(j.error);
+    return j;
+  }
+  // the model opened: the cloud copy is compared with this computer's, the newer one wins (a change here goes up, a newer one from another computer comes in)
+  async function cpLink() {
+    const name = currentName; if (!name || fromPkg || window.G360_CLIENT) return;
+    const c = await cpCfg(); if (!c || name !== currentName) return;
+    let r; try { r = await cpPost(c, { action:'pcget', id:await cpId(name) }); } catch (err) { console.warn('cloud project', err); return; }
+    if (name !== currentName) return;
+    const local = cpNorm(projectData());
+    if (!r) { cpLast = { name, saved:'', json:'' }; cpSeen = { name, json:local }; return; }   // not in the cloud yet: it goes up with its first content
+    const rt = Date.parse(r.saved) || 0;
+    if (cpNorm(r) !== local && r.model === name && (rt > cpAt(name) || (!cpHas(projectData()) && cpHas(r)))) {   // an empty project here (the scan picked again) never wipes the one in the cloud
+      applyProject(r); cpSetAt(name, rt); const m = t('cpGot', cpWhen(r.saved)); say(m); pkgMsg(m);
+      cpLast = { name, saved:r.saved, json:cpNorm(projectData()) };
+    } else cpLast = { name, saved:r.saved, json:cpNorm(r) === local ? local : '' };   // the same, or newer here: then it goes up at the next look
+    cpSeen = { name, json:cpNorm(projectData()) };
+  }
+  // every 15 seconds (and when the window is left): a change is noted with its time, and goes up when this computer is connected
+  async function cpTick(leaving) {
+    if (!started || !currentName || fromPkg || window.G360_CLIENT || cpBusy) return;
+    const name = currentName, d = projectData(), j = cpNorm(d);
+    if (cpSeen.name === name && cpSeen.json !== j) cpSetAt(name, Date.now());
+    cpSeen = { name, json:j };
+    if (cpLast.name !== name || cpLast.json === j || (!cpLast.saved && !cpHas(d))) return;
+    cpBusy = true;
+    try { const r = await cpPush(d, false, leaving); if (r && r.error === 'stale') await cpLink(); }   // another computer saved in between: the newer copy decides
+    catch (err) { console.warn('cloud project', err); }
+    finally { cpBusy = false; }
+  }
+  setInterval(cpTick, 15000); window.G360_cpTick = cpTick;   // (the browser tests call it instead of waiting)
+  addEventListener('pagehide', () => cpTick(true)); document.addEventListener('visibilitychange', () => { if (document.hidden) cpTick(true); });
+  // "Save project": the cloud copy too (in the Studio online, only the cloud)
+  async function cpSaveNow(d, fileName) {
+    const c = await cpCfg(true);
+    if (!c) { if (CP_HOSTED) { pkgMsg(t('cpNoCloud')); say(t('cpNoCloud')); } return false; }
+    cpBusy = true;
+    try {
+      let r = await cpPush(d, false);
+      if (r && r.error === 'stale' && (await g360Ask(t('cpStale', cpWhen(r.saved))))) r = await cpPush(d, true);
+      if (!r || !r.ok) return false;
+      cpSeen = { name:d.model, json:cpNorm(d) };
+      const m = fileName ? t('cpSavedAlso', fileName) : t('cpSaved'); pkgMsg(m); say(m); return true;
+    } catch (err) { const m = t('cpFail', err.message || err); pkgMsg(m); say(m); return false; }
+    finally { cpBusy = false; }
+  }
+
+  // ---- "Open a project from the cloud" on the start screen: the list, then the same way as a project file ----
+  let cpDlg = null;
+  function cpBox() {
+    if (cpDlg) return cpDlg;
+    cpDlg = document.createElement('div'); cpDlg.id = 'cpDlg'; cpDlg.hidden = true;
+    cpDlg.innerHTML = '<div class="box" role="dialog" aria-modal="true"><h3></h3><div class="note"></div><div class="list"></div><div class="row"><button type="button" class="no"></button></div></div>';
+    document.body.appendChild(cpDlg);
+    cpDlg.querySelector('.no').onclick = () => { cpDlg.hidden = true; };
+    cpDlg.addEventListener('mousedown', e => { if (e.target === cpDlg) cpDlg.hidden = true; });
+    addEventListener('keydown', e => { if (cpDlg.hidden) return; if (e.key === 'Escape') cpDlg.hidden = true; e.stopImmediatePropagation(); }, true);   // while it is open the Studio's shortcuts stay off (a question on top of it takes the keys first)
+    return cpDlg;
+  }
+  async function cpOpenList() {
+    const b = cpBox(), list = b.querySelector('.list');
+    b.querySelector('h3').textContent = t('cpH'); b.querySelector('.note').textContent = t('cpNote'); b.querySelector('.no').textContent = t('cpClose');
+    list.textContent = t('cpLoading'); b.hidden = false;
+    const c = await cpCfg(true);
+    if (!c) { list.textContent = t('cpNoCloud'); return; }
+    let j; try { j = await cpPost(c, { action:'pclist' }); } catch (err) { list.textContent = t('cpErr', err.message || err); return; }
+    const items = (j.list || []).sort((a, b) => (Date.parse(b.saved) || 0) - (Date.parse(a.saved) || 0));
+    list.textContent = items.length ? '' : t('cpNone');
+    items.forEach(it => {
+      const row = document.createElement('div'); row.className = 'it';
+      const go = document.createElement('button'); go.type = 'button'; go.className = 'go';
+      const nm = document.createElement('b'), sm = document.createElement('small'), md = document.createElement('small');
+      nm.textContent = it.title || String(it.model).replace(/^(cloud_\d+)_\d+$/i, '$1'); md.textContent = it.title ? String(it.model).replace(/^(cloud_\d+)_\d+$/i, '$1') : ''; sm.textContent = t('cpInfo', cpWhen(it.saved), it.tags);
+      nm.dir = 'auto'; go.append(nm, md, sm);
+      const del = document.createElement('button'); del.type = 'button'; del.className = 'del'; del.title = t('cpDel'); del.setAttribute('aria-label', t('cpDel'));
+      del.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>';
+      go.onclick = () => cpOpen(c, it);
+      del.onclick = async () => { if (!(await g360Ask(t('cpDelAsk', nm.textContent)))) return; try { await cpPost(c, { action:'pcdel', id:it.id }); row.remove(); if (cpLast.name === it.model) cpLast = { name:'', saved:'', json:'' }; if (!list.children.length) list.textContent = t('cpNone'); } catch (err) { say(t('cpErr', err.message || err)); } };
+      row.append(go, del); list.appendChild(row);
+    });
+  }
+  async function cpOpen(c, it) {
+    let d; try { d = await cpPost(c, { action:'pcget', id:it.id }); } catch (err) { say(t('cpErr', err.message || err)); return; }
+    if (!d) return;
+    cpBox().hidden = true; projHandle = null;
+    hideImport(); $('boot').hidden = false; let ok = false;
+    try { await sleep(40); ok = await openProjectData(d); } finally { hideBoot(); if (!ok) backToImport(); }
+    if (d.saved) cpSetAt(d.model, Date.parse(d.saved) || 0);   // what came from the cloud counts as this computer's copy, so the cloud copy is not taken again over it
+  }
+  // the button under "Open an existing project" shows only on a computer connected to the cloud
+  { const ps = $('projOpenStart');
+    if (ps && ps.parentNode) {
+      const b = document.createElement('button'); b.type = 'button'; b.id = 'cpOpenBtn'; b.className = 'resume'; b.hidden = true; b.onclick = cpOpenList; ps.insertAdjacentElement('afterend', b);
+      const show = async () => { b.textContent = t('cpOpenBtn'); b.hidden = !(await cpCfg()); };
+      setTimeout(show, 300); addEventListener('focus', () => { if (!started) { cpCfgAt = 0; show(); } });
+      const prev = window.G360_relang; window.G360_relang = function () { if (prev) prev.apply(this, arguments); b.textContent = t('cpOpenBtn'); if (cpDlg && !cpDlg.hidden) cpOpenList(); };
+    } }
+  /*@/STUDIO*/
   // ---- E57 point clouds ----
   function startPC(d) {
     pointMode = true;
@@ -6669,10 +6850,10 @@ const G360Card = (() => {
 // Gambit360 live tours – receives the files the Gambit360 Studio publishes. Put it in the same folder as index.html.
 // Only a request with the Studio's upload key is accepted, only into tours/<address>/ (plus index.html and .htaccess),
 // and only image, audio, video and config files. The previous copy of every file is kept in _backup/.
-// It also keeps the Studio's synced data (a private _bk_ folder), lets another computer connect with a password,
+// It also keeps the Studio's synced data (a private _bk_ folder: the live tours and the point-cloud projects), lets another computer connect with a password,
 // serves the Studio online at /app/ after that password, replaces itself when the Studio has a newer copy, and emails the clients' view reports.
 $KEY_SHA256 = '@@KEYHASH@@';
-$VER = 6;   // grows with every change to this file: the Studio replaces an older copy on the server by itself
+$VER = 7;   // grows with every change to this file: the Studio replaces an older copy on the server by itself
 $LOGO = '@@LOGO@@';   // the Gambit360 logo for the sign-in page, filled in by the Studio
 $MAX_BYTES = 500 * 1024 * 1024;
 
@@ -7068,6 +7249,38 @@ if ($action === 'repset' || $action === 'repsend') {   // the email reports of o
   $ev = $r['every'] === 'off' ? '' : $r['every'];
   $sent = repMail($root, $j, $slug, $r['email'], $ev, !empty($r['last']) ? $r['last'] : repBack($ev, $now), $now, $KEY_SHA256);
   out(200, array('ok' => true, 'sent' => $sent, 'rep' => $j, 'now' => $now));
+}
+if ($action === 'pclist' || $action === 'pcget' || $action === 'pcput' || $action === 'pcdel') {   // point-cloud projects (.g360: tags, views, measurements; not the E57 itself), one per model, in the private folder
+  $pd = $bd . '/pc'; $id = isset($_POST['id']) ? (string)$_POST['id'] : '';
+  if ($action !== 'pclist' && !preg_match('#^[0-9a-f]{24}$#', $id)) out(400, array('ok' => false, 'error' => 'path'));
+  $f = $pd . '/' . $id . '.json';
+  if ($action === 'pclist') {   // what the Studio shows in "Open from the cloud": the title, the model and when it was saved, not the whole project
+    $list = array();
+    foreach ((array)glob($pd . '/*.json') as $g) {
+      if (!preg_match('#/([0-9a-f]{24})\.json$#', $g, $m)) continue;
+      $j = $meta($g); if (!$j) continue;
+      $list[] = array('id' => $m[1], 'model' => isset($j['model']) ? (string)$j['model'] : '', 'title' => isset($j['title']) ? (string)$j['title'] : '', 'kind' => isset($j['kind']) ? (string)$j['kind'] : '',
+        'saved' => isset($j['saved']) ? (string)$j['saved'] : '', 'by' => isset($j['by']) ? (string)$j['by'] : '', 'tags' => isset($j['extras']['tags']) && is_array($j['extras']['tags']) ? count($j['extras']['tags']) : 0, 'size' => filesize($g));
+    }
+    out(200, array('ok' => true, 'list' => $list));
+  }
+  if ($action === 'pcget') { if (!is_file($f)) out(404, array('ok' => false, 'error' => 'none')); header('Content-Type: application/json; charset=utf-8'); readfile($f); exit; }
+  $lk = @fopen($bd . '/.lock', 'c'); if ($lk) flock($lk, LOCK_EX);
+  $keep = function () use ($pd, $id, $f) {   // the 20 copies before this one stay in pc/history/
+    if (!is_file($f)) return;
+    $kd = $pd . '/history'; if (!is_dir($kd)) @mkdir($kd, 0755, true); @copy($f, $kd . '/' . $id . '.' . date('Ymd-His') . '.json');
+    $old = glob($kd . '/' . $id . '.*.json'); if ($old && count($old) > 20) { sort($old); foreach (array_slice($old, 0, count($old) - 20) as $o) @unlink($o); }
+  };
+  if ($action === 'pcdel') { $keep(); @unlink($f); out(200, array('ok' => true)); }
+  if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) out(400, array('ok' => false, 'error' => 'file'));
+  $j = json_decode(file_get_contents($_FILES['file']['tmp_name']), true);
+  if (!is_array($j) || !isset($j['g360project']) || empty($j['model'])) out(400, array('ok' => false, 'error' => 'json'));
+  if (isset($_POST['prev']) && is_file($f)) { $c = $meta($f); $sv = $c && isset($c['saved']) ? (string)$c['saved'] : ''; if ($sv !== (string)$_POST['prev']) out(409, array('ok' => false, 'error' => 'stale', 'saved' => $sv, 'by' => $c && isset($c['by']) ? (string)$c['by'] : '')); }
+  denyDir($bd); if (!is_dir($pd) && !@mkdir($pd, 0755, true)) out(500, array('ok' => false, 'error' => 'mkdir'));
+  $keep();
+  if (!move_uploaded_file($_FILES['file']['tmp_name'], $f . '.part')) out(500, array('ok' => false, 'error' => 'write'));
+  if (!@rename($f . '.part', $f)) { @unlink($f); if (!@rename($f . '.part', $f)) out(500, array('ok' => false, 'error' => 'rename')); }
+  out(200, array('ok' => true, 'saved' => isset($j['saved']) ? (string)$j['saved'] : ''));
 }
 if ($action !== 'put') out(400, array('ok' => false, 'error' => 'action'));
 
@@ -8437,7 +8650,7 @@ const G360Card = (() => {
       if (!j.ver) phpNote = L('cloudPhpOld');   // from before this version: it cannot replace itself, so once more by hand
       else { try { await phpUpdate(settings.upKey); msg(L('cloudPhpUp')); const j2 = await upPost({ key: settings.upKey, action: 'ping' }); if (j2 && j2.ok) srvInfo = j2; } catch (e) { phpNote = L('cloudPhpFail', e.message || e); } }
     }
-    if (srvInfo.pass && srvInfo.user === '' && !userAsked && $('lvDlg').hidden) { userAsked = true; msg(L('cloudNoUser')); cloudPass(true); }   // a password from before user names: ask for one, once a session
+    if (srvInfo.pass && srvInfo.user === '' && !userAsked && $('lvDlg').hidden && !$('live').hidden) { userAsked = true; msg(L('cloudNoUser')); cloudPass(true); }   // a password from before user names: ask for one, once a session
     if (!HOSTED && srvInfo.ver >= 2) appUpload(false).catch(() => {});
     return srvInfo;
   }
@@ -8662,6 +8875,15 @@ const G360Card = (() => {
     if (k || HOSTED) try { await db.kset('settings', settings); } catch (e) {}
     return !!k;
   }
+  // the point-cloud viewer keeps its projects in the same cloud (06a-cloud-projects.js): it gets the address, the key and an up-to-date upload.php from here
+  window.G360_cloud = async () => {
+    if (!settings.upKey) { try { const s = await db.kget('settings'); if (s) Object.assign(settings, s); } catch (e) {} }
+    await cloudBoot();
+    if (!settings.upKey || !settings.base) return null;
+    const i = await srvCheck(false);
+    let user = ''; try { user = localStorage.getItem('g360user') || ''; } catch (e) {}
+    return { url: upUrl(), key: settings.upKey, ver: i ? i.ver || 0 : 0, user: (i && i.user) || user };
+  };
   if (HOSTED) { let k = null; try { k = localStorage.getItem('g360cloudKey'); } catch (e) {} if (k) setTimeout(() => { if (window.G360_openLive) window.G360_openLive(); }, 300); }
   // ---- Matterport SDK key: options that need it (nadir, Photos tab, map position) warn when they are turned on and the key is missing,
   // or when the tour pages on the site reported that Matterport refused the key (upload.php keeps that note, ping returns it) ----

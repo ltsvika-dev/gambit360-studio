@@ -51,6 +51,7 @@
     } catch (err) { console.warn('could not remember the file', err); }
     if (rec.handle && !window.G360_CLIENT) { try { await idb.set('model:' + rec.name, { kind:rec.kind, name:rec.name, handle:rec.handle, quality:rec.quality || null }); } catch (err) {} }
     if (pendingProject) { const d = pendingProject; pendingProject = null; if (d.model === currentName || legacyOf(d.model, currentName)) applyProject(d); else msg(t('projMismatch', currentName, d.model), true); }
+    if (typeof cpLink === 'function') setTimeout(cpLink, 1200);   // the project's copy in the cloud: the newer one wins
   }
 
   // "Continue where you left off": where you stood and looked, and which view was open (inside, plan or 3D), is kept per model

@@ -197,25 +197,39 @@
     return out;
   }
   let pkgAbort = false;
+  async function siteViewer() {   // the Studio online has no Studio folder: its own page and lib/*.js are read back from the site (signed in, so the page comes back)
+    const get = async u => { const r = await fetch(u, { cache:'no-store', credentials:'same-origin' }); if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + u); return r.blob(); };
+    const page = await get(location.href.split('#')[0]), lib = [];
+    if (!/G360_CLIENT\s*=\s*false/.test(await page.slice(0, 4000).text())) throw new Error(t('pkgNeedSrc'));
+    for (const sc of document.querySelectorAll('script[src]')) {
+      const u = new URL(sc.getAttribute('src'), location.href); if (!/\/lib\/[^/]+\.js$/i.test(u.pathname)) continue;
+      const b = await get(u.href), n = decodeURIComponent(u.pathname.split('/').pop()); lib.push({ name:n, getFile:async () => new File([b], n) });
+    }
+    return { html:{ getFile:async () => new File([page], 'Gambit360 Studio.html') }, lib, obf:null, name:'' };
+  }
   async function makePackage() {
     if ((!lastObjFiles && !lastE57) || !window.showDirectoryPicker) { pkgMsg(t('pkgNoFS')); return; }
     // The viewer file and its lib folder are copied too. The page cannot read its own file, so the folder that holds them is chosen once and remembered.
-    let src = null;
-    try { src = await idb.get('srcDir'); } catch (err) {}
-    if (src) {
-      try {
-        let p = await src.queryPermission({ mode:'readwrite' });
-        if (p !== 'granted') p = await src.requestPermission({ mode:'readwrite' });
-        if (p !== 'granted') src = null;
-      } catch (err) { pkgMsg(t('pkgAgain')); return; }
-      if (src) src = await alignSrc(src);
+    let src = null, found = null, root = null;
+    if (CP_HOSTED) {   // the Studio online: the viewer and its lib come from the site, and the package goes into a folder picked on this computer
+      try { found = await siteViewer(); } catch (err) { pkgMsg(t('pkgFail') + err.message); return; }
+      try { root = await g360Pick.dir({ id:'g360pkg', mode:'readwrite' }); } catch (err) { if (!(err && err.name === 'AbortError')) pkgMsg(t('pkgNeedRW')); return; }
+    } else {
+      try { src = await idb.get('srcDir'); } catch (err) {}
+      if (src) {
+        try {
+          let p = await src.queryPermission({ mode:'readwrite' });
+          if (p !== 'granted') p = await src.requestPermission({ mode:'readwrite' });
+          if (p !== 'granted') src = null;
+        } catch (err) { pkgMsg(t('pkgAgain')); return; }
+        if (src) src = await alignSrc(src);
+      }
+      if (!src) { pkgMsg(t('pkgNeedSrc')); return; }
+      found = await findViewer(src);
+      if (!found.html || !found.lib.length) { try { await idb.del('srcDir'); } catch (err) {} pkgMsg(t('pkgBadSrc', found.name, !!found.html, found.lib.length)); return; }
+      try { root = await exportDir(src, 'Client Packages', true); }
+      catch (err) { pkgMsg(t('pkgNeedRW')); return; }
     }
-    if (!src) { pkgMsg(t('pkgNeedSrc')); return; }
-    const found = await findViewer(src);
-    if (!found.html || !found.lib.length) { try { await idb.del('srcDir'); } catch (err) {} pkgMsg(t('pkgBadSrc', found.name, !!found.html, found.lib.length)); return; }
-    let root;
-    try { root = await exportDir(src, 'Client Packages', true); }
-    catch (err) { pkgMsg(t('pkgNeedRW')); return; }
     const projName = $('pkgName').value.trim();
     const mgr = $('pkgMgr').value.trim();
     const expires = expiryEnd();

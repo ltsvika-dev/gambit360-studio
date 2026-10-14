@@ -76,7 +76,7 @@
       if (!j.ver) phpNote = L('cloudPhpOld');   // from before this version: it cannot replace itself, so once more by hand
       else { try { await phpUpdate(settings.upKey); msg(L('cloudPhpUp')); const j2 = await upPost({ key: settings.upKey, action: 'ping' }); if (j2 && j2.ok) srvInfo = j2; } catch (e) { phpNote = L('cloudPhpFail', e.message || e); } }
     }
-    if (srvInfo.pass && srvInfo.user === '' && !userAsked && $('lvDlg').hidden) { userAsked = true; msg(L('cloudNoUser')); cloudPass(true); }   // a password from before user names: ask for one, once a session
+    if (srvInfo.pass && srvInfo.user === '' && !userAsked && $('lvDlg').hidden && !$('live').hidden) { userAsked = true; msg(L('cloudNoUser')); cloudPass(true); }   // a password from before user names: ask for one, once a session
     if (!HOSTED && srvInfo.ver >= 2) appUpload(false).catch(() => {});
     return srvInfo;
   }
@@ -301,4 +301,13 @@
     if (k || HOSTED) try { await db.kset('settings', settings); } catch (e) {}
     return !!k;
   }
+  // the point-cloud viewer keeps its projects in the same cloud (06a-cloud-projects.js): it gets the address, the key and an up-to-date upload.php from here
+  window.G360_cloud = async () => {
+    if (!settings.upKey) { try { const s = await db.kget('settings'); if (s) Object.assign(settings, s); } catch (e) {} }
+    await cloudBoot();
+    if (!settings.upKey || !settings.base) return null;
+    const i = await srvCheck(false);
+    let user = ''; try { user = localStorage.getItem('g360user') || ''; } catch (e) {}
+    return { url: upUrl(), key: settings.upKey, ver: i ? i.ver || 0 : 0, user: (i && i.user) || user };
+  };
   if (HOSTED) { let k = null; try { k = localStorage.getItem('g360cloudKey'); } catch (e) {} if (k) setTimeout(() => { if (window.G360_openLive) window.G360_openLive(); }, 300); }

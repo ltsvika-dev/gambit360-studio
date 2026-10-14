@@ -350,7 +350,7 @@
       g.fillStyle = 'rgba(15,19,22,' + Math.min(1, p.card) + ')'; g.fillRect(0, 0, W, H);
       g.save(); g.globalAlpha = Math.min(1, p.card); g.textAlign = 'center';
       if (img && img.naturalWidth) {
-        const lw = 560, lh = lw * img.naturalHeight / img.naturalWidth, pad = 26;
+        const lw = Math.min(560 * logoK(), W * 0.8, H * 0.34 * img.naturalWidth / img.naturalHeight), lh = lw * img.naturalHeight / img.naturalWidth, pad = 26;
         g.fillStyle = '#fff'; g.beginPath();
         if (g.roundRect) g.roundRect(W / 2 - lw / 2 - pad, H / 2 - lh - pad - 40, lw + 2 * pad, lh + 2 * pad, 18); else g.rect(W / 2 - lw / 2 - pad, H / 2 - lh - pad - 40, lw + 2 * pad, lh + 2 * pad);
         g.fill(); g.drawImage(img, W / 2 - lw / 2, H / 2 - lh - 40, lw, lh);
@@ -359,7 +359,7 @@
       if (!customLogo) { g.fillStyle = '#5ec4b6'; g.font = '500 40px sans-serif'; g.fillText('gambit360.co.il', W / 2, H / 2 + 150); }
       g.restore();
     } else if (o.logo && img && img.naturalWidth && p.ph >= 1) {   // small logo in the corner while walking
-      const lw = 230, lh = lw * img.naturalHeight / img.naturalWidth, pad = 10, m = 36;
+      const lw = Math.min(230 * logoK(), W * 0.5, H * 0.16 * img.naturalWidth / img.naturalHeight), lh = lw * img.naturalHeight / img.naturalWidth, pad = 10, m = 36;
       g.save(); g.globalAlpha = .92; g.fillStyle = '#fff'; g.beginPath();
       if (g.roundRect) g.roundRect(m, H - m - lh - 2 * pad, lw + 2 * pad, lh + 2 * pad, 10); else g.rect(m, H - m - lh - 2 * pad, lw + 2 * pad, lh + 2 * pad);
       g.fill(); g.drawImage(img, m + pad, H - m - lh - pad, lw, lh); g.restore();

@@ -58,7 +58,28 @@
     const m = await fileMeta('splash'), im = $('lvSplImg'); forgetUrl('splash');
     if (m && m.blob) { im.src = await fileUrl('splash'); im.hidden = false; } else { im.removeAttribute('src'); im.hidden = true; }
     $('lvSplRm').hidden = !(m && m.blob); $('lvSplW').value = +settings.splW || 260; splWTxt();
+    brandPush();
   }
+  // My logo (the one picked here) is also the Studio's logo and the one in point-cloud outputs: the viewer gets it as a small PNG.
+  // The width above is handed over for outputs only; the Studio's own screen keeps its usual size.
+  let brandSeq = 0;
+  async function brandPush() {
+    if (!window.G360_setBrand) return;
+    const seq = ++brandSeq; let w = +settings.splW || 0;
+    if (!w) { try { const s = await db.kget('settings'); w = (s && +s.splW) || 0; } catch (e) {} }
+    const m = await fileMeta('splash');
+    if (!(m && m.blob)) { if (seq === brandSeq) window.G360_setBrand('', 0); return; }
+    const u = URL.createObjectURL(m.blob), im = new Image();
+    im.onload = () => {
+      URL.revokeObjectURL(u); if (seq !== brandSeq) return;
+      const k = Math.min(1, 1200 / im.naturalWidth, 480 / im.naturalHeight), c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(im.naturalWidth * k)); c.height = Math.max(1, Math.round(im.naturalHeight * k)); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      window.G360_setBrand(c.toDataURL('image/png'), w || 260);
+    };
+    im.onerror = () => URL.revokeObjectURL(u);
+    im.src = u;
+  }
+  brandPush();
   $('lvSplPick').onclick = () => {
     const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/png,.png';
     inp.onchange = async () => { const f = inp.files && inp.files[0]; if (!f) return; if (!pngOk(f)) { msg(L('pngBad'), true); return; } await db.fset('splash', { blob: f, name: f.name, type: f.type, ts: Date.now() }); bkSoon(); refreshSplash(); };
@@ -66,6 +87,7 @@
   };
   // the loading-screen logo's size (all tours; the page keeps it inside the screen)
   const splWTxt = () => { const v = +settings.splW || 260; $('lvSplWL').textContent = L('splW', v); };
-  $('lvSplW').oninput = () => { settings.splW = +$('lvSplW').value; splWTxt(); saveSet(); };
+  $('lvSplW').oninput = () => { settings.splW = +$('lvSplW').value; splWTxt(); saveSet(); clearTimeout(brandT); brandT = setTimeout(brandPush, 300); };
+  let brandT = 0;
   $('lvSplRm').onclick = async () => { try { await db.fdel('splash'); } catch (e) {} forgetUrl('splash'); bkSoon(); refreshSplash(); };
 

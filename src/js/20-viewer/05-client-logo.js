@@ -1,17 +1,29 @@
   // ---- Client logo: replaces the Gambit360 logo in the viewer, snapshots, the promo video and the client package ----
-  const DEF_LOGO = (document.querySelector('#logo img') || {}).src || '';
-  let customLogo = '';
+  const DEF_LOGO0 = (document.querySelector('#logo img') || {}).src || '';
+  let customLogo = '', DEF_LOGO = DEF_LOGO0, brandW = 0;   // DEF_LOGO: my own logo (chosen in the Options screen) or the built-in Gambit360 one
   function refreshLogoSt() { const e = $('pkgLogoSt'); if (e) e.textContent = t(customLogo ? 'logoCustom' : 'logoDefault'); if ($('pkgLogoReset')) $('pkgLogoReset').hidden = !customLogo; }
   function applyLogo(url) {
     customLogo = url || '';
     const a = $('logo'), img = a.querySelector('img');
     img.src = customLogo || DEF_LOGO;
     $('bootLogo').src = img.src; $('bootLogo').hidden = false;
-    a.classList.toggle('custom', !!customLogo);
+    a.classList.toggle('custom', !!customLogo); a.classList.toggle('brand', !customLogo && DEF_LOGO !== DEF_LOGO0);
+    if (window.G360_CLIENT) { const st = document.documentElement.style, k = !customLogo && brandW ? brandW / 260 : 0; st.setProperty('--logoW', k ? Math.round(200 * k) + 'px' : 'auto'); st.setProperty('--logoMH', k ? Math.round(64 * k) + 'px' : '64px'); }   // a client package shows my logo at the chosen width
     if (customLogo) { a.removeAttribute('href'); a.removeAttribute('title'); a.onclick = e => e.preventDefault(); }
     else { a.href = 'https://gambit360.co.il/'; a.title = 'gambit360.co.il'; a.onclick = null; }
     refreshLogoSt();
   }
+  // My logo comes from the Options screen (the live tours module hands it over). Its width there is for what the Studio produces
+  // (published tours, client packages, snapshots, videos, reports), never for the Studio's own screen.
+  function setBrand(url, w) {
+    DEF_LOGO = url || DEF_LOGO0; brandW = +w > 0 ? +w : 0;
+    if (!window.G360_CLIENT) { try { if (url) localStorage.setItem('g360Brand', JSON.stringify({ url, w:brandW })); else localStorage.removeItem('g360Brand'); } catch (err) {} }
+    applyLogo(customLogo);
+  }
+  const logoK = () => !customLogo && brandW > 0 ? brandW / 260 : 1;   // the size outputs draw my logo at (260 = the usual width)
+  function brandFields() { return { brand:DEF_LOGO !== DEF_LOGO0 ? DEF_LOGO : undefined, brandW:DEF_LOGO !== DEF_LOGO0 && brandW && brandW !== 260 ? brandW : undefined }; }
+  window.G360_setBrand = setBrand;
+  if (!window.G360_CLIENT) { try { const b = JSON.parse(localStorage.getItem('g360Brand') || 'null'); if (b && b.url) setBrand(b.url, b.w); } catch (err) {} }   // at once, so the Studio opens with my logo
   function saveLogoLocal() { try { if (customLogo) localStorage.setItem('tourViewerLogo:' + currentName, customLogo); else localStorage.removeItem('tourViewerLogo:' + currentName); } catch (err) {} }
   function pickLogo(file) {
     const u = URL.createObjectURL(file), im = new Image();

@@ -93,11 +93,11 @@
   .pcb { height:40px; min-width:40px; border-radius:20px !important; padding:0 !important; display:none; align-items:center; justify-content:center; gap:6px; background:rgba(20,24,27,.72) !important; color:#fff !important; border:0 !important; cursor:pointer; }
   .pcb svg { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
   #lvPTour, #lvPVid, #lvPInfo, #lvPSpot, #lvPCt { padding:0 12px 0 10px !important; font-size:.8rem; } #lvPInfo span { white-space:nowrap; }
-  #lvStage.lblOff .pcb { padding:0 !important; width:40px; } #lvStage.lblOff .pcb span { display:none; } #lvPVid span { max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #lvStage.lblOff .pcb, #lvStage .pcb.noLbl { padding:0 !important; width:40px; } #lvStage.lblOff .pcb span, #lvStage .pcb.noLbl > span { display:none; } #lvPVid span { max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   #lvPTm, #lvPVm, #lvPSm { border-radius:14px !important; padding:8px !important; } #lvPTm button, #lvPVm button, #lvPSm button { border-radius:9px !important; padding:9px 12px !important; } #lvPTour span { max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   #lvPTm, #lvPVm, #lvPSm { position:absolute; z-index:6; top:62px; right:14px; display:none; min-width:160px; background:rgba(20,24,27,.96); border:1px solid #3a464d; border-radius:10px; padding:6px; }
   #lvPTm button, #lvPVm button, #lvPSm button, #lvPOv .tabs button { display:block; width:100%; text-align:start; background:transparent !important; color:#e8ecee !important; border:0 !important; border-radius:6px; padding:7px 10px; cursor:pointer; }
-  #lvPTm button.on, #lvPVm button.on, #lvPOv .tabs button.on { background:var(--hl, #5ec4b6) !important; color:var(--hlFg, #0b1412) !important; font-weight:600; }
+  #lvPTm button.on, #lvPVm button.on, #lvPOv .tabs button.on { background:var(--hl, #4a565e) !important; color:var(--hlFg, #fff) !important; font-weight:600; }   /* no colour chosen: a lighter grey */
   #lvPTm button::before, #lvPVm button::before, #lvPSm button::before { content:'\25B6'; font-size:.6em; margin-inline-end:9px; opacity:.65; vertical-align:middle; } #lvPTm button.on::before, #lvPVm button.on::before { opacity:1; }
   #lvPOv { position:absolute; inset:0; z-index:7; background:rgba(0,0,0,.72); display:none; align-items:center; justify-content:center; padding:12px; }
   #lvPOv .b { position:relative; background:#14181b; color:#e8ecee; border:1px solid #3a464d; border-radius:14px; padding:16px; width:min(520px,100%); max-height:100%; overflow:auto; line-height:1.6; }
@@ -166,7 +166,7 @@
   #live .lvTop #lvAcc:hover { border-color:var(--accent); }
   #live .lvTop #lvAcc::after { content:''; width:18px; height:18px; border-radius:50%; background:var(--sw, var(--accent)); box-shadow:0 0 0 1px rgba(0,0,0,.25); pointer-events:none; }
   #live .lvTop #lvAcc input { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; border:0; padding:0; }
-  #lvPTm button:not(.on):hover, #lvPVm button:not(.on):hover, #lvPSm button:not(.on):hover { background:var(--hov, #2a3338) !important; }   /* hover: 25% of the button's colour */
+  #lvPTm button:not(.on):hover, #lvPVm button:not(.on):hover, #lvPSm button:not(.on):hover, #lvPOv .tabs button:not(.on):hover { background:var(--hov, #2a3338) !important; }   /* hover: 25% of the button's colour */
   /* opening caption in the preview */
   #lvPWel { position:absolute; z-index:4; bottom:44px; left:0; display:none; align-items:stretch; max-width:70%; pointer-events:none; direction:ltr; }
   #lvPWel.r { left:auto; right:0; flex-direction:row-reverse; }

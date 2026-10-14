@@ -185,7 +185,7 @@
     const none = list.filter(x => !typeOf(x.ty)); if (none.length) groups.push({ ty:{ id:'', n:t('tyNone'), col:'#8e9aa1' }, list:none });
     // the cover
     { const { c, g } = newPage();
-      if (logo) { const lw = Math.min(420, logo.naturalWidth), lh = lw * logo.naturalHeight / logo.naturalWidth; g.drawImage(logo, he ? PW - M - lw : M, M, lw, lh); }
+      if (logo) { const lw = Math.min(420 * logoK(), PW - 2 * M, 300 * logo.naturalWidth / logo.naturalHeight), lh = lw * logo.naturalHeight / logo.naturalWidth; g.drawImage(logo, he ? PW - M - lw : M, M, lw, lh); }
       txt(g, t('repTitle'), M, 420, 40, { col:'#5d6a72', rtl:he }); txt(g, title, M, 500, 64, { bold:true, rtl:he });
       txt(g, t('repDate') + ': ' + date + '   ·   ' + t('repCount', list.length), M, 570, 30, { col:'#5d6a72', rtl:he });
       g.fillStyle = '#e1e6e9'; g.fillRect(M, 620, PW - 2 * M, 2);

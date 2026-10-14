@@ -224,6 +224,29 @@ try {
   const expired = await (await fetch(SITE + 'upload.php?pkgget=' + tok + '&e=1&s=x')).status;
   ok(expired === 403, 'a download link without a valid signature is refused');
   ok(c.errors.length === 0 && s.errors.length === 0, 'no errors with projects in the cloud', c.errors.concat(s.errors).join('\n'));
+
+  // ---- 7. the Options screen opens from the point-cloud module; my logo there becomes the Studio's logo; its width is for outputs only ----
+  const logoBox = () => s.page.evaluate(() => { const r = document.querySelector('#logo').getBoundingClientRect(); return Math.round(r.width) + 'x' + Math.round(r.height); });
+  const lgBefore = await logoBox(), origSrc = await s.page.getAttribute('#logo img', 'src');
+  await s.page.click('#optBtn'); await s.page.click('#liveSetMenuBtn');
+  await s.page.waitForSelector('#lvSet:not([hidden])');
+  ok(await s.page.evaluate(() => document.getElementById('live').hidden && document.getElementById('optMenu').hidden), 'the Options screen opens from the point-cloud Options menu, without the tours screen');
+  const png = Buffer.from(await s.page.evaluate(() => { const c = document.createElement('canvas'); c.width = 300; c.height = 300; const g = c.getContext('2d'); g.fillStyle = '#d33'; g.fillRect(0, 0, 300, 300); return c.toDataURL('image/png').split(',')[1]; }), 'base64');
+  const [fc] = await Promise.all([s.page.waitForEvent('filechooser'), s.page.click('#lvSplPick')]);
+  await fc.setFiles({ name: 'mine.png', mimeType: 'image/png', buffer: png });
+  await s.page.waitForFunction(o => { const i = document.querySelector('#logo img'); return i.src !== o && i.src.startsWith('data:image/png'); }, origSrc, { timeout: 10000 }).catch(() => {});
+  const lg = await s.page.evaluate(() => ({ src: document.querySelector('#logo img').src, boot: document.getElementById('bootLogo').src, brand: document.getElementById('logo').classList.contains('brand') }));
+  ok(lg.src !== origSrc && lg.brand && lg.boot === lg.src, 'the logo picked there replaces the Studio logo (top corner and start screen)');
+  const shown = await logoBox();
+  await s.page.evaluate(() => { const r = document.getElementById('lvSplW'); r.value = 520; r.dispatchEvent(new Event('input')); });
+  await s.page.waitForFunction(() => { try { return JSON.parse(localStorage.getItem('g360Brand')).w === 520; } catch (e) { return false; } }, null, { timeout: 5000 }).catch(() => {});
+  const handed = await s.page.evaluate(() => { try { return JSON.parse(localStorage.getItem('g360Brand')).w; } catch (e) { return 0; } });
+  ok(handed === 520 && await logoBox() === shown, 'the width goes to the outputs and the Studio logo keeps its size', lgBefore + ' / ' + shown + ' / ' + (await logoBox()) + ' w=' + handed);
+  await s.page.keyboard.press('Escape');
+  ok(await s.page.evaluate(() => document.getElementById('lvSet').hidden), 'Esc closes the Options screen over the point cloud');
+  await s.page.reload(); await s.page.waitForTimeout(500);
+  ok(await s.page.evaluate(() => document.getElementById('logo').classList.contains('brand')), 'the Studio opens with my logo next time');
+  ok(s.errors.length === 0, 'no errors with my logo', s.errors.join('\n'));
 } catch (e) { ok(false, 'the test itself ran to the end', e.stack || e); }
 finally {
   if (browser) await browser.close();

@@ -50,12 +50,13 @@
       let u = null;
       if (E) u = E;
       if (u && u.pkg && M && u.name === M.name && (u.ts || 0) >= (M.built || 0)) {
-        ['logo', 'tags', 'tagTypes', 'start', 'hide', 'floors', 'miniClosed', 'clientTags', 'noCloud', 'promoMode'].forEach(k => { if (!(k in u.pkg)) delete M[k]; });
+        ['logo', 'brand', 'brandW', 'tags', 'tagTypes', 'start', 'hide', 'floors', 'miniClosed', 'clientTags', 'noCloud', 'promoMode'].forEach(k => { if (!(k in u.pkg)) delete M[k]; });
         Object.assign(M, u.pkg, { built:M.built });
       }
     } catch (err) { console.error(err); }
     const pk = window.G360PKG;
     if (!pk || !pk.files || !pk.files.length) return false;
+    if (pk.brand) setBrand(pk.brand, pk.brandW);   // my logo, from the Options screen
     if (pk.logo) applyLogo(pk.logo);
     if (pk.miniClosed && window.G360_miniDefault) window.G360_miniDefault();
     if (pk.title) setProjectTitle(pk.title, pk.manager);
@@ -270,7 +271,7 @@
         await put(md, fname, new Blob(['window.G360F=window.G360F||{};window.G360F[' + JSON.stringify(fname) + ']="', b64, '";']), 'model/' + fname);
         list.push({ n:use[i].name, src:fname });
       }
-      await put(md, 'manifest.js', 'window.G360PKG=' + JSON.stringify(Object.assign({ name:currentName, built:Date.now(), logo:customLogo || undefined, title:projName, manager:mgr, expires, terms:(window.G360_getTerms ? window.G360_getTerms(true) : ''), link:$('pkgMpShow').checked ? getLink() : '', miniClosed:$('pkgMini').checked ? 1 : undefined, clientTags:$('pkgClientTags').checked ? 1 : undefined, noCloud:$('pkgCloud').checked ? undefined : 1, promoMode:promoModeVal(), tags:(window.G360_extrasData().tags.length ? window.G360_extrasData().tags : undefined), start:window.G360_extrasData().start, hide:window.G360_extrasData().hide, floors:window.G360_extrasData().floors, views:views.map(v => ({ n:v.n, p:v.p, yaw:v.yaw, pitch:v.pitch, room:v.room ? 1 : undefined })), files:list }, extra)) + ';', 'model/manifest.js');
+      await put(md, 'manifest.js', 'window.G360PKG=' + JSON.stringify(Object.assign({ name:currentName, built:Date.now(), logo:customLogo || undefined, ...brandFields(), title:projName, manager:mgr, expires, terms:(window.G360_getTerms ? window.G360_getTerms(true) : ''), link:$('pkgMpShow').checked ? getLink() : '', miniClosed:$('pkgMini').checked ? 1 : undefined, clientTags:$('pkgClientTags').checked ? 1 : undefined, noCloud:$('pkgCloud').checked ? undefined : 1, promoMode:promoModeVal(), tags:(window.G360_extrasData().tags.length ? window.G360_extrasData().tags : undefined), start:window.G360_extrasData().start, hide:window.G360_extrasData().hide, floors:window.G360_extrasData().floors, views:views.map(v => ({ n:v.n, p:v.p, yaw:v.yaw, pitch:v.pitch, room:v.room ? 1 : undefined })), files:list }, extra)) + ';', 'model/manifest.js');
       { const fresh = new Set(entries.filter(e => e.path.startsWith(safe + '/model/')).map(e => e.path.slice((safe + '/model/').length)));   // leftovers of an older package are removed only now
         for (const name of old) if (!fresh.has(name)) { try { await md.removeEntry(name); } catch (err) {} } }
       let zipped = false;
@@ -407,7 +408,7 @@
       const a = txt.indexOf('{'), b = txt.lastIndexOf('}');
       const man = JSON.parse(txt.slice(a, b + 1));
       const ex = window.G360_extrasData ? window.G360_extrasData() : {};
-      Object.assign(man, { built:Date.now(), logo:customLogo || undefined, title:projName, manager:mgr, expires, terms:(window.G360_getTerms ? window.G360_getTerms(true) : ''),
+      Object.assign(man, { built:Date.now(), logo:customLogo || undefined, ...brandFields(), title:projName, manager:mgr, expires, terms:(window.G360_getTerms ? window.G360_getTerms(true) : ''),
         link:$('pkgMpShow').checked ? getLink() : '', miniClosed:$('pkgMini').checked ? 1 : undefined, clientTags:$('pkgClientTags').checked ? 1 : undefined, noCloud:$('pkgCloud').checked ? undefined : 1, promoMode:promoModeVal(),
         tags:(ex.tags && ex.tags.length ? ex.tags : undefined), tagTypes:ex.tagTypes, floors:ex.floors, start:ex.start, hide:ex.hide,
         views:views.map(v => ({ n:v.n, p:v.p, yaw:v.yaw, pitch:v.pitch, room:v.room ? 1 : undefined })) });
@@ -423,7 +424,7 @@
   // The settings a client package carries (the same ones the manifest holds).
   function clientFields() {
     const ex = window.G360_extrasData ? window.G360_extrasData() : {};
-    return { logo:customLogo || undefined, title:$('pkgName').value.trim(), manager:$('pkgMgr').value.trim(), expires:expiryEnd(), terms:(window.G360_getTerms ? window.G360_getTerms(true) : ''),
+    return { logo:customLogo || undefined, ...brandFields(), title:$('pkgName').value.trim(), manager:$('pkgMgr').value.trim(), expires:expiryEnd(), terms:(window.G360_getTerms ? window.G360_getTerms(true) : ''),
       link:$('pkgMpShow').checked ? getLink() : '', miniClosed:$('pkgMini').checked ? 1 : undefined, clientTags:$('pkgClientTags').checked ? 1 : undefined, noCloud:$('pkgCloud').checked ? undefined : 1, promoMode:promoModeVal(),
       tags:(ex.tags && ex.tags.length ? ex.tags : undefined), tagTypes:ex.tagTypes, floors:ex.floors, start:ex.start, hide:ex.hide, views:views.map(v => ({ n:v.n, p:v.p, yaw:v.yaw, pitch:v.pitch, room:v.room ? 1 : undefined })) };
   }

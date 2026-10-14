@@ -191,8 +191,9 @@ try {
   await c.page.evaluate(() => window.G360_cpTick()); await c.page.waitForTimeout(500);
   await s.page.evaluate(() => { localStorage.setItem('g360pcAt:room', '1'); });   // A's own last change was long ago
   await s.page.reload(); await s.page.setInputFiles('#pickerE57', path.join(HERE, 'fixtures', 'room.e57'));
-  await s.page.waitForSelector('#mbtn', { state: 'visible', timeout: 60000 }); await s.page.waitForTimeout(2500);
-  ok(await s.page.evaluate(() => document.getElementById('pkgName').value) === 'From computer C' && await tagCount(s.page) === sTags, 'the newer copy from computer C comes back to computer A when the scan opens', JSON.stringify([await s.page.evaluate(() => [document.getElementById('pkgName').value, Object.keys(localStorage).filter(k => /room/.test(k))]), await tagCount(s.page), fs.readFileSync(path.join(pcDir, pcFiles[0]), 'utf8').slice(0, 300)]));
+  await s.page.waitForSelector('#mbtn', { state: 'visible', timeout: 60000 });
+  await s.page.waitForFunction(() => document.getElementById('pkgName').value === 'From computer C', null, { timeout: 15000 }).catch(() => {});
+  ok(await s.page.evaluate(() => document.getElementById('pkgName').value) === 'From computer C' && await tagCount(s.page) === sTags, 'the newer copy from computer C comes back to computer A when the scan opens', JSON.stringify({ sTags, title: await s.page.evaluate(() => document.getElementById('pkgName').value), a: await s.page.evaluate(() => window.G360_extrasData().tags.map(x => x.n)), srv: JSON.parse(fs.readFileSync(path.join(pcDir, pcFiles[0]), 'utf8')).extras.tags.map(x => x.n) }));
   ok(c.errors.length === 0 && s.errors.length === 0, 'no errors with projects in the cloud', c.errors.concat(s.errors).join('\n'));
 } catch (e) { ok(false, 'the test itself ran to the end', e.stack || e); }
 finally {

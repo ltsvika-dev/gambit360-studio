@@ -159,7 +159,7 @@
       const cmw = document.createElement('div'); cmw.dataset.ctmsg = '1'; parent.appendChild(cmw);
       const cms = field(cmw, L('cMsg'), '<input type="text" data-ct="msg">'); cms.oninput = () => { t.contact.msg = cms.value; ctSync(); save(t); };
       if (withLabel) { const clb = field(parent, L('cLabel'), '<input type="text" data-ct="label">'); clb.oninput = () => { t.contact.label = clb.value; ctSync(); save(t); preview(); };
-        const cr = document.createElement('div'); cr.className = 'row'; cr.innerHTML = '<label class="f" style="margin:0"></label><input type="color"><button type="button"></button>'; parent.appendChild(cr);   // the button's colour (WhatsApp green etc. by default)
+        const cr = document.createElement('div'); cr.className = 'row colRow'; cr.innerHTML = '<label class="f" style="margin:0"></label><input type="color"><button type="button"></button>'; parent.appendChild(cr);   // the button's colour (WhatsApp green etc. by default)
         cr.children[0].textContent = L('cCol'); cr.children[2].textContent = L('bsDef'); const ci = cr.children[1], cdef = () => { ci.value = G360Card.colOf(Object.assign({}, t.contact, { col: '' })); };
         if (/^#[0-9a-f]{6}$/i.test(t.contact.col || '')) ci.value = t.contact.col; else cdef();
         ci.oninput = () => { t.contact.col = ci.value; save(t); openInfoCard(); };

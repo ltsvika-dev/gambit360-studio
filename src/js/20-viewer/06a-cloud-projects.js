@@ -102,7 +102,7 @@
     finally { cpBusy = false; }
   }
 
-  // ---- a client package on the site: after the package is made, the Studio asks whether the client should also get it as a link (p/<token>/index.html).
+  // ---- a client package on the site: after the package is made, the Studio asks whether the client should also get it as a link (packages/<token>/index.html).
   // The token is kept with the project, so publishing again (from any computer) updates the same link. ----
   async function pkgPublish(entries, safe, viewerName, o) {
     o = o || {};
@@ -127,10 +127,12 @@
       if (!/^[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(code)) { code = [0, 1].map(() => [...crypto.getRandomValues(new Uint8Array(4))].map(b => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join('')).join('-'); try { localStorage.setItem('tourViewerPkgCode:' + currentName, code); } catch (err) {} }
       const k = await cpPost(c, { action:'pkgcode', token:tk, code, exp:expiryEnd(), name:safe }); if (!k.ok) throw new Error(k.error);   // the client downloads the package with this code (a ZIP the server builds from these same files)
     } catch (err) { pkgMsg(t('pubFail', err.message || err)); return; }
-    const url = c.url.replace(/upload\.php$/, '') + 'p/' + tk + '/index.html', txt = url + '\n' + t('pubCodeLine', code);
+    const url = c.url.replace(/upload\.php$/, '') + 'packages/' + tk + '/index.html', txt = url + '\n' + t('pubCodeLine', code);
     pkgMsg(t('pubDone', url, code)); say(t('pubDone', url, code));
     $('pkgPath').textContent = txt; $('pkgPath').style.whiteSpace = 'pre-line'; $('pkgOpen').hidden = false;
-    $('pkgCopy').onclick = async () => { try { await navigator.clipboard.writeText(txt); } catch (err) { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); } pkgMsg(t('pkgCopied')); };
+    const copy = async (s, m) => { try { await navigator.clipboard.writeText(s); } catch (err) { const ta = document.createElement('textarea'); ta.value = s; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); } pkgMsg(t(m)); };
+    $('pkgCopy').textContent = t('pkgCopyLink'); $('pkgCopy').onclick = () => copy(url, 'pkgLinkCopied');   // the link and the code are copied apart: they usually go to the client separately
+    $('pkgCopyCode').textContent = t('pkgCopyCode'); $('pkgCopyCode').hidden = false; $('pkgCopyCode').onclick = () => copy(code, 'pkgCodeCopied');
   }
 
   window.G360_pkgPublish = pkgPublish;

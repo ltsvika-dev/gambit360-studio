@@ -13,10 +13,9 @@
     else { a.href = 'https://gambit360.co.il/'; a.title = 'gambit360.co.il'; a.onclick = null; }
     refreshLogoSt();
   }
-  // My logo comes from the Options screen (the live tours module hands it over). Its width there is for what the Studio produces
-  // (published tours, client packages, snapshots, videos, reports), never for the Studio's own screen.
+  // My logo comes from the Options screen (the live tours module hands it over). Its width there is for the published live tours only.
   function setBrand(url, w) {
-    DEF_LOGO = url || DEF_LOGO0; brandW = +w > 0 ? +w : 0;
+    DEF_LOGO = url || DEF_LOGO0; brandW = 0;   // the width chosen in the Options screen is for the live tours only: the point-cloud module (Studio, packages, snapshots, videos, reports) keeps the usual size
     if (!window.G360_CLIENT) { try { if (url) localStorage.setItem('g360Brand', JSON.stringify({ url, w:brandW })); else localStorage.removeItem('g360Brand'); } catch (err) {} }
     applyLogo(customLogo);
   }

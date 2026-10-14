@@ -11,6 +11,8 @@
     cpOld: 'upload.php בשרת ישן מכדי לשמור פרויקטים. פתחו פעם אחת את "סיורים חיים" במחשב הראשי והוא יתעדכן לבד.',
     cpStale: d => 'במחשב אחר נשמרה בינתיים גרסה של הפרויקט הזה (' + d + ').\nלשמור בענן את הגרסה שכאן במקומה?', cpGot: d => 'נטענה מהענן גרסה חדשה יותר של הפרויקט (' + d + ')',
     pubAsk: 'לפרסם את החבילה גם בשרת?\nהלקוח יקבל קישור ויצפה בה בדפדפן, ועם הקוד שהסטודיו ייתן לך הוא יוכל גם להוריד אותה. פרסום חוזר של אותו פרויקט מעדכן את אותו קישור.', pubYes: 'פרסום בשרת', pubNo: 'לא עכשיו',
+    pubAskUpd: 'לעדכן גם את החבילה בשרת?\nהלקוח יראה את השינויים באותו קישור. עולים רק הקבצים שהשתנו.', pubSame: 'כבר בשרת', pkgPubBtn: 'פרסום החבילה בשרת', pkgPubTip: 'מעלה לשרת את החבילה שכבר נמצאת במחשב (Export\\Client Packages) ונותן קישור ללקוח וקוד הורדה. עולים רק הקבצים שהשתנו.',
+    pubNoPkg: n => 'לא נמצאה חבילה בשם "' + n + '" בתיקייה Export\\Client Packages. צרו אותה קודם בלחיצה על "יצירת חבילה ללקוח" כש"מודל" מסומן.',
     pubBusy: (i, n) => 'מעלה את החבילה לשרת… ' + i + ' מתוך ' + n, pubDone: (u, c) => 'החבילה פורסמה בשרת ✓ הקישור ללקוח: ' + u + ' · קוד להורדת החבילה: ' + c, pubCodeLine: c => 'קוד להורדת החבילה: ' + c, pubFail: e => 'הפרסום בשרת נכשל: ' + e + '. החבילה במחשב מוכנה ותקינה.',
     pubBig: (f, mb) => 'הקובץ ' + f + ' גדול מדי לשרת (' + mb + 'MB, עד 45MB). אפשר לבחור איכות פנורמות נמוכה יותר או סרטון קצר יותר.' });
   Object.assign(I18N.en, { cpOpenBtn: 'Open a project from the cloud', cpH: 'Projects in the cloud', cpLoading: 'Loading the list…', cpClose: 'Close', cpDel: 'Delete from the cloud',
@@ -21,6 +23,8 @@
     cpOld: 'upload.php on the server is too old to keep projects. Open Live tours once on the main computer and it updates itself.',
     cpStale: d => 'Meanwhile another computer saved a version of this project (' + d + ').\nSave the version here in the cloud instead?', cpGot: d => 'A newer version of the project came in from the cloud (' + d + ')',
     pubAsk: 'Publish the package on the server too?\nThe client gets a link to view it in the browser, and with the code the Studio gives you, can also download it. Publishing the same project again updates the same link.', pubYes: 'Publish on the server', pubNo: 'Not now',
+    pubAskUpd: 'Update the package on the server too?\nThe client sees the changes at the same link. Only the files that changed are sent.', pubSame: 'already on the server', pkgPubBtn: 'Publish the package on the server', pkgPubTip: 'Uploads the package already on this computer (Export\\Client Packages) and gives a link for the client and a download code. Only the files that changed are sent.',
+    pubNoPkg: n => 'No package named "' + n + '" was found in Export\\Client Packages. Create it first with "Create client package" with "Model" ticked.',
     pubBusy: (i, n) => 'Uploading the package… ' + i + ' of ' + n, pubDone: (u, c) => 'The package is on the server ✓ The client\'s link: ' + u + ' · Code to download the package: ' + c, pubCodeLine: c => 'Code to download the package: ' + c, pubFail: e => 'Publishing on the server failed: ' + e + '. The package on this computer is ready and fine.',
     pubBig: (f, mb) => 'The file ' + f + ' is too large for the server (' + mb + ' MB, up to 45 MB). Choose a lower panorama quality or a shorter video.' });
   const CP_HOSTED = /^https?:$/.test(location.protocol) && /\/app\/(index\.php)?$/.test(location.pathname);   // the Studio online, at <site>/app/
@@ -100,18 +104,22 @@
 
   // ---- a client package on the site: after the package is made, the Studio asks whether the client should also get it as a link (p/<token>/index.html).
   // The token is kept with the project, so publishing again (from any computer) updates the same link. ----
-  async function pkgPublish(entries, safe, viewerName) {
-    const c = await cpCfg(true); if (!c) return;
-    if (!(await g360Ask(t('pubAsk'), { ok:t('pubYes'), cancel:t('pubNo') }))) return;
-    let tk = pkgPubOf(currentName), code = ''; try { code = localStorage.getItem('tourViewerPkgCode:' + currentName) || ''; } catch (err) {}
+  async function pkgPublish(entries, safe, viewerName, o) {
+    o = o || {};
+    const c = await cpCfg(true); if (!c) { if (o.noAsk) pkgMsg(t('cpNoCloud')); return; }
+    let tk = pkgPubOf(currentName), code = '';
+    if (!o.noAsk && !(await g360Ask(t(/^p[a-z0-9]{10}$/.test(tk) ? 'pubAskUpd' : 'pubAsk'), { ok:t('pubYes'), cancel:t('pubNo') }))) return; try { code = localStorage.getItem('tourViewerPkgCode:' + currentName) || ''; } catch (err) {}
     if (!/^p[a-z0-9]{10}$/.test(tk)) { tk = 'p' + [...crypto.getRandomValues(new Uint8Array(10))].map(b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join(''); try { localStorage.setItem('tourViewerPkgPub:' + currentName, tk); } catch (err) {} }
     const list = entries.filter(e => e.path.startsWith(safe + '/')).map(e => { const rel = e.path.slice(safe.length + 1); return { rel:rel === viewerName ? 'index.html' : rel, fh:e.fh }; });
     try {
+      let have = {}; try { const h = await cpPost(c, { action:'pkglist', token:tk }); if (h && h.ok && h.have) have = h.have; } catch (err) {}   // what the server already has: a file that did not change is not sent again
+      const sha = async f => [...new Uint8Array(await crypto.subtle.digest('SHA-256', await f.arrayBuffer()))].map(x => x.toString(16).padStart(2, '0')).join('');
       for (let i = 0; i < list.length; i++) {
         if (pkgAbort) throw new Error(t('pkgCancelledMsg'));
         pkgMsg(t('pubBusy', i + 1, list.length));
-        const f = await list[i].fh.getFile();
+        const f = await list[i].fh.getFile(), was = have[list[i].rel];
         if (f.size > 45 * 1048576) throw new Error(t('pubBig', list[i].rel, Math.round(f.size / 1048576)));   // the server takes up to 50MB a request
+        if (was && was[0] === f.size && was[1] === await sha(f)) continue;
         const j = await cpPost(c, { action:'pkgput', token:tk, path:list[i].rel }, f);
         if (!j.ok) throw new Error(j.error + ' (' + list[i].rel + ')');
       }
@@ -126,6 +134,19 @@
   }
 
   window.G360_pkgPublish = pkgPublish;
+  // "Publish the package on the server" in the package panel: the package already made on this computer goes up as it is (and again after a change, only what changed)
+  { const pb = $('pkgBtn'), row = pb && pb.closest('.mprow');
+    if (row) {
+      const b = document.createElement('button'); b.type = 'button'; b.id = 'pkgPubBtn';
+      const lbl = () => { b.textContent = t('pkgPubBtn'); b.title = t('pkgPubTip'); }; lbl();
+      b.onclick = async () => {
+        if (pkgBusy) return;
+        if (!(await cpCfg(true))) { pkgMsg(t('cpNoCloud')); return; }
+        b.disabled = true; try { await pkgPublishFolder({ noAsk:true }); } finally { b.disabled = false; }
+      };
+      const r2 = document.createElement('div'); r2.className = 'mprow'; r2.appendChild(b); row.insertAdjacentElement('afterend', r2);
+      const prev = window.G360_relang; window.G360_relang = function () { if (prev) prev.apply(this, arguments); lbl(); };
+    } }
 
   // ---- "Open a project from the cloud" on the start screen: the list, then the same way as a project file ----
   let cpDlg = null;

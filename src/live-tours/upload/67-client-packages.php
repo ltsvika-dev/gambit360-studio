@@ -1,4 +1,4 @@
-if ($action === 'pkgput' || $action === 'pkgdone' || $action === 'pkgcode') {   // a client package published on the site: p/<token>/index.html with its lib/ and model/ files, the link the client gets
+if ($action === 'pkgput' || $action === 'pkgdone' || $action === 'pkgcode' || $action === 'pkglist') {   // a client package published on the site: p/<token>/index.html with its lib/ and model/ files, the link the client gets
   $tk = isset($_POST['token']) ? (string)$_POST['token'] : '';
   if (!preg_match('#^p[a-z0-9]{10}$#', $tk)) out(400, array('ok' => false, 'error' => 'path'));
   $pd = $root . '/p/' . $tk;
@@ -10,6 +10,11 @@ if ($action === 'pkgput' || $action === 'pkgdone' || $action === 'pkgcode') {   
     $nm = mb_substr(trim(isset($_POST['name']) ? (string)$_POST['name'] : ''), 0, 100);
     if (!@file_put_contents($bd . '/pkg/' . $tk . '.json', json_encode(array('hash' => password_hash($code, PASSWORD_DEFAULT), 'exp' => $exp, 'name' => $nm, 'at' => time())))) out(500, array('ok' => false, 'error' => 'write'));
     out(200, array('ok' => true));
+  }
+  if ($action === 'pkglist') {   // what is already there (size and sha256 of each file), so publishing again sends only the files that changed
+    $have = array();
+    foreach (array('', '/lib', '/model') as $sub) foreach ((array)glob($pd . $sub . '/*') as $g) { if (!is_file($g) || substr($g, -5) === '.part' || ($sub !== '' && basename($g) === 'index.html')) continue; $have[ltrim($sub . '/' . basename($g), '/')] = array(filesize($g), hash_file('sha256', $g)); }
+    out(200, array('ok' => true, 'have' => (object)$have));
   }
   if ($action === 'pkgdone') {   // the files of an older version of the package that this one no longer has are taken away
     $keep = json_decode(isset($_POST['keep']) ? (string)$_POST['keep'] : '', true); if (!is_array($keep)) out(400, array('ok' => false, 'error' => 'json'));

@@ -351,8 +351,21 @@ try {
   const acc2 = await acc();
   ok(acc2[0] === '#4da3ff' && acc2[1] === '#ff7eb6', 'the colour in the top bar is the Studio\'s own', JSON.stringify(acc2));
   await s.page.keyboard.press('Escape'); await s.page.evaluate(() => { document.getElementById('colorPanel').hidden = true; document.getElementById('optMenu').hidden = true; });
+  await s.page.click('#pcTop .modTabs [data-m="live"]'); await s.page.waitForSelector('#live:not([hidden])', { timeout: 10000 }).catch(() => {});
+  await s.page.evaluate(() => { const i = document.querySelector('#lvAcc input'); i.value = '#ff9f43'; i.dispatchEvent(new Event('input', { bubbles: true })); }); await s.page.waitForTimeout(200);
+  await s.page.click('#live .modTabs [data-m="pc"]'); await s.page.waitForTimeout(300);
+  const acc3 = await s.page.evaluate(() => [getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), localStorage.getItem('tourViewerAccent'), document.querySelector('#pcAcc input').value]);
+  ok(acc3.every(v => v === '#ff9f43'), 'the colour chosen in the Live Tours bar is the point-cloud module\'s colour too', JSON.stringify(acc3));
+  await s.page.evaluate(() => { window.PROJ_TITLE = 'Title'; renderTitle(); });
+  const tt = await s.page.evaluate(() => Math.round(document.getElementById('projTitle').getBoundingClientRect().top));
+  ok(tt >= 58, 'the project title sits under the top bar, where the client sees it', tt);
+  const chooser = s.page.waitForEvent('filechooser', { timeout: 3000 }).then(fc => fc.setFiles([])).catch(() => {});
+  await s.page.click('#projOpen'); await chooser; await s.page.waitForTimeout(300);
+  ok(await s.page.evaluate(() => document.getElementById('start').hidden), '"Open project" in the top bar does not bring up the start screen');
   await s.page.click('#pcClose'); await s.page.waitForTimeout(400);
   ok(await s.page.evaluate(() => !document.getElementById('start').hidden && document.getElementById('pcSide').hidden), '"Close" in the top bar goes back to the start screen');
+  const st = await s.page.evaluate(() => ({ title: !!document.getElementById('projTitle').offsetWidth, shown: [...document.getElementById('pcTop').children].filter(e => e.offsetWidth && !e.classList.contains('sp')).map(e => e.id || e.className) }));
+  ok(!st.title && st.shown.length === 1 && st.shown[0] === 'modTabs', 'the start screen shows only the module tabs in the bar, and no project title', JSON.stringify(st));
   ok(s.errors.length === 0, 'no errors in the two-column layout', s.errors.join('\n'));
   // ---- 9. on a phone the Options button is the rightmost button at the top, in Hebrew and in English ----
   await s.page.setViewportSize({ width: 390, height: 800 }); await s.page.waitForTimeout(300);

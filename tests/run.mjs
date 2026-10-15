@@ -339,10 +339,20 @@ try {
   ok(await s.page.evaluate(() => !document.getElementById('live').hidden && document.querySelector('#live .modTabs .on').dataset.m === 'live'), 'the Live tours tab opens the tours screen');
   await s.page.click('#live .modTabs [data-m="pc"]'); await s.page.waitForTimeout(300); L1 = await lay();
   ok(await s.page.evaluate(() => document.getElementById('live').hidden) && L1.side === 640 && L1.views, 'the Point clouds tab goes back to the open model at once', JSON.stringify(L1));
-  await s.page.click('#optBtn'); await s.page.click('#pcLayoutBtn'); await s.page.waitForTimeout(400); L1 = await lay();
-  ok(!L1.top && L1.side === 0 && L1.cvW === 1400 && await s.page.locator('#viewsBtn').isVisible() && await s.page.evaluate(() => document.getElementById('viewsPanel').hidden), '"Classic layout" in the Options menu brings back the earlier look', JSON.stringify(L1));
-  await s.page.click('#pcLayoutBtn'); await s.page.waitForTimeout(400); L1 = await lay(); await s.page.click('#optBtn').catch(() => {});
-  ok(L1.top && L1.side === 640 && L1.views, 'and the same button goes back to the columns', JSON.stringify(L1));
+  const bar = await s.page.evaluate(() => { const q = id => document.getElementById(id), inBar = id => !!q(id) && !!q(id).closest('#pcTop') && !!q(id).offsetWidth;
+    return { open: inBar('projOpen'), save: inBar('projSave'), set: inBar('liveSetMenuBtn'), liveInMenu: !!q('liveMenuBtn').offsetWidth || getComputedStyle(q('liveMenuBtn')).display !== 'none', logoTop: Math.round(q('logo').getBoundingClientRect().top) }; });
+  ok(bar.open && bar.save && bar.set && !bar.liveInMenu && bar.logoTop >= 58, 'open / save project and the Options screen are in the top bar, Live tours left the menu, and the logo sits under the bar', JSON.stringify(bar));
+  const acc = () => s.page.evaluate(() => [getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), localStorage.getItem('g360PkgAccent')]);
+  const acc0 = await acc();
+  await s.page.click('#optBtn'); await s.page.click('#colorBtn'); await s.page.click('#swatches .sw[data-c="#ff7eb6"]'); await s.page.waitForTimeout(200);
+  const acc1 = await acc();
+  ok(acc1[0] === acc0[0] && acc1[1] === '#ff7eb6', 'the colour in the Options menu is the client package\'s; the Studio keeps its own', JSON.stringify([acc0, acc1]));
+  await s.page.evaluate(() => { const i = document.querySelector('#pcAcc input'); i.value = '#4da3ff'; i.dispatchEvent(new Event('input', { bubbles: true })); }); await s.page.waitForTimeout(200);
+  const acc2 = await acc();
+  ok(acc2[0] === '#4da3ff' && acc2[1] === '#ff7eb6', 'the colour in the top bar is the Studio\'s own', JSON.stringify(acc2));
+  await s.page.keyboard.press('Escape'); await s.page.evaluate(() => { document.getElementById('colorPanel').hidden = true; document.getElementById('optMenu').hidden = true; });
+  await s.page.click('#pcClose'); await s.page.waitForTimeout(400);
+  ok(await s.page.evaluate(() => !document.getElementById('start').hidden && document.getElementById('pcSide').hidden), '"Close" in the top bar goes back to the start screen');
   ok(s.errors.length === 0, 'no errors in the two-column layout', s.errors.join('\n'));
   // ---- 9. on a phone the Options button is the rightmost button at the top, in Hebrew and in English ----
   await s.page.setViewportSize({ width: 390, height: 800 }); await s.page.waitForTimeout(300);

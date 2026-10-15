@@ -15,18 +15,36 @@
     if (measMat) measMat.color.copy(c);
     if (fillMat) fillMat.color.copy(c);
     if (marker) marker.children.forEach(ch => ch.material.color.copy(c));
-    [...$('swatches').children].forEach(sw => sw.classList.toggle('on', sw.dataset.c === hex));
-    $('colorPick').value = hex;
-    if (save) { try { localStorage.setItem(ACCENT_KEY, hex); } catch (e) {} }
+    if (window.G360_CLIENT) markSw(hex);
+    if (save) { try { localStorage.setItem(ACCENT_KEY, hex); if (window.G360_CLIENT) localStorage.setItem('g360ClientAcc', '1'); } catch (e) {} }
+  }
+  // In the Studio the colour panel of the Options menu picks the client package's colour (cyan unless changed);
+  // the Studio's own colour is picked in the top bar (js/34-side-columns.js). The client's copy picks its own colour.
+  const PKG_ACC_KEY = 'g360PkgAccent';
+  let pkgAccent = DEFAULT_ACCENT, baseAccent = DEFAULT_ACCENT;   // baseAccent: the colour the client's package came with
+  try { pkgAccent = (localStorage.getItem(PKG_ACC_KEY) || DEFAULT_ACCENT).toLowerCase(); } catch (e) {}
+  function markSw(hex) { [...$('swatches').children].forEach(sw => sw.classList.toggle('on', sw.dataset.c === hex)); $('colorPick').value = hex; }
+  function pickColor(hex) {
+    if (window.G360_CLIENT) { applyAccent(hex, true); return; }
+    pkgAccent = hex.toLowerCase(); markSw(pkgAccent);
+    try { if (pkgAccent === DEFAULT_ACCENT) localStorage.removeItem(PKG_ACC_KEY); else localStorage.setItem(PKG_ACC_KEY, pkgAccent); } catch (e) {}
+  }
+  window.G360_setUiAccent = hex => applyAccent(hex, true);
+  window.G360_uiAccent = () => accent;
+  const pkgAccField = () => pkgAccent !== DEFAULT_ACCENT ? pkgAccent : undefined;   // the manifest's 'acc'
+  function pkgBaseAccent(hex) {   // the client's copy: the package's colour, unless the client chose one
+    if (!/^#[0-9a-f]{6}$/i.test(hex || '')) return;
+    baseAccent = hex.toLowerCase(); let own = false; try { own = localStorage.getItem('g360ClientAcc') === '1'; } catch (e) {}
+    if (!own) applyAccent(baseAccent);
   }
   SWATCHES.forEach(([hex, name]) => {
     const sw = document.createElement('button');
     sw.className = 'sw'; sw.dataset.c = hex; sw.dataset.n = name; sw.title = t(name); sw.style.background = hex;
-    sw.onclick = () => applyAccent(hex, true);
+    sw.onclick = () => pickColor(hex);
     $('swatches').appendChild(sw);
   });
-  $('colorPick').oninput = e => applyAccent(e.target.value, true);
-  $('colorReset').onclick = () => applyAccent(DEFAULT_ACCENT, true);
+  $('colorPick').oninput = e => pickColor(e.target.value);
+  $('colorReset').onclick = () => { if (!window.G360_CLIENT) { pickColor(DEFAULT_ACCENT); return; } applyAccent(baseAccent); try { localStorage.removeItem(ACCENT_KEY); localStorage.removeItem('g360ClientAcc'); } catch (e) {} };
   function applyTheme(light, save) {
     document.documentElement.dataset.theme = light ? 'light' : 'dark';
     if (save) { try { localStorage.setItem('tourViewerTheme', light ? 'light' : 'dark'); } catch (err) {} }
@@ -53,7 +71,7 @@
     }
     else cp.style.cssText = '';
   };
-  applyAccent(accent);
+  applyAccent(accent); if (!window.G360_CLIENT) markSw(pkgAccent);
 
   $('homeBtn').onclick = () => openImport();
   $('cancelImport').onclick = () => closeImport();

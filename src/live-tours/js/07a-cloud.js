@@ -17,7 +17,7 @@
     outAsk: 'לנתק את המחשב הזה מהענן? הסיורים בשרת לא נמחקים, ואפשר להתחבר שוב עם הסיסמה.', outWipe: 'למחוק גם את העותק של הסיורים מהמחשב הזה? (מומלץ במחשב שאינו שלכם)\n\nאישור = למחוק מהמחשב הזה\nביטול = להשאיר', outDone: 'המחשב נותק מהענן.',
     syncGot: n => 'התקבלו מהענן ' + n + ' עדכונים ממחשב אחר.', syncBusy: 'מסנכרן עם הענן…', syncDone: n => 'מסונכרן עם הענן ✓ (' + n + ' סיורים)', rekeyDone: 'נוצר מפתח חדש והשרת עבר אליו לבד ✓ קבעו שוב את סיסמת הענן.',
     keyConfirm: 'מפתח חדש יחליף את הקודם. כשהשרת זמין הוא עובר למפתח החדש לבד; אחרת צריך להעלות שוב את upload.php. להמשיך?',
-    srvBkOn: 'סנכרון אוטומטי עם הענן (בין כל המחשבים)', srvRestore: 'שחזור מלא מהענן'
+    srvBkOn: 'סנכרון אוטומטי עם הענן (בין כל המחשבים)', srvRestore: 'שחזור מלא מהשרת'
   });
   Object.assign(STR.en, {
     cloudL: 'Cloud: work from any computer', cloudN: 'Tours, files and settings are also kept on the server and sync by themselves: on opening, on coming back to the window and after every change. On another computer: "Connect with password", or just open the Studio on the server. If one tour was edited on two computers, the one saved last stays.',
@@ -35,7 +35,7 @@
     outAsk: 'Disconnect this computer from the cloud? Nothing is deleted on the server, and you can connect again with the password.', outWipe: 'Also delete the copy of the tours from this computer? (best on a computer that is not yours)\n\nOK = delete from this computer\nCancel = keep it', outDone: 'This computer was disconnected.',
     syncGot: n => n + ' updates from another computer came in from the cloud.', syncBusy: 'Syncing with the cloud…', syncDone: n => 'In sync with the cloud ✓ (' + n + ' tours)', rekeyDone: 'A new key was made and the server switched to it by itself ✓ Set the cloud password again.',
     keyConfirm: 'A new key replaces the old one. When the server answers it switches to the new key by itself; otherwise upload.php must be uploaded again. Continue?',
-    srvBkOn: 'Sync with the cloud automatically (between all computers)', srvRestore: 'Full restore from the cloud'
+    srvBkOn: 'Sync with the cloud automatically (between all computers)', srvRestore: 'Full restore from the server'
   });
   STR.he.upN += ' מאז upload.php מתעדכן בשרת לבד, בלי FTP.'; STR.en.upN += ' After that upload.php updates itself on the server, no FTP.';
   const HOSTED = /^https?:$/.test(location.protocol) && /\/app\/(index\.php)?$/.test(location.pathname);   // this Studio was opened online, from <site>/app/

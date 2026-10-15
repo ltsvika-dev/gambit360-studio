@@ -391,6 +391,7 @@
     #topRight { align-items:stretch; height:48px; }
     #topRight > button, #topRight #top-tools #optBtn { height:48px; box-sizing:border-box; padding:0 13px; display:inline-flex; align-items:center; justify-content:center; }
     #topRight #top-tools { flex:0 0 auto; display:flex; }
+    :root[dir=rtl] #topRight #top-tools { order:-1; }   /* the Options button is the rightmost one in Hebrew too (a right-to-left row starts on the right) */
     #projTitle { height:48px; min-height:48px; padding-top:0; padding-bottom:0; }
     #topRight #top-tools #optBtn span { display:none; }
     body.hasTitle #pkgFloat, body.hasMgr #pkgFloat, body.hasTl3 #pkgFloat { top:calc(max(10px, env(safe-area-inset-top)) + 100px) !important; }

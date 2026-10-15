@@ -37,6 +37,8 @@
   const accIn = $('pcAcc').querySelector('input');
   const accShow = () => { const a = window.G360_uiAccent ? window.G360_uiAccent() : '#5ec4b6'; accIn.value = a; $('pcAcc').style.setProperty('--sw', a); };
   accIn.oninput = e => { if (window.G360_setUiAccent) window.G360_setUiAccent(e.target.value); accShow(); };
+  const setUi = window.G360_setUiAccent;   // the Live Tours bar changes the same colour, so this swatch follows it
+  if (setUi) window.G360_setUiAccent = hex => { setUi(hex); accShow(); };
   $('pcSrc').onclick = () => { const b = $('srcBtn'); if (b) b.click(); };
   $('pcLang').onclick = () => { const b = $('langBtn'); if (b) b.click(); };   // the Studio's language (the same button as in the Options menu)
   $('pcClose').onclick = () => { const b = $('homeBtn'); if (b) b.click(); };   // closes the model: back to the start screen
@@ -89,6 +91,7 @@
   function apply() {
     const wide = WIDE.matches, on = wide && loaded();
     top.hidden = !wide; document.body.classList.toggle('pcTopOn', wide);
+    document.body.classList.toggle('pcStart', !!$('start') && !$('start').hidden);   // the start screen: only the module tabs in the bar, and no project title
     if (wide !== barOn) { barOn = wide; barIn(wide); }
     if (on !== isOn) { isOn = on; document.body.classList.toggle('pcSide', on); if (on) enter(); else leave(); }
     const pkgOk = !!$('pkgTopBtn') && !$('pkgTopBtn').hidden, planOk = !!$('pdfBtn') && !$('pdfBtn').hidden;

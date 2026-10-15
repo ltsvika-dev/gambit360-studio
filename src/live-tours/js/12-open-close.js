@@ -11,19 +11,20 @@
     modLook(true); $('live').hidden = false; renderList(); renderEdit(); preview(true); bkDismiss = false; checkBk();
     if (settings.upKey) bkSrvAuto();   // what changed on another computer comes in
   }
-  // the module keeps its own language and colour (settings.mLang / mAcc); closing it brings back the Studio's
+  // the module keeps its own language (settings.mLang); closing it brings back the Studio's. The colour is the Studio's own (the same as in the point-cloud bar)
   const accVars = hex => { const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16), st = document.documentElement.style; st.setProperty('--accent', hex); st.setProperty('--on-accent', (.299 * r + .587 * g + .114 * b) / 255 > .55 ? '#0b1412' : '#ffffff'); };
   const studioLang = () => { let l = 'he'; try { l = localStorage.getItem('tourViewerLang') || 'he'; } catch (e) {} return l === 'en' ? 'en' : 'he'; };
   const studioAcc = () => { let a = ''; try { a = localStorage.getItem('tourViewerAccent') || ''; } catch (e) {} return /^#[0-9a-f]{6}$/i.test(a) ? a.toLowerCase() : '#5ec4b6'; };
   function modLook(on) {
-    const lg = on && /^(he|en)$/.test(settings.mLang || '') ? settings.mLang : studioLang(), ac = on && /^#[0-9a-f]{6}$/i.test(settings.mAcc || '') ? settings.mAcc : studioAcc();
+    const lg = on && /^(he|en)$/.test(settings.mLang || '') ? settings.mLang : studioLang(), ac = studioAcc();   // one colour for the whole Studio: the point-cloud bar and this one change the same colour
     accVars(ac); $('lvAcc').firstChild.value = ac; $('lvAcc').style.setProperty('--sw', ac);
     if (typeof LANG !== 'undefined' && LANG !== lg) applyLang(lg, false);   // re-labels the module too (G360_relang below)
     $('lvLang').textContent = lg === 'he' ? 'EN' : '\u05e2\u05d1'; $('lvLang').title = L('mLang'); $('lvAcc').title = L('mAcc');
   }
   $('lvLang').onclick = () => { settings.mLang = (document.documentElement.lang || 'he') === 'en' ? 'he' : 'en'; saveSet(); modLook(true); };
-  $('lvAcc').firstChild.oninput = e => { settings.mAcc = e.target.value.toLowerCase(); saveSet(); modLook(true); };
-  $('lvAcc').oncontextmenu = e => { e.preventDefault(); settings.mAcc = ''; saveSet(); modLook(true); };
+  const setAcc = hex => { if (settings.mAcc) { settings.mAcc = ''; saveSet(); } if (window.G360_setUiAccent) window.G360_setUiAccent(hex); else { try { localStorage.setItem('tourViewerAccent', hex); } catch (e) {} } modLook(true); };
+  $('lvAcc').firstChild.oninput = e => setAcc(e.target.value.toLowerCase());
+  $('lvAcc').oncontextmenu = e => { e.preventDefault(); setAcc('#5ec4b6'); };
   function close() { if (settings.upKey) bkSrvAuto(); stopPrev(); modLook(false); $('live').hidden = true; $('lvSet').hidden = true; $('lvDlg').hidden = true; const fr = $('lvFrame'); fr.src = 'about:blank'; lastSrc = ''; }
   $('lvClose').onclick = close;
   $('lvSetBtn').onclick = openSet;

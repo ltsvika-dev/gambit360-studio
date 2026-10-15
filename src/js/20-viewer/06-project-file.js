@@ -101,7 +101,7 @@
     await swapCloud(await h.getFile(), h);
   };
   $('swapFile').onchange = async () => { const f = $('swapFile').files[0]; $('swapFile').value = ''; if (f) await swapCloud(f, null); };
-  $('projSave').onclick = saveProject; $('projOpen').onclick = () => openImport();   // "Open project" brings up the start screen
+  $('projSave').onclick = saveProject; $('projOpen').onclick = openProject;   // "Open project" goes straight to the file window (cancelling it leaves the model as it is)
    $('projOpenStart').onclick = openProject;
   /*@/STUDIO*/
   if (window.G360_CLIENT) $('projOpenStart').hidden = true;

@@ -1,5 +1,5 @@
   /* ===== Point-cloud module laid out like Live Tours (Studio, wide screens): top bar with the module tabs, two columns on the right (js/34-side-columns.js) ===== */
-  #pcTop { position:fixed; top:0; left:0; right:0; height:58px; box-sizing:border-box; z-index:7; display:flex; align-items:center; gap:8px; padding:0 14px; background:var(--panel); border-bottom:1px solid var(--line); }
+  #pcTop { position:fixed; top:0; left:0; right:0; height:58px; box-sizing:border-box; z-index:7; display:flex; align-items:center; gap:8px; padding:0 14px; background:color-mix(in srgb, var(--panel) 99%, transparent); border-bottom:1px solid var(--line); }   /* not quite opaque: an opaque bar over the 3D view made Chromium leave a blank strip at the bottom of the view */
   #pcTop[hidden], #pcSide[hidden] { display:none; }
   .modTabs { display:inline-flex; gap:2px; padding:3px; border-radius:999px; background:var(--hov, rgba(255,255,255,.06)); border:1px solid var(--line); flex:none; }
   .modTabs button { height:32px; padding:0 16px; border:0 !important; border-radius:999px !important; background:transparent; color:var(--mute); font:inherit; font-size:.95rem; font-weight:600; cursor:pointer; white-space:nowrap; }
@@ -12,12 +12,25 @@
   .pcIb.off { opacity:.55; }
   .pcIb svg, .pcSecH svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
 
-  /* the logo and the Options button sit in the top bar, on the side away from the tabs */
-  body.pcTopOn #brand { z-index:8; top:8px; direction:ltr; flex-direction:row; align-items:center; width:auto; gap:8px; }
-  body.pcTopOn #logo { height:42px; width:auto; max-width:200px; padding:4px 8px; display:flex; align-items:center; }
-  body.pcTopOn #logo img { height:34px !important; width:auto !important; max-width:184px !important; max-height:none !important; margin:0; object-fit:contain; }
-  body.pcTopOn #top-tools #optBtn { height:38px; padding:0 14px; }
-  body.pcTopOn #projTitle { z-index:6; top:9px; }
+  /* the logo and the Options button stay where the client sees them, just under the bar */
+  body.pcTopOn #brand { top:70px; }
+  body.pcTopOn #hint { top:168px; }   /* below the logo and the Options button */
+  body.pcTopOn #projTitle { z-index:8; top:9px; }
+  #pcTop .sp { flex:1; }
+  #pcTop #pcAcc { position:relative; }
+  #pcTop #pcAcc::after { content:''; width:18px; height:18px; border-radius:50%; background:var(--sw, var(--accent)); box-shadow:0 0 0 1px rgba(0,0,0,.25); pointer-events:none; }
+  #pcTop #pcAcc input { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; border:0; padding:0; }
+  /* the Studio's buttons that came from the Options menu: pills like Live Tours' "Publish all" and "Close", the Options screen as a round icon */
+  #pcTop .ib { display:inline-flex; align-items:center; gap:7px; width:auto; height:38px; padding:0 16px; margin:0; border-radius:999px; border:1px solid var(--line2, var(--line)); background:var(--btn); color:var(--ink); font:inherit; font-size:.92rem; cursor:pointer; white-space:nowrap; flex:none; }
+  #pcTop .ib[hidden] { display:none; }
+  #pcTop .ib:hover { border-color:var(--accent); }
+  #pcTop .ib .ic, #pcTop .ib svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+  #pcTop #projSave { background:var(--accent); color:var(--on-accent); border-color:var(--accent); font-weight:600; }
+  #pcTop .pcTx { font-weight:700; font-size:.82rem; font-family:inherit; }
+  #pcTop .pcIb[hidden] { display:none; }
+  #pcTop #liveSetMenuBtn { width:38px; padding:0; justify-content:center; }
+  #pcTop #liveSetMenuBtn span { display:none; }
+  body.pcTopOn #liveMenuBtn, body.pcTopOn #optMenu .srcBox { display:none !important; }   /* the tabs and the folder button in the bar do these */
   body.pcTopOn #status { top:70px; }
 
   /* the two columns; the 3D view keeps the rest of the window (VW() in 00-core.js) */
@@ -54,5 +67,3 @@
   body.pcSide > canvas:not(#mini) { position:fixed; left:0; top:0; }   /* the 3D view starts at the left edge (a right-to-left page would push it right) */
   #pcTop { direction:rtl; }   /* the tabs stay on the right, away from the logo, in English too */
   :root[dir=ltr] #pcTop .modTabs { direction:ltr; }
-  body.pcClassic #live .lvTop #lvTitle { display:inline; }   /* classic layout: the Live Tours screen keeps its title instead of the tabs */
-  body.pcClassic #live .lvTop .modTabs { display:none; }

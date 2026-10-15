@@ -229,12 +229,13 @@ try {
     return document.getElementById('pkgPath').textContent;
   });
   await c.page.waitForFunction(() => { const a = document.getElementById('g360Ask'); return a && !a.hidden; }, null, { timeout: 15000 });
-  const asked = await c.page.evaluate(() => document.querySelector('#g360Ask p').textContent); await c.page.evaluate(() => document.querySelector('#g360Ask .ok').click());
+  const asked = await c.page.evaluate(() => document.querySelector('#g360Ask p').textContent), nameAsked = await c.page.evaluate(() => document.querySelector('#g360Ask input').value);
+  ok(nameAsked === 'room' && asked.includes('packages/'), 'publishing asks for the name in the client\'s address, suggested from the package name', nameAsked + ' / ' + asked); await c.page.evaluate(() => document.querySelector('#g360Ask .ok').click());
   const link = (await pub.catch(e => String(e))).split('\n')[0];
-  const got = /\/packages\/p[a-z0-9]{10}\/index\.html$/.test(link) ? await (await fetch(link)).text() : '';
+  const got = /\/packages\/room\/index\.html$/.test(link) ? await (await fetch(link)).text() : '';
   ok(got.includes('<title>client</title>') && (await (await fetch(link.replace('index.html', 'model/manifest.js'))).text()).includes('G360PKG'), 'after asking, a client package is published on the site and the client\'s link opens it', asked + ' ' + link);
   // the client downloads it as a ZIP with the code the Studio gave: the server builds the ZIP from the published files
-  const code = ((await c.page.locator('#pkgPath').textContent()).match(/[A-Z2-9]{4}-[A-Z2-9]{4}/) || [])[0] || '', tok = (link.match(/\/packages\/(p[a-z0-9]{10})\//) || [])[1] || '';
+  const code = ((await c.page.locator('#pkgPath').textContent()).match(/[A-Z2-9]{4}-[A-Z2-9]{4}/) || [])[0] || '', tok = (link.match(/\/packages\/([a-z0-9-]+)\//) || [])[1] || '';
   const cp = await c.page.evaluate(() => ({ link: document.getElementById('pkgCopy').textContent, code: document.getElementById('pkgCopyCode').textContent, codeShown: !document.getElementById('pkgCopyCode').hidden }));
   ok(cp.codeShown && cp.link !== cp.code && cp.code.length > 0, 'after publishing, the link and the code have separate copy buttons', JSON.stringify(cp));
   const ask = async f => { const fd = new FormData(); fd.append('token', tok); Object.entries(f).forEach(([k, v]) => fd.append(k, v)); return (await fetch(SITE + 'upload.php', { method: 'POST', body: fd })).json(); };
@@ -267,6 +268,18 @@ try {
   await c.page.evaluate(async () => { const d = await (await navigator.storage.getDirectory()).getDirectoryHandle('pkg'), entries = [{ path: 'Room/Room.html', fh: await d.getFileHandle('Room.html') }]; await window.G360_pkgPublish(entries, 'Room', 'Room.html', { noAsk: true }); });
   const oldPage = await (await fetch(SITE + 'p/' + tok + '/index.html')).text();
   ok(oldInfo.dl === true && fs.readFileSync(path.join(siteDir, 'packages', tok, 'index.html'), 'utf8').includes('<title>client</title>') && oldPage.includes('../../packages/' + tok + '/index.html'), 'an older package in p/ still downloads, moves to packages/ when published again, and its old link sends on', JSON.stringify(oldInfo) + ' ' + oldPage);
+  // the name can change later (the publish button asks for it): a name another project uses is refused, a free one moves the package and the old address sends on
+  fs.mkdirSync(path.join(siteDir, 'packages', 'taken-x', 'lib'), { recursive: true });
+  const bkDir = fs.readdirSync(siteDir).find(f => f.startsWith('_bk_')); fs.mkdirSync(path.join(siteDir, bkDir, 'pkg'), { recursive: true }); fs.writeFileSync(path.join(siteDir, bkDir, 'pkg', 'taken-x.json'), JSON.stringify({ proj: 'someone else' }));
+  const ren = c.page.evaluate(async () => { const d = await (await navigator.storage.getDirectory()).getDirectoryHandle('pkg'), entries = [{ path: 'Room/Room.html', fh: await d.getFileHandle('Room.html') }]; await window.G360_pkgPublish(entries, 'Room', 'Room.html', { noAsk: true, askName: true }); return document.getElementById('pkgPath').textContent.split('\n')[0]; });
+  const answer = async v => { await c.page.waitForFunction(() => { const a = document.getElementById('g360Ask'); return a && !a.hidden; }, null, { timeout: 15000 }); await c.page.fill('#g360Ask input', v); await c.page.click('#g360Ask .ok'); await c.page.waitForTimeout(300); };
+  await answer('Taken X');
+  await c.page.waitForFunction(() => { const a = document.getElementById('g360Ask'); return a && !a.hidden && /taken-x/.test(a.querySelector('p').textContent); }, null, { timeout: 15000 }).catch(() => {});
+  const takenMsg = await c.page.evaluate(() => document.querySelector('#g360Ask p').textContent);
+  await answer('My Client');
+  const renLink = await ren;
+  const fwdPage = await (await fetch(SITE + 'packages/' + tok + '/index.html')).text();
+  ok(/taken-x/.test(takenMsg) && /\/packages\/my-client\/index\.html$/.test(renLink) && (await (await fetch(renLink)).text()).includes('<title>client</title>') && fwdPage.includes('../../packages/my-client/index.html'), 'a name in use is refused; a new name moves the package and the old address sends on', takenMsg + ' / ' + renLink + ' / ' + fwdPage.slice(0, 200));
   ok(c.errors.length === 0 && s.errors.length === 0, 'no errors with projects in the cloud', c.errors.concat(s.errors).join('\n'));
 
   // ---- 7. the Options screen opens from the point-cloud module; my logo there becomes the Studio's logo; its width is for outputs only ----

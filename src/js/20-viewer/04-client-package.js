@@ -96,15 +96,17 @@
   });
   /*@STUDIO*/
   async function findViewer(dir) {
-    let html = null, lib = [], obf = null;
+    let html = null, lib = [], obf = null, pkg = false;
     try {
       for await (const [name, h] of dir.entries()) {
         if (h.kind === 'file' && /\.html?$/i.test(name) && (!html || /studio|viewer/i.test(name))) html = h;
+        if (h.kind === 'directory' && name.toLowerCase() === 'model') pkg = true;   // a client package (it has the same HTML + lib/) is never the Studio folder
         if (h.kind === 'directory' && name.toLowerCase() === 'lib') for await (const [n2, h2] of h.entries()) if (h2.kind === 'file' && /\.js$/i.test(n2)) lib.push(h2);
         if (h.kind === 'directory' && name.toLowerCase() === 'tools') for await (const [n2, h2] of h.entries()) if (h2.kind === 'file' && /obfuscator.*\.js$/i.test(n2)) obf = h2;   // the code-scrambling tool lives in "tools", never in "lib": everything in "lib" is copied into the client packages
       }
     } catch (err) { return { html:null, lib:[], obf:null, name:dir.name }; }
-    return { html, lib, obf, name:dir.name };
+    if (pkg) { html = null; lib = []; }
+    return { html, lib, obf, pkg, name:dir.name };
   }
   /*@/STUDIO*/
   const ymd = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -290,7 +292,11 @@
   }
   // The browser cannot open Windows Explorer or tell a folder's real path. The helper started by the launcher (.bat) can: the page leaves a small request file
   // in the Studio folder, the helper reads it, opens the folder (unless the request starts with "?") and writes the real path back into a result file.
-  async function helperReq(src, rel) {
+  // One question to the helper at a time: they share one answer file, so two at once could each read the other's answer
+  // (the Studio folder was once remembered as a package folder that way).
+  let helperQ = Promise.resolve();
+  function helperReq(src, rel) { const p = helperQ.then(() => helperReq1(src, rel)); helperQ = p.catch(() => {}); return p; }
+  async function helperReq1(src, rel) {
     try {
       try { await src.removeEntry('.open-folder6.result.txt'); } catch (err) {}
       const fh = await src.getFileHandle('.open-folder6.txt', { create:true }); const w = await fh.createWritable(); await w.write(rel); await w.close();
@@ -305,6 +311,16 @@
   const pageDir = () => { try { if (location.protocol !== 'file:') return ''; const p = decodeURIComponent(location.pathname).replace(/^\/([A-Za-z]:)/, '$1'); return p.slice(0, p.lastIndexOf('/')).replace(/\//g, '\\'); } catch (err) { return ''; } };
   // Saves go to the folder the Studio runs from: when the remembered Studio folder is another one, ask for the right one once.
   async function alignSrc(src) {
+    if (src && (await findViewer(src)).pkg) {   // a package folder was remembered as the Studio folder by mistake: forget it and ask for the right one
+      try { await idb.del('srcDir'); } catch (err) {} refreshSrc('');
+      pkgMsg(t('pkgSrcIsPkg', src.name));
+      try {
+        const dir = await g360Pick.dir({ id:'g360studio', mode:'readwrite' }), f0 = await findViewer(dir);
+        if (f0.html && f0.lib.length) { try { await idb.set('srcDir', dir); } catch (err) {} refreshSrc(await helperReq(dir, '?.') || ''); return dir; }
+        pkgMsg(f0.pkg ? t('pkgSrcIsPkg', f0.name) : t('pkgBadSrc', f0.name, !!f0.html, f0.lib.length));
+      } catch (err) {}
+      return null;
+    }
     const here = pageDir(); if (!here || !src) return src;
     const real = await helperReq(src, '?.');
     if (real && real !== srcReal) refreshSrc(real);
@@ -445,7 +461,7 @@
       try {
         const dir = await g360Pick.dir({ id:'g360studio', mode:'readwrite' });
         const f0 = await findViewer(dir);
-        if (!f0.html || !f0.lib.length) { pkgMsg(t('pkgBadSrc', f0.name, !!f0.html, f0.lib.length)); return null; }
+        if (!f0.html || !f0.lib.length) { pkgMsg(f0.pkg ? t('pkgSrcIsPkg', f0.name) : t('pkgBadSrc', f0.name, !!f0.html, f0.lib.length)); return null; }
         try { await idb.set('srcDir', dir); } catch (err) {}
         refreshSrc(await helperReq(dir, '?.') || ''); src = dir;
       } catch (err) { if (!(err && err.name === 'AbortError')) pkgMsg(t('pkgFail') + err.message); return null; }

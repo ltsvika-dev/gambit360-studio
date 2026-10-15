@@ -312,6 +312,14 @@ try {
   await s.page.reload(); await s.page.waitForTimeout(500);
   ok(await s.page.evaluate(() => document.getElementById('logo').classList.contains('brand')), 'the Studio opens with my logo next time');
   ok(s.errors.length === 0, 'no errors with my logo', s.errors.join('\n'));
+  // ---- 8. on a phone the Options button is the rightmost button at the top, in Hebrew and in English ----
+  await s.page.setViewportSize({ width: 390, height: 800 }); await s.page.waitForTimeout(300);
+  for (const dir of ['rtl', 'ltr']) {
+    const r = await s.page.evaluate(d => { document.documentElement.dir = d; const tr = document.getElementById('topRight'), o = document.getElementById('optBtn').getBoundingClientRect();
+      const others = [...tr.querySelectorAll('button')].filter(b => b.id !== 'optBtn' && b.offsetWidth).map(b => Math.round(b.getBoundingClientRect().right));
+      return { inRow: document.getElementById('top-tools').parentNode === tr, opt: Math.round(o.right), others }; }, dir);
+    ok(r.inRow && r.others.every(x => x <= r.opt), `on a phone the Options button is the rightmost (${dir})`, JSON.stringify(r));
+  }
 } catch (e) { ok(false, 'the test itself ran to the end', e.stack || e); }
 finally {
   if (browser) await browser.close();

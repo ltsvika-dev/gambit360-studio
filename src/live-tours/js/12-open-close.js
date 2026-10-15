@@ -24,7 +24,6 @@
   $('lvLang').onclick = () => { settings.mLang = (document.documentElement.lang || 'he') === 'en' ? 'he' : 'en'; saveSet(); modLook(true); };
   const setAcc = hex => { if (settings.mAcc) { settings.mAcc = ''; saveSet(); } if (window.G360_setUiAccent) window.G360_setUiAccent(hex); else { try { localStorage.setItem('tourViewerAccent', hex); } catch (e) {} } modLook(true); };
   $('lvAcc').firstChild.oninput = e => setAcc(e.target.value.toLowerCase());
-  $('lvAcc').oncontextmenu = e => { e.preventDefault(); setAcc('#5ec4b6'); };
   function close() { if (settings.upKey) bkSrvAuto(); stopPrev(); modLook(false); $('live').hidden = true; $('lvSet').hidden = true; $('lvDlg').hidden = true; const fr = $('lvFrame'); fr.src = 'about:blank'; lastSrc = ''; }
   $('lvClose').onclick = close;
   $('lvSetBtn').onclick = openSet;

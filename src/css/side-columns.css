@@ -17,6 +17,8 @@
   body.pcTopOn #hint { top:calc(var(--pcTopH) + 110px); }   /* below the logo and the Options button */
   body.pcTopOn #projTitle { top:calc(var(--pcTopH) + 12px); }   /* under the bar, where the client sees it */
   body.pcStart #projTitle { display:none !important; }
+  body.pcTopOn #start.panel { padding-top:calc(var(--pcTopH) + 12px); align-items:flex-start; overflow-y:auto; overscroll-behavior:contain; }   /* the start window starts under the bar, and scrolls when the window is low */
+  body.pcTopOn #start.panel > div { margin:auto 0; }
   body.pcStart #pcTop > :not(.modTabs):not(.sp) { display:none !important; }   /* the start screen has its own buttons */
   #pcTop .sp { flex:1; }
   #pcTop #pcAcc { position:relative; border-color:var(--line2, var(--line)); }
@@ -35,6 +37,14 @@
   body.pcTopOn #liveMenuBtn, body.pcTopOn #optMenu .srcBox { display:none !important; }   /* the tabs and the folder button in the bar do these */
   body.pcTopOn #status { top:calc(var(--pcTopH) + 12px); } body.pcTopOn.hasTitle #status { top:calc(var(--pcTopH) + 68px); }
   body.pcTopOn.hasTitle #pkgFloat { top:calc(var(--pcTopH) + 92px); } body.pcTopOn.hasMgr #pkgFloat { top:calc(var(--pcTopH) + 118px); }
+
+  /* the colour window of the two bars (the same look as the one in the Options menu) */
+  #uiColor { position:fixed; z-index:950; width:220px; box-sizing:border-box; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; display:flex; flex-direction:column; gap:10px; font-size:.9rem; box-shadow:0 10px 30px rgba(0,0,0,.4); }
+  #uiColor[hidden] { display:none; }
+  #uiColor .ucSw { display:grid; grid-template-columns:repeat(4, 28px); justify-content:space-between; gap:8px; }
+  #uiColor label { display:flex; align-items:center; justify-content:space-between; color:var(--mute); }
+  #uiColor input[type=color] { width:44px; height:28px; border:0; background:none; padding:0; cursor:pointer; }
+  #uiColor button.txt { background:var(--btn); color:var(--ink); border:1px solid var(--line); border-radius:6px; padding:6px 12px; font:inherit; font-size:.9rem; cursor:pointer; }
 
   /* the two columns; the 3D view keeps the rest of the window (VW() in 00-core.js) */
   #pcSide { position:fixed; top:var(--pcTopH); right:0; bottom:0; z-index:6; width:var(--pcSideW, 640px); display:flex; background:var(--panel); border-inline-start:1px solid var(--line); }
@@ -63,7 +73,7 @@
   .pcSec.shut .pcSecB { display:none; }
 
   /* what is centred on the screen is centred on the 3D view */
-  body.pcSide #dock, body.pcSide #floors, body.pcSide #hint, body.pcSide #status, body.pcSide #projTitle, body.pcSide #pkgFloat, body.pcSide #tagCard, body.pcSide #tagEd, body.pcSide #tagTyEd { left:calc((100vw - var(--pcSideW, 0px)) / 2); }
+  body.pcSide #dock, body.pcSide #hint, body.pcSide #status, body.pcSide #projTitle, body.pcSide #pkgFloat, body.pcSide #tagCard, body.pcSide #tagEd, body.pcSide #tagTyEd { left:calc((100vw - var(--pcSideW, 0px)) / 2); }
   body.pcSide #dot { left:calc((100vw - var(--pcSideW, 0px)) / 2); }
   body.pcSide #dock { max-width:calc(100vw - var(--pcSideW, 0px) - 24px); }
   body.pcSide #copyright { right:calc(var(--pcSideW, 0px) + 12px); }

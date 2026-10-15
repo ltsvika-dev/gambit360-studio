@@ -179,7 +179,7 @@
     overview = true; dollhouse = false; tween = null; refreshClip();
     if (document.pointerLockElement) document.exitPointerLock();
     const box = bbox(), c = box.getCenter(new THREE.Vector3());
-    const top = new THREE.Vector3(c.x, box.max.y + Math.max(span * 0.8, (box.max.x - box.min.x) * 0.54 / (Math.tan(37.5 * Math.PI / 180) * camera.aspect)), c.z), pEnd = -Math.PI / 2 + 0.001;
+    const top = new THREE.Vector3(c.x, box.max.y + (window.G360_sideW ? Math.max(span * 0.8, (box.max.x - box.min.x) * 0.54 / (Math.tan(37.5 * Math.PI / 180) * camera.aspect)) : span * 0.8), c.z), pEnd = -Math.PI / 2 + 0.001;
     camera.fov = 75; camera.updateProjectionMatrix();
     if (anim) {
       const y1 = Math.round(yaw / (2 * Math.PI)) * 2 * Math.PI;   // the nearest way round to "north"
@@ -228,7 +228,7 @@
     requestAnimationFrame(loop);
     if (tourOpen) { clock.getDelta(); return; }   // the 3D view rests while the Matterport tour is open
     syncMeasBtns();
-    if (renderer && camera && (renderer.domElement.clientWidth !== VW() || Math.abs(camera.aspect - VW() / innerHeight) > 1e-3)) { camera.aspect = VW() / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(VW(), innerHeight); }   // the Studio's columns opened or closed
+    if (window.G360_sideW !== undefined && renderer && camera && (renderer.domElement.clientWidth !== VW() || Math.abs(camera.aspect - VW() / innerHeight) > 1e-3)) { camera.aspect = VW() / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(VW(), innerHeight); }   // the Studio's columns opened or closed
     const dt = Math.min(clock.getDelta(), 0.1);
     if (look.on) {
       if (!panoOn || tween) look.on = false;

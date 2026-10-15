@@ -7,8 +7,8 @@
   if (window.G360_CLIENT) return;
   const $ = id => document.getElementById(id);
   const TX = {
-    he: { pc:'ענני נקודות', live:'סיורים חיים', colList:'הצגה או הסתרה של נקודות העניין', colEdit:'הצגה או הסתרה של כרטיסי הפרויקט', pkg:'חבילה ללקוח', plan:'ייצוא תכניות קומה' },
-    en: { pc:'Point clouds', live:'Live tours', colList:'Show or hide the points of interest', colEdit:'Show or hide the project cards', pkg:'Client package', plan:'Export floor plans' }
+    he: { pc:'ענני נקודות', live:'סיורים חיים', colList:'הצגה או הסתרה של נקודות העניין', colEdit:'הצגה או הסתרה של כרטיסי הפרויקט', pkg:'חבילה ללקוח', plan:'ייצוא תכניות קומה', classic:'תצוגה קלאסית (בלי עמודות)', cols:'תצוגת עמודות' },
+    en: { pc:'Point clouds', live:'Live tours', colList:'Show or hide the points of interest', colEdit:'Show or hide the project cards', pkg:'Client package', plan:'Export floor plans', classic:'Classic layout (no columns)', cols:'Columns layout' }
   };
   const T = k => TX[document.documentElement.lang === 'en' ? 'en' : 'he'][k];
   const LIST_W = 280, EDIT_W = 360, WIDE = matchMedia('(min-width:901px)');
@@ -62,8 +62,15 @@
   PANELS.forEach(id => { const el = $(id); if (el) keepOpen.observe(el, { attributes:true, attributeFilter:['hidden'] }); });
 
   const loaded = () => !!($('start') && $('start').hidden && document.querySelector('body > canvas:not(#mini)'));
+  // "Classic layout" in the Options menu brings back the earlier look (floating panels, no tabs); the choice is kept
+  const lb = document.createElement('button'); lb.type = 'button'; lb.id = 'pcLayoutBtn'; lb.className = 'ib';
+  lb.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M14.5 4v16M9.5 4v16"/></svg><span></span>';
+  { const m = $('optMenu'), after = $('liveSetMenuBtn'); if (after && after.parentNode === m) after.insertAdjacentElement('afterend', lb); else if (m) m.insertBefore(lb, m.firstChild); }
+  lb.onclick = () => { ui.classic = !ui.classic; saveUi(); apply(); texts(); };
   function apply() {
-    const wide = WIDE.matches, on = wide && loaded();
+    const wide = WIDE.matches && !ui.classic;
+    document.body.classList.toggle('pcClassic', !!ui.classic); lb.hidden = !WIDE.matches;
+    const on = wide && loaded();
     top.hidden = !wide; document.body.classList.toggle('pcTopOn', wide);
     if (on !== isOn) { isOn = on; document.body.classList.toggle('pcSide', on); if (on) enter(); else leave(); }
     const pkgOk = !!$('pkgTopBtn') && !$('pkgTopBtn').hidden, planOk = !!$('pdfBtn') && !$('pdfBtn').hidden;
@@ -87,6 +94,7 @@
 
   function texts() {
     document.querySelectorAll('.modTabs button').forEach(b => { b.textContent = T(b.dataset.m); });
+    const lbs = $('pcLayoutBtn').querySelector('span'); if (lbs) lbs.textContent = T(ui.classic ? 'cols' : 'classic');
     $('pcColList').title = T('colList'); $('pcColEdit').title = T('colEdit');
     side.querySelectorAll('.pcSec').forEach(s => { s.querySelector('.pcSecH span').textContent = T(s.dataset.s); });
   }

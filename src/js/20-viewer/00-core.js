@@ -1,6 +1,7 @@
 const $ = id => document.getElementById(id) || (($.m = $.m || {})[id] = $.m[id] || document.createElement('div'));   // an element cut out of the client's copy answers as a detached one, so the code that mentions it still runs
 // The width of the 3D view: the whole window, less the two Studio columns on the right when they are open (js/34-side-columns.js).
-const VW = () => Math.max(200, innerWidth - (window.G360_sideW || 0));
+// The client's copy never has the columns, so for it this is exactly innerWidth.
+const VW = () => window.G360_sideW ? Math.max(200, innerWidth - window.G360_sideW) : innerWidth;
 const msg = (t, err) => { $('msg').textContent = t; $('msg').className = err ? 'err' : ''; $('bootMsg').textContent = err ? '' : t; };
 const hideBoot = () => { $('boot').hidden = true; };
 // While the "tour expired" cover is up, nothing underneath can be operated (keyboard, mouse, wheel, touch).

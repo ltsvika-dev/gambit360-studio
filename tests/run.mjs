@@ -339,6 +339,10 @@ try {
   ok(await s.page.evaluate(() => !document.getElementById('live').hidden && document.querySelector('#live .modTabs .on').dataset.m === 'live'), 'the Live tours tab opens the tours screen');
   await s.page.click('#live .modTabs [data-m="pc"]'); await s.page.waitForTimeout(300); L1 = await lay();
   ok(await s.page.evaluate(() => document.getElementById('live').hidden) && L1.side === 640 && L1.views, 'the Point clouds tab goes back to the open model at once', JSON.stringify(L1));
+  await s.page.click('#optBtn'); await s.page.click('#pcLayoutBtn'); await s.page.waitForTimeout(400); L1 = await lay();
+  ok(!L1.top && L1.side === 0 && L1.cvW === 1400 && await s.page.locator('#viewsBtn').isVisible() && await s.page.evaluate(() => document.getElementById('viewsPanel').hidden), '"Classic layout" in the Options menu brings back the earlier look', JSON.stringify(L1));
+  await s.page.click('#pcLayoutBtn'); await s.page.waitForTimeout(400); L1 = await lay(); await s.page.click('#optBtn').catch(() => {});
+  ok(L1.top && L1.side === 640 && L1.views, 'and the same button goes back to the columns', JSON.stringify(L1));
   ok(s.errors.length === 0, 'no errors in the two-column layout', s.errors.join('\n'));
   // ---- 9. on a phone the Options button is the rightmost button at the top, in Hebrew and in English ----
   await s.page.setViewportSize({ width: 390, height: 800 }); await s.page.waitForTimeout(300);

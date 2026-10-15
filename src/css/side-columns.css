@@ -54,3 +54,5 @@
   body.pcSide > canvas:not(#mini) { position:fixed; left:0; top:0; }   /* the 3D view starts at the left edge (a right-to-left page would push it right) */
   #pcTop { direction:rtl; }   /* the tabs stay on the right, away from the logo, in English too */
   :root[dir=ltr] #pcTop .modTabs { direction:ltr; }
+  body.pcClassic #live .lvTop #lvTitle { display:inline; }   /* classic layout: the Live Tours screen keeps its title instead of the tabs */
+  body.pcClassic #live .lvTop .modTabs { display:none; }

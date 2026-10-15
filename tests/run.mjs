@@ -311,6 +311,13 @@ try {
   ok(await s.page.evaluate(() => document.getElementById('lvSet').hidden), 'Esc closes the Options screen over the point cloud');
   await s.page.reload(); await s.page.waitForTimeout(500);
   ok(await s.page.evaluate(() => document.getElementById('logo').classList.contains('brand')), 'the Studio opens with my logo next time');
+  await s.page.waitForTimeout(1500);
+  const px = await s.page.evaluate(() => new Promise(r => { const im = new Image(); im.onload = () => { const c = document.createElement('canvas'); c.width = c.height = 1; const g = c.getContext('2d'); g.drawImage(im, 0, 0, 1, 1); r(Array.from(g.getImageData(0, 0, 1, 1).data).slice(0, 3)); }; im.onerror = () => r([]); im.src = document.querySelector('#logo img').src; }));
+  ok(px[0] > 150 && px[2] < 120, 'after a restart the Studio logo is my logo, not the separate live-tours logo', px.join(','));
+  const lightOf = fill => s.page.evaluate(async f => { const c = document.createElement('canvas'); c.width = 300; c.height = 80; const g = c.getContext('2d'); g.fillStyle = f; g.fillRect(10, 10, 220, 60); g.fillStyle = '#28f'; g.fillRect(240, 10, 50, 60);
+    window.G360_setBrand(c.toDataURL('image/png'), 260); await new Promise(r => setTimeout(r, 400)); return document.getElementById('logo').classList.contains('light'); }, fill);
+  const wl = await lightOf('#fff'), dl = await lightOf('#123');
+  ok(wl && !dl, 'a white logo on a see-through background gets a dark box (a dark logo keeps the white one)', wl + ' / ' + dl);
   ok(s.errors.length === 0, 'no errors with my logo', s.errors.join('\n'));
   // ---- 8. on a phone the Options button is the rightmost button at the top, in Hebrew and in English ----
   await s.page.setViewportSize({ width: 390, height: 800 }); await s.page.waitForTimeout(300);

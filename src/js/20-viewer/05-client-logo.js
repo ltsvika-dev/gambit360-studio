@@ -2,10 +2,21 @@
   const DEF_LOGO0 = (document.querySelector('#logo img') || {}).src || '';
   let customLogo = '', DEF_LOGO = DEF_LOGO0, brandW = 0;   // DEF_LOGO: my own logo (chosen in the Options screen) or the built-in Gambit360 one
   function refreshLogoSt() { const e = $('pkgLogoSt'); if (e) e.textContent = t(customLogo ? 'logoCustom' : 'logoDefault'); if ($('pkgLogoReset')) $('pkgLogoReset').hidden = !customLogo; }
+  // A logo with a see-through background whose drawing is mostly white: shown on the usual white box, only its coloured parts would show
+  function logoLight(src) {
+    return new Promise(res => { const im = new Image(); im.onload = () => { try {
+      const k = Math.min(1, 160 / im.naturalWidth, 80 / im.naturalHeight), w = Math.max(1, Math.round(im.naturalWidth * k)), h = Math.max(1, Math.round(im.naturalHeight * k));
+      const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.drawImage(im, 0, 0, w, h);
+      const d = x.getImageData(0, 0, w, h).data; let clear = 0, solid = 0, white = 0;
+      for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 50) { clear++; continue; } if (d[i + 3] < 160) continue; solid++; if (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2] > 215) white++; }
+      res(clear > w * h * 0.05 && solid > 0 && white / solid > 0.3);
+    } catch (err) { res(false); } }; im.onerror = () => res(false); im.src = src; });
+  }
   function applyLogo(url) {
     customLogo = url || '';
     const a = $('logo'), img = a.querySelector('img');
     img.src = customLogo || DEF_LOGO;
+    { const src = img.src; a.classList.remove('light'); if (src !== DEF_LOGO0) logoLight(src).then(l => { if (img.src === src) a.classList.toggle('light', l); }); }   // a white logo (made for dark screens) gets a dark box, or its white part vanishes
     $('bootLogo').src = img.src; $('bootLogo').hidden = false;
     a.classList.toggle('custom', !!customLogo); a.classList.toggle('brand', !customLogo && DEF_LOGO !== DEF_LOGO0);
     if (window.G360_CLIENT) { const st = document.documentElement.style, k = !customLogo && brandW ? brandW / 260 : 0; st.setProperty('--logoW', k ? Math.round(200 * k) + 'px' : 'auto'); st.setProperty('--logoMH', k ? Math.round(64 * k) + 'px' : '64px'); }   // a client package shows my logo at the chosen width

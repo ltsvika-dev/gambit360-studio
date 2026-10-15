@@ -168,7 +168,7 @@
       v.set(tg.p[0], tg.p[1], tg.p[2]).project(camera);
       const vis = v.z < 1 && Math.abs(v.x) < 1.05 && Math.abs(v.y) < 1.05;
       tg.el.style.display = vis ? 'flex' : 'none';
-      if (vis) tg.el.style.transform = `translate(${(v.x * 0.5 + 0.5) * innerWidth}px, ${(-v.y * 0.5 + 0.5) * innerHeight}px) translate(-50%,-50%)`;
+      if (vis) tg.el.style.transform = `translate(${(v.x * 0.5 + 0.5) * VW()}px, ${(-v.y * 0.5 + 0.5) * innerHeight}px) translate(-50%,-50%)`;
     });
   };
   // -- the editor, and placing a tag on the model --

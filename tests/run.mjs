@@ -5,6 +5,7 @@
 //  4. a second computer with the same key gets the tour from the server (cloud sync);
 //  5. point cloud: tag types (infrastructure set), quick mode, layers, and the PDF tag report;
 //  6. point-cloud projects in the cloud: computer A's tags reach the server, computer B opens the project from the cloud, and B's change comes back to A.
+//  8. the point-cloud module in two columns with the module tabs at the top (js/34-side-columns.js).
 // Needs node, php and the built "Gambit360 Studio.html". Run:  npm install  then  npm test   (in this folder)
 import { chromium } from 'playwright';
 import { spawn, execFileSync } from 'node:child_process';
@@ -168,13 +169,14 @@ try {
   const s = await computer(browser, 'point cloud');
   await s.page.setInputFiles('#pickerE57', path.join(HERE, 'fixtures', 'room.e57'));
   await s.page.waitForSelector('#mbtn', { state: 'visible', timeout: 60000 });
-  await s.page.waitForTimeout(800); await s.page.click('#b3d'); await s.page.waitForTimeout(800); await s.page.mouse.click(700, 600); await s.page.waitForTimeout(1500);
-  await s.page.click('#viewsBtn'); await s.page.click('#tabTags'); await s.page.waitForTimeout(200);
+  await s.page.waitForTimeout(800); await s.page.click('#b3d'); await s.page.waitForTimeout(800); await s.page.mouse.click(360, 600); await s.page.waitForTimeout(1500);
+  if (await s.page.locator('#viewsBtn').isVisible()) await s.page.click('#viewsBtn');   // in the Studio's columns the list is always open
+  await s.page.click('#tabTags'); await s.page.waitForTimeout(200);
   await s.page.click('#tagTyEdBtn'); await s.page.locator('#tagTyEd button', { hasText: /תשתיות|infrastructure/ }).click(); await s.page.click('#tagTyEd .tyOk');
   ok(await s.page.locator('#tagTyRow .tyChip').count() === 7, 'the infrastructure set adds 7 tag types, each with its layer switch');
   await s.page.selectOption('#tagQuickTy', 'i0'); await s.page.click('#tagQuick');
-  for (const [x, y] of [[500, 400], [700, 450], [900, 380]]) { await s.page.mouse.click(x, y); await s.page.waitForTimeout(250); }
-  await s.page.selectOption('#tagQuickTy', 'i1'); await s.page.mouse.click(600, 600); await s.page.waitForTimeout(250);
+  for (const [x, y] of [[200, 400], [360, 450], [520, 380]]) { await s.page.mouse.click(x, y); await s.page.waitForTimeout(250); }
+  await s.page.selectOption('#tagQuickTy', 'i1'); await s.page.mouse.click(300, 600); await s.page.waitForTimeout(250);
   await s.page.keyboard.press('Escape'); await s.page.waitForTimeout(200);
   const rows = () => s.page.locator('#viewsList .vrow').count();
   const made = await rows();
@@ -319,7 +321,30 @@ try {
   const wl = await lightOf('#fff'), dl = await lightOf('#123');
   ok(wl && !dl, 'a white logo on a see-through background gets a dark box (a dark logo keeps the white one)', wl + ' / ' + dl);
   ok(s.errors.length === 0, 'no errors with my logo', s.errors.join('\n'));
-  // ---- 8. on a phone the Options button is the rightmost button at the top, in Hebrew and in English ----
+  // ---- 8. the point-cloud module laid out like Live Tours: the module tabs at the top, two columns on the right, the 3D view beside them ----
+  await s.page.setInputFiles('#pickerE57', path.join(HERE, 'fixtures', 'room.e57'));
+  await s.page.waitForSelector('#mbtn', { state: 'visible', timeout: 60000 }); await s.page.waitForTimeout(800);
+  const lay = () => s.page.evaluate(() => { const cv = document.querySelector('body > canvas:not(#mini)'), r = cv.getBoundingClientRect(), q = id => document.getElementById(id);
+    return { top: !q('pcTop').hidden, cvL: Math.round(r.left), cvW: Math.round(r.width), side: q('pcSide').hidden ? 0 : Math.round(q('pcSide').getBoundingClientRect().width),
+      views: !!q('viewsPanel').closest('#pcListCol') && !q('viewsPanel').hidden, pkg: !!q('pkgPanel').closest('.pcSec') && !q('pkgPanel').hidden }; });
+  let L1 = await lay();
+  ok(L1.top && L1.side === 640 && L1.cvL === 0 && L1.cvW === 1400 - 640 && L1.views && L1.pkg, 'a model opens in two columns on the right (points of interest, client package) with the 3D view beside them', JSON.stringify(L1));
+  await s.page.click('#viewsBtn').catch(() => {}); await s.page.click('#tagQuick').catch(() => {});
+  ok(await s.page.evaluate(() => !document.getElementById('viewsPanel').hidden), 'the points of interest stay open in their column');
+  await s.page.keyboard.press('Escape');
+  await s.page.click('#pcColEdit'); await s.page.waitForTimeout(300); L1 = await lay();
+  ok(L1.side === 280 && L1.cvW === 1120, 'hiding the project cards gives their width to the 3D view', JSON.stringify(L1));
+  await s.page.click('#pcColEdit'); await s.page.waitForTimeout(300);
+  await s.page.click('#pcTop .modTabs [data-m="live"]'); await s.page.waitForSelector('#live:not([hidden])', { timeout: 10000 }).catch(() => {});
+  ok(await s.page.evaluate(() => !document.getElementById('live').hidden && document.querySelector('#live .modTabs .on').dataset.m === 'live'), 'the Live tours tab opens the tours screen');
+  await s.page.click('#live .modTabs [data-m="pc"]'); await s.page.waitForTimeout(300); L1 = await lay();
+  ok(await s.page.evaluate(() => document.getElementById('live').hidden) && L1.side === 640 && L1.views, 'the Point clouds tab goes back to the open model at once', JSON.stringify(L1));
+  await s.page.click('#optBtn'); await s.page.click('#pcLayoutBtn'); await s.page.waitForTimeout(400); L1 = await lay();
+  ok(!L1.top && L1.side === 0 && L1.cvW === 1400 && await s.page.locator('#viewsBtn').isVisible() && await s.page.evaluate(() => document.getElementById('viewsPanel').hidden), '"Classic layout" in the Options menu brings back the earlier look', JSON.stringify(L1));
+  await s.page.click('#pcLayoutBtn'); await s.page.waitForTimeout(400); L1 = await lay(); await s.page.click('#optBtn').catch(() => {});
+  ok(L1.top && L1.side === 640 && L1.views, 'and the same button goes back to the columns', JSON.stringify(L1));
+  ok(s.errors.length === 0, 'no errors in the two-column layout', s.errors.join('\n'));
+  // ---- 9. on a phone the Options button is the rightmost button at the top, in Hebrew and in English ----
   await s.page.setViewportSize({ width: 390, height: 800 }); await s.page.waitForTimeout(300);
   for (const dir of ['rtl', 'ltr']) {
     const r = await s.page.evaluate(d => { document.documentElement.dir = d; const tr = document.getElementById('topRight'), o = document.getElementById('optBtn').getBoundingClientRect();

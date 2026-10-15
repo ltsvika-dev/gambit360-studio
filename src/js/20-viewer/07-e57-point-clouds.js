@@ -88,7 +88,7 @@
     started = true;
     renderer = new THREE.WebGLRenderer({ antialias:true });
     basePR = Math.min(Math.max(devicePixelRatio, 1.5), 2); renderer.setPixelRatio(basePR);   // at least 1.5x supersampling for smoother edges
-    renderer.setSize(innerWidth, innerHeight);
+    renderer.setSize(VW(), innerHeight);
     renderer.outputEncoding = THREE.sRGBEncoding;
     clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 1e9);
     renderer.clippingPlanes = [clipPlane];
@@ -96,7 +96,7 @@
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x14181b);
-    camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.05, 500);
+    camera = new THREE.PerspectiveCamera(75, VW() / innerHeight, 0.05, 500);
     camera.rotation.order = 'YXZ';
 
     maxAniso = renderer.capabilities.getMaxAnisotropy();
@@ -132,7 +132,7 @@ renderer.domElement.addEventListener('mousedown', e => {
       if (!locked && e.button === 0) { const v = findVertex(e.clientX, e.clientY); if (v) { drag = v; dragMoved = 99; } }
     });
     renderer.domElement.addEventListener('mousemove', e => {
-      mouseNDC.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); mouseIn = true;
+      mouseNDC.set(e.clientX / VW() * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); mouseIn = true;
       if (drag) { setHover(drag); if (e.buttons & 1) moveVertex(e); else drag = null; return; }
       if (!locked && !(e.buttons & 1)) { const v = findVertex(e.clientX, e.clientY); setHover(v); renderer.domElement.style.cursor = (placingTag || placingRoom) ? TAG_CURSOR : (v ? 'grab' : (picking() ? 'crosshair' : '')); }
       if ((e.buttons & 1) && dollhouse && !tween) {   // dollhouse: drag orbits around the building
@@ -159,7 +159,7 @@ renderer.domElement.addEventListener('mousedown', e => {
       if (dollhouse) { orbGoal.dist = Math.max(orb.r * 0.25, Math.min(orb.r * 5, orbGoal.dist * f)); lowRes(); return; }
       if (overview) {
         // bird's-eye view: move toward (or away from) the point under the cursor
-        mouseNDC.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+        mouseNDC.set(e.clientX / VW() * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
         ray.setFromCamera(mouseNDC, camera); ray.far = Infinity;
         const now = performance.now();
         if (now - lastWheel > 50) { const h = cast()[0]; wheelDist = h ? h.distance : camera.position.y - modelBox.min.y; lastWheel = now; }
@@ -237,8 +237,8 @@ renderer.domElement.addEventListener('mousedown', e => {
 
     $('start').hidden = true; $('homeBtn').hidden = false; finishImport();
     addEventListener('resize', () => {
-      camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
-      renderer.setSize(innerWidth, innerHeight);
+      camera.aspect = VW() / innerHeight; camera.updateProjectionMatrix();
+      renderer.setSize(VW(), innerHeight);
     });
     document.addEventListener('pointerlockchange', () => {
       locked = document.pointerLockElement === renderer.domElement;
@@ -253,22 +253,22 @@ renderer.domElement.addEventListener('mousedown', e => {
     renderer.domElement.addEventListener('click', e => {
       if (dragMoved > 4) { dragMoved = 0; return; }
       if (placingTag) {
-        ray.setFromCamera(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera); ray.far = Infinity;
+        ray.setFromCamera(new THREE.Vector2(e.clientX / VW() * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera); ray.far = Infinity;
         const h = cast()[0]; if (h) window.G360_placeTag(h.point); return;
       }
       if (placingRoom && overview) {
-        ray.setFromCamera(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera); ray.far = Infinity;
+        ray.setFromCamera(new THREE.Vector2(e.clientX / VW() * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera); ray.far = Infinity;
         const hit = cast().find(floorLike); if (hit) window.G360_placeRoom(hit.point); return;
       }
       if (picking()) {
-        ray.setFromCamera((overview || !locked) ? new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1) : new THREE.Vector2(0, 0), camera);
+        ray.setFromCamera((overview || !locked) ? new THREE.Vector2(e.clientX / VW() * 2 - 1, -(e.clientY / innerHeight) * 2 + 1) : new THREE.Vector2(0, 0), camera);
         ray.far = Infinity;
         const h = cast()[0];
         if (h) { if (measuring) addPoint(h.point.clone()); else addAreaPoint(h.point.clone(), e.clientX, e.clientY); }
         return;
       }
       if (overview) {
-        ray.setFromCamera(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera);
+        ray.setFromCamera(new THREE.Vector2(e.clientX / VW() * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera);
         ray.far = Infinity;
         const hit = cast().find(floorLike);
         if (hit) {   // glide down to the spot (or the nearest scan) instead of jumping; the plan/dollhouse state is left when the glide ends
@@ -285,7 +285,7 @@ renderer.domElement.addEventListener('mousedown', e => {
           const wasDoll = dollhouse;
           tween = { from:camera.position.clone(), to, t:0, dur:1.1, rot:{ y0:yaw, y1:yaw, p0:pitch, p1:0 }, onEnd:() => { exitOverview(); pitch = 0; if (wasDoll) camera.fov = 75; camera.updateProjectionMatrix(); } };
         }
-      } else teleport(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1));
+      } else teleport(new THREE.Vector2(e.clientX / VW() * 2 - 1, -(e.clientY / innerHeight) * 2 + 1));
     });
     addEventListener('keydown', e => {
       keys[e.code] = true;

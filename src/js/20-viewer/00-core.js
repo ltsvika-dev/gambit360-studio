@@ -1,4 +1,7 @@
 const $ = id => document.getElementById(id) || (($.m = $.m || {})[id] = $.m[id] || document.createElement('div'));   // an element cut out of the client's copy answers as a detached one, so the code that mentions it still runs
+// The width of the 3D view: the whole window, less the two Studio columns on the right when they are open (js/34-side-columns.js).
+// The client's copy never has the columns, so for it this is exactly innerWidth.
+const VW = () => window.G360_sideW ? Math.max(200, innerWidth - window.G360_sideW) : innerWidth;
 const msg = (t, err) => { $('msg').textContent = t; $('msg').className = err ? 'err' : ''; $('bootMsg').textContent = err ? '' : t; };
 const hideBoot = () => { $('boot').hidden = true; };
 // While the "tour expired" cover is up, nothing underneath can be operated (keyboard, mouse, wheel, touch).
@@ -48,9 +51,9 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
   function lowRes() {
     if (!renderer) return;
     clearTimeout(resTimer);
-    if (renderer.getPixelRatio() !== 1) { renderer.setPixelRatio(1); renderer.setSize(innerWidth, innerHeight); }
+    if (renderer.getPixelRatio() !== 1) { renderer.setPixelRatio(1); renderer.setSize(VW(), innerHeight); }
     if (ptsLow && ptsMain) { ptsMain.visible = false; ptsLow.visible = true; }   // a lighter copy of the cloud while it is being turned or zoomed
-    resTimer = setTimeout(() => { if (renderer.getPixelRatio() !== basePR) { renderer.setPixelRatio(basePR); renderer.setSize(innerWidth, innerHeight); } if (ptsLow && ptsMain) { ptsMain.visible = true; ptsLow.visible = false; } }, 220);
+    resTimer = setTimeout(() => { if (renderer.getPixelRatio() !== basePR) { renderer.setPixelRatio(basePR); renderer.setSize(VW(), innerHeight); } if (ptsLow && ptsMain) { ptsMain.visible = true; ptsLow.visible = false; } }, 220);
   }
   let floors = [], floorCeil = [], curFloor = -1, clipY = Infinity, clipPlane;
   let measuring = false, pending = null, measures = [], measMat;

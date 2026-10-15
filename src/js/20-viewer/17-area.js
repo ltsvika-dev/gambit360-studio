@@ -30,7 +30,7 @@
     if (!draft) draft = { pts:[], parts:[] };
     if (draft.pts.length >= 3) {
       const q = draft.pts[0].clone().project(camera);
-      if (Math.hypot((q.x * 0.5 + 0.5) * innerWidth - cx, (-q.y * 0.5 + 0.5) * innerHeight - cy) < 22) { finishArea(); return; }
+      if (Math.hypot((q.x * 0.5 + 0.5) * VW() - cx, (-q.y * 0.5 + 0.5) * innerHeight - cy) < 22) { finishArea(); return; }
     }
     const last = draft.pts[draft.pts.length - 1];
     draft.parts.push(last ? [mkBar(last, p), mkDot(p)] : [mkDot(p)]);
@@ -96,7 +96,7 @@
     [...measures, ...areas].forEach(sh => sh.pts.forEach((p, i) => {
       const q = p.clone().project(camera);
       if (q.z > 1) return;
-      const d = Math.hypot((q.x * 0.5 + 0.5) * innerWidth - cx, (-q.y * 0.5 + 0.5) * innerHeight - cy);
+      const d = Math.hypot((q.x * 0.5 + 0.5) * VW() - cx, (-q.y * 0.5 + 0.5) * innerHeight - cy);
       if (d < bd) { bd = d; best = { sh, i }; }
     }));
     return best;
@@ -106,7 +106,7 @@
     const now = performance.now();
     if (now - lastMove < 30) return;
     lastMove = now;
-    ray.setFromCamera(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera);
+    ray.setFromCamera(new THREE.Vector2(e.clientX / VW() * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera);
     ray.far = Infinity;
     const h = cast()[0];
     if (h) { drag.sh.pts[drag.i].copy(h.point); buildShape(drag.sh); }
@@ -130,8 +130,8 @@
     let p = h.point, closing = false;
     if (areaMode && draft && draft.pts.length >= 3) {  // near the first corner: snap to it, click will close the shape
       const q = draft.pts[0].clone().project(camera);
-      const mx = (mouseNDC.x * 0.5 + 0.5) * innerWidth, my = (-mouseNDC.y * 0.5 + 0.5) * innerHeight;
-      if (!locked && Math.hypot((q.x * 0.5 + 0.5) * innerWidth - mx, (-q.y * 0.5 + 0.5) * innerHeight - my) < 22) { p = draft.pts[0]; closing = true; }
+      const mx = (mouseNDC.x * 0.5 + 0.5) * VW(), my = (-mouseNDC.y * 0.5 + 0.5) * innerHeight;
+      if (!locked && Math.hypot((q.x * 0.5 + 0.5) * VW() - mx, (-q.y * 0.5 + 0.5) * innerHeight - my) < 22) { p = draft.pts[0]; closing = true; }
     }
     pickDot.position.copy(p);
     pickDot.scale.setScalar(scale * Math.max(1, camera.position.distanceTo(p) / (3 * scale)));
@@ -162,14 +162,14 @@
       v.set(w.p[0], w.p[1] + -0.8 * scale, w.p[2]).project(camera);   // from above, pin the tag nearer the floor so it sits inside its room
       const vis = v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1;
       w.el.style.display = vis ? 'inline-flex' : 'none';
-      if (vis) w.el.style.transform = `translate(${(v.x * 0.5 + 0.5) * innerWidth}px, ${(-v.y * 0.5 + 0.5) * innerHeight}px) translate(-50%,-50%)`;
+      if (vis) w.el.style.transform = `translate(${(v.x * 0.5 + 0.5) * VW()}px, ${(-v.y * 0.5 + 0.5) * innerHeight}px) translate(-50%,-50%)`;
     });
     if (window.G360_updateTags) window.G360_updateTags();
     [...measures, ...areas].forEach(m => {
       v.copy(m.mid).project(camera);
       const vis = v.z < 1 && Math.abs(v.x) < 1.1 && Math.abs(v.y) < 1.1;
       m.el.style.display = vis ? '' : 'none';
-      if (vis) m.el.style.transform = `translate(${(v.x * 0.5 + 0.5) * innerWidth}px, ${(-v.y * 0.5 + 0.5) * innerHeight}px) translate(-50%,-50%)`;
+      if (vis) m.el.style.transform = `translate(${(v.x * 0.5 + 0.5) * VW()}px, ${(-v.y * 0.5 + 0.5) * innerHeight}px) translate(-50%,-50%)`;
     });
   }
 
@@ -179,7 +179,7 @@
     overview = true; dollhouse = false; tween = null; refreshClip();
     if (document.pointerLockElement) document.exitPointerLock();
     const box = bbox(), c = box.getCenter(new THREE.Vector3());
-    const top = new THREE.Vector3(c.x, box.max.y + span * 0.8, c.z), pEnd = -Math.PI / 2 + 0.001;
+    const top = new THREE.Vector3(c.x, box.max.y + (window.G360_sideW ? Math.max(span * 0.8, (box.max.x - box.min.x) * 0.54 / (Math.tan(37.5 * Math.PI / 180) * camera.aspect)) : span * 0.8), c.z), pEnd = -Math.PI / 2 + 0.001;
     camera.fov = 75; camera.updateProjectionMatrix();
     if (anim) {
       const y1 = Math.round(yaw / (2 * Math.PI)) * 2 * Math.PI;   // the nearest way round to "north"
@@ -228,6 +228,7 @@
     requestAnimationFrame(loop);
     if (tourOpen) { clock.getDelta(); return; }   // the 3D view rests while the Matterport tour is open
     syncMeasBtns();
+    if (window.G360_sideW !== undefined && renderer && camera && (renderer.domElement.clientWidth !== VW() || Math.abs(camera.aspect - VW() / innerHeight) > 1e-3)) { camera.aspect = VW() / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(VW(), innerHeight); }   // the Studio's columns opened or closed
     const dt = Math.min(clock.getDelta(), 0.1);
     if (look.on) {
       if (!panoOn || tween) look.on = false;

@@ -11,6 +11,7 @@
     cpOld: 'upload.php בשרת ישן מכדי לשמור פרויקטים. פתחו פעם אחת את "סיורים חיים" במחשב הראשי והוא יתעדכן לבד.',
     cpStale: d => 'במחשב אחר נשמרה בינתיים גרסה של הפרויקט הזה (' + d + ').\nלשמור בענן את הגרסה שכאן במקומה?', cpGot: d => 'נטענה מהענן גרסה חדשה יותר של הפרויקט (' + d + ')',
     pubAsk: 'לפרסם את החבילה גם בשרת?\nהלקוח יקבל קישור ויצפה בה בדפדפן, ועם הקוד שהסטודיו ייתן לך הוא יוכל גם להוריד אותה. פרסום חוזר של אותו פרויקט מעדכן את אותו קישור.', pubYes: 'פרסום בשרת', pubNo: 'לא עכשיו',
+    pubName: b => 'השם בכתובת ללקוח (אותיות באנגלית, ספרות ומקף):\n' + b + '…/', pubNameBad: 'השם צריך להיות באנגלית: אותיות, ספרות ומקף, לפחות שני תווים.', pubNameTaken: n => 'השם "' + n + '" כבר תפוס בשרת על ידי חבילה אחרת. בחרו שם אחר.',
     pubAskUpd: 'לעדכן גם את החבילה בשרת?\nהלקוח יראה את השינויים באותו קישור. עולים רק הקבצים שהשתנו.', pubSame: 'כבר בשרת', pkgPubBtn: 'פרסום החבילה בשרת', pkgPubTip: 'מעלה לשרת את החבילה שכבר נמצאת במחשב (Export\\Client Packages) ונותן קישור ללקוח וקוד הורדה. עולים רק הקבצים שהשתנו.',
     pubNoPkg: n => 'לא נמצאה חבילה בשם "' + n + '" בתיקייה Export\\Client Packages. צרו אותה קודם בלחיצה על "יצירת חבילה ללקוח" כש"מודל" מסומן.',
     pubBusy: (i, n) => 'מעלה את החבילה לשרת… ' + i + ' מתוך ' + n, pubDone: (u, c) => 'החבילה פורסמה בשרת ✓ הקישור ללקוח: ' + u + ' · קוד להורדת החבילה: ' + c, pubCodeLine: c => 'קוד להורדת החבילה: ' + c, pubFail: e => 'הפרסום בשרת נכשל: ' + e + '. החבילה במחשב מוכנה ותקינה.',
@@ -23,6 +24,7 @@
     cpOld: 'upload.php on the server is too old to keep projects. Open Live tours once on the main computer and it updates itself.',
     cpStale: d => 'Meanwhile another computer saved a version of this project (' + d + ').\nSave the version here in the cloud instead?', cpGot: d => 'A newer version of the project came in from the cloud (' + d + ')',
     pubAsk: 'Publish the package on the server too?\nThe client gets a link to view it in the browser, and with the code the Studio gives you, can also download it. Publishing the same project again updates the same link.', pubYes: 'Publish on the server', pubNo: 'Not now',
+    pubName: b => 'The name in the client\'s address (English letters, digits and dashes):\n' + b + '…/', pubNameBad: 'The name must be in English: letters, digits and dashes, at least two characters.', pubNameTaken: n => 'The name "' + n + '" is already used on the server by another package. Choose another name.',
     pubAskUpd: 'Update the package on the server too?\nThe client sees the changes at the same link. Only the files that changed are sent.', pubSame: 'already on the server', pkgPubBtn: 'Publish the package on the server', pkgPubTip: 'Uploads the package already on this computer (Export\\Client Packages) and gives a link for the client and a download code. Only the files that changed are sent.',
     pubNoPkg: n => 'No package named "' + n + '" was found in Export\\Client Packages. Create it first with "Create client package" with "Model" ticked.',
     pubBusy: (i, n) => 'Uploading the package… ' + i + ' of ' + n, pubDone: (u, c) => 'The package is on the server ✓ The client\'s link: ' + u + ' · Code to download the package: ' + c, pubCodeLine: c => 'Code to download the package: ' + c, pubFail: e => 'Publishing on the server failed: ' + e + '. The package on this computer is ready and fine.',
@@ -104,15 +106,33 @@
 
   // ---- a client package on the site: after the package is made, the Studio asks whether the client should also get it as a link (packages/<token>/index.html).
   // The token is kept with the project, so publishing again (from any computer) updates the same link. ----
+  const PKG_NM = /^[a-z0-9][a-z0-9-]{1,59}$/, pkgSlug = s => String(s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
   async function pkgPublish(entries, safe, viewerName, o) {
     o = o || {};
     const c = await cpCfg(true); if (!c) { if (o.noAsk) pkgMsg(t('cpNoCloud')); return; }
     let tk = pkgPubOf(currentName), code = '';
-    if (!o.noAsk && !(await g360Ask(t(/^p[a-z0-9]{10}$/.test(tk) ? 'pubAskUpd' : 'pubAsk'), { ok:t('pubYes'), cancel:t('pubNo') }))) return; try { code = localStorage.getItem('tourViewerPkgCode:' + currentName) || ''; } catch (err) {}
-    if (!/^p[a-z0-9]{10}$/.test(tk)) { tk = 'p' + [...crypto.getRandomValues(new Uint8Array(10))].map(b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join(''); try { localStorage.setItem('tourViewerPkgPub:' + currentName, tk); } catch (err) {} }
+    const had = PKG_NM.test(tk), base = c.url.replace(/upload\.php$/, '') + 'packages/';
+    let nm = had ? tk : PKG_NM.test(pkgSlug(safe)) ? pkgSlug(safe) : 'p' + [...crypto.getRandomValues(new Uint8Array(10))].map(b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join('');
+    if (!(o.noAsk && had && !o.askName)) {   // the name in the client's address (packages/<name>/) is mine to choose; it is asked together with the question whether to publish
+      let err = '';
+      for (;;) {
+        const v = await g360Ask((err ? err + '\n\n' : '') + (o.noAsk ? '' : t(had ? 'pubAskUpd' : 'pubAsk') + '\n\n') + t('pubName', base), { input:true, value:nm, ok:t('pubYes'), cancel:t('pubNo') });
+        if (v == null) return;
+        nm = pkgSlug(v);
+        if (!PKG_NM.test(nm)) { err = t('pubNameBad'); continue; }
+        if (nm !== tk) { let j = null; try { j = await cpPost(c, { action:'pkglist', token:nm, proj:currentName }); } catch (e) {} if (j && j.taken) { err = t('pubNameTaken', nm); continue; } }
+        break;
+      }
+    }
+    try { code = localStorage.getItem('tourViewerPkgCode:' + currentName) || ''; } catch (err) {}
+    if (had && nm !== tk) {   // a new name: the package on the server moves, and the old address sends on to the new one
+      let j = null; try { j = await cpPost(c, { action:'pkgmove', token:tk, to:nm, proj:currentName }); } catch (err) { pkgMsg(t('pubFail', err.message || err)); return; }
+      if (!j.ok) { pkgMsg(t('pubFail', j.error === 'taken' ? t('pubNameTaken', nm) : j.error)); return; }
+    }
+    if (nm !== tk) { tk = nm; try { localStorage.setItem('tourViewerPkgPub:' + currentName, tk); } catch (err) {} }
     const list = entries.filter(e => e.path.startsWith(safe + '/')).map(e => { const rel = e.path.slice(safe.length + 1); return { rel:rel === viewerName ? 'index.html' : rel, fh:e.fh }; });
     try {
-      let have = {}; try { const h = await cpPost(c, { action:'pkglist', token:tk }); if (h && h.ok && h.have) have = h.have; } catch (err) {}   // what the server already has: a file that did not change is not sent again
+      let have = {}; try { const h = await cpPost(c, { action:'pkglist', token:tk, proj:currentName }); if (h && h.ok && h.have) have = h.have; } catch (err) {}   // what the server already has: a file that did not change is not sent again
       const sha = async f => [...new Uint8Array(await crypto.subtle.digest('SHA-256', await f.arrayBuffer()))].map(x => x.toString(16).padStart(2, '0')).join('');
       for (let i = 0; i < list.length; i++) {
         if (pkgAbort) throw new Error(t('pkgCancelledMsg'));
@@ -125,7 +145,7 @@
       }
       const j = await cpPost(c, { action:'pkgdone', token:tk, keep:JSON.stringify(list.map(x => x.rel)) }); if (!j.ok) throw new Error(j.error);
       if (!/^[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(code)) { code = [0, 1].map(() => [...crypto.getRandomValues(new Uint8Array(4))].map(b => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join('')).join('-'); try { localStorage.setItem('tourViewerPkgCode:' + currentName, code); } catch (err) {} }
-      const k = await cpPost(c, { action:'pkgcode', token:tk, code, exp:expiryEnd(), name:safe }); if (!k.ok) throw new Error(k.error);   // the client downloads the package with this code (a ZIP the server builds from these same files)
+      const k = await cpPost(c, { action:'pkgcode', token:tk, code, exp:expiryEnd(), name:safe, proj:currentName }); if (!k.ok) throw new Error(k.error);   // the client downloads the package with this code (a ZIP the server builds from these same files)
     } catch (err) { pkgMsg(t('pubFail', err.message || err)); return; }
     const url = c.url.replace(/upload\.php$/, '') + 'packages/' + tk + '/index.html', txt = url + '\n' + t('pubCodeLine', code);
     pkgMsg(t('pubDone', url, code)); say(t('pubDone', url, code));
@@ -144,7 +164,7 @@
       b.onclick = async () => {
         if (pkgBusy) return;
         if (!(await cpCfg(true))) { pkgMsg(t('cpNoCloud')); return; }
-        b.disabled = true; try { await pkgPublishFolder({ noAsk:true }); } finally { b.disabled = false; }
+        b.disabled = true; try { await pkgPublishFolder({ noAsk:true, askName:true }); } finally { b.disabled = false; }   // the button asks only for the name in the address (to keep or change)
       };
       const r2 = document.createElement('div'); r2.className = 'mprow'; r2.appendChild(b); row.insertAdjacentElement('afterend', r2);
       const prev = window.G360_relang; window.G360_relang = function () { if (prev) prev.apply(this, arguments); lbl(); };

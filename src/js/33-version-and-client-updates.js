@@ -23,7 +23,7 @@
   // ---- Client: a package published on the site (…/packages/<token>/) can be downloaded as a ZIP with the code the owner gave ----
   Object.assign(I18N.he, { dlPkgBtn: 'הורדת החבילה', dlPkgAsk: 'הקלידו את הקוד להורדת החבילה (קיבלתם אותו יחד עם הקישור):', dlPkgBad: 'הקוד שגוי.', dlPkgWait: 'יותר מדי ניסיונות. נסו שוב בעוד רבע שעה.', dlPkgNone: 'אי אפשר להוריד את החבילה הזו.', dlPkgFail: 'השרת לא ענה. נסו שוב.', dlPkgGo: 'ההורדה מתחילה…' });
   Object.assign(I18N.en, { dlPkgBtn: 'Download the package', dlPkgAsk: 'Type the code to download the package (you got it with the link):', dlPkgBad: 'Wrong code.', dlPkgWait: 'Too many tries. Try again in 15 minutes.', dlPkgNone: 'This package cannot be downloaded.', dlPkgFail: 'The server did not answer. Try again.', dlPkgGo: 'The download is starting…' });
-  const pkgM = location.pathname.match(/\/(packages|p)\/(p[a-z0-9]{10})\/(index\.html)?$/) || [], pkgTk = pkgM[2] || '', siteBase = () => location.href.slice(0, location.href.indexOf('/' + pkgM[1] + '/' + pkgTk + '/') + 1);   // packages/<token>/ (older ones: p/<token>/)
+  const pkgM = location.pathname.match(/\/(packages|p)\/([a-z0-9][a-z0-9-]{1,59})\/(index\.html)?$/) || [], pkgTk = pkgM[2] || '', siteBase = () => location.href.slice(0, location.href.indexOf('/' + pkgM[1] + '/' + pkgTk + '/') + 1);   // packages/<token>/ (older ones: p/<token>/)
   if (window.G360_CLIENT && pkgTk && /^https?:$/.test(location.protocol)) {
     const b = document.createElement('button'); b.type = 'button'; b.id = 'dlPkgBtn'; b.className = 'ib'; b.hidden = true;
     b.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M4 19h16"/></svg><span></span>';

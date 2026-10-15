@@ -636,7 +636,7 @@ const I18N = {
     pkgSrcSaved: 'תיקיית ה-Studio נשמרה. עכשיו לחצו על "יצירת חבילה ללקוח".',
     srcBtn: 'בחירת תיקיית ה-Studio', srcBtnChange: 'החלפת תיקיית ה-Studio',
     pkgNeedSrc: 'קודם לחצו על "בחירת תיקיית ה-Studio" ובחרו את התיקייה שבה נמצא הקובץ Gambit360 Studio.html (עם תיקיית lib).',
-    pkgBadSrc: (n, h, l) => 'בתיקייה "' + n + '": קובץ הצפיין ' + (h ? 'נמצא' : 'לא נמצא') + ', תיקיית lib ' + (l ? 'נמצאה (' + l + ' קבצים)' : 'לא נמצאה או ריקה') + '. זו תיקיית ה-Studio : בחרו את התיקייה שמכילה ישירות את קובץ Gambit360 Studio.html ואת התיקייה lib.',
+    pkgSrcIsPkg: n => '"' + n + '" היא תיקייה של חבילת לקוח, לא תיקיית ה-Studio. בחרו את התיקייה שבה נמצא הקובץ Gambit360 Studio.html.', pkgBadSrc: (n, h, l) => 'בתיקייה "' + n + '": קובץ הצפיין ' + (h ? 'נמצא' : 'לא נמצא') + ', תיקיית lib ' + (l ? 'נמצאה (' + l + ' קבצים)' : 'לא נמצאה או ריקה') + '. זו תיקיית ה-Studio : בחרו את התיקייה שמכילה ישירות את קובץ Gambit360 Studio.html ואת התיקייה lib.',
     pkgAgain: 'יש ללחוץ שוב על "יצירת חבילה ללקוח" (נדרש אישור נוסף מהדפדפן).', pkgCopying: 'מעתיק את הצפיין…',
     pkgHint: 'יצירת חבילה ללקוח: קודם בוחרים פעם אחת את תיקיית ה-Studio. אחר כך כל לחיצה יוצרת את החבילה (ואם תרצו גם ZIP) בתיקייה Export\\Client Packages שבתוכה, ומציגה כפתורי העתקת נתיב ופתיחה.',
     pkgObfLbl: 'ערפול קוד (הגנה מהעתקה)', freshConfirm: n => 'קיימים נתונים שמורים של פרויקט בשם "' + n + '" (נקודות, שמות, הגדרות, לוגו). טעינת מודל חדש פותחת פרויקט חדש, והנתונים האלה יימחקו.\n\nכדי להחליף מודל בפרויקט קיים השתמש בכפתור ההחלפה בחלונית יצירת החבילה.\n\nלהמשיך ולמחוק?', obfWarn: '⚠ שים לב: ללא ערפול הקוד של הצפיין, הוא יהיה גלוי וכל מי שיקבל את הקובץ יכול לקרוא אותו ולהעתיק אותו.', obfBusy: 'מערפל את קוד הצפיין, זה יכול לקחת כמה שניות…', obfMissing: 'כלי הערפול לא נמצא. שמור את הקובץ index.browser.js של javascript-obfuscator בשם javascript-obfuscator.js בתיקייה tools שבתיקיית ה-Studio, או בטל את הסימון "ערפול קוד".',
@@ -796,7 +796,7 @@ const I18N = {
     pkgSrcSaved: 'The Studio folder was saved. Now press "Create client package".',
     srcBtn: 'Choose the Studio folder', srcBtnChange: 'Change the Studio folder',
     pkgNeedSrc: 'First press "Step 1: choose the Studio folder" and choose the folder that holds Gambit360 Studio.html (with its lib folder).',
-    pkgBadSrc: (n, h, l) => 'In the folder "' + n + '": viewer file ' + (h ? 'found' : 'not found') + ', lib folder ' + (l ? 'found (' + l + ' files)' : 'not found or empty') + '. Choose the folder that directly contains the HTML file and the lib folder.',
+    pkgSrcIsPkg: n => '"' + n + '" is a client package folder, not the Studio folder. Choose the folder that holds Gambit360 Studio.html.', pkgBadSrc: (n, h, l) => 'In the folder "' + n + '": viewer file ' + (h ? 'found' : 'not found') + ', lib folder ' + (l ? 'found (' + l + ' files)' : 'not found or empty') + '. Choose the folder that directly contains the HTML file and the lib folder.',
     pkgAgain: 'Press "Create client package" again (the browser needed one more confirmation).', pkgCopying: 'Copying the viewer…',
     pkgHint: 'Create a client package: first choose the Studio folder once. After that each press creates the package (and, if you like, a ZIP) in its Export\\Client Packages folder, and shows copy-path and open buttons.',
     pkgObfLbl: 'Scramble the code (copy protection)', freshConfirm: n => 'Saved data exists for a project named "' + n + '" (points, names, settings, logo). Loading a new model starts a new project and this data will be deleted.\n\nTo replace the model of an existing project use the replace button in the package panel.\n\nContinue and delete?', obfWarn: '⚠ Note: without scrambling the viewer code is readable, and anyone who gets the file can read and copy it.', obfBusy: 'Scrambling the viewer code, this can take a few seconds…', obfMissing: 'The scrambling tool was not found. Save index.browser.js of javascript-obfuscator as javascript-obfuscator.js in a folder named tools inside the Studio folder, or untick "Scramble the code".',
@@ -1976,15 +1976,17 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
   });
   /*@STUDIO*/
   async function findViewer(dir) {
-    let html = null, lib = [], obf = null;
+    let html = null, lib = [], obf = null, pkg = false;
     try {
       for await (const [name, h] of dir.entries()) {
         if (h.kind === 'file' && /\.html?$/i.test(name) && (!html || /studio|viewer/i.test(name))) html = h;
+        if (h.kind === 'directory' && name.toLowerCase() === 'model') pkg = true;   // a client package (it has the same HTML + lib/) is never the Studio folder
         if (h.kind === 'directory' && name.toLowerCase() === 'lib') for await (const [n2, h2] of h.entries()) if (h2.kind === 'file' && /\.js$/i.test(n2)) lib.push(h2);
         if (h.kind === 'directory' && name.toLowerCase() === 'tools') for await (const [n2, h2] of h.entries()) if (h2.kind === 'file' && /obfuscator.*\.js$/i.test(n2)) obf = h2;   // the code-scrambling tool lives in "tools", never in "lib": everything in "lib" is copied into the client packages
       }
     } catch (err) { return { html:null, lib:[], obf:null, name:dir.name }; }
-    return { html, lib, obf, name:dir.name };
+    if (pkg) { html = null; lib = []; }
+    return { html, lib, obf, pkg, name:dir.name };
   }
   /*@/STUDIO*/
   const ymd = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -2170,7 +2172,11 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
   }
   // The browser cannot open Windows Explorer or tell a folder's real path. The helper started by the launcher (.bat) can: the page leaves a small request file
   // in the Studio folder, the helper reads it, opens the folder (unless the request starts with "?") and writes the real path back into a result file.
-  async function helperReq(src, rel) {
+  // One question to the helper at a time: they share one answer file, so two at once could each read the other's answer
+  // (the Studio folder was once remembered as a package folder that way).
+  let helperQ = Promise.resolve();
+  function helperReq(src, rel) { const p = helperQ.then(() => helperReq1(src, rel)); helperQ = p.catch(() => {}); return p; }
+  async function helperReq1(src, rel) {
     try {
       try { await src.removeEntry('.open-folder6.result.txt'); } catch (err) {}
       const fh = await src.getFileHandle('.open-folder6.txt', { create:true }); const w = await fh.createWritable(); await w.write(rel); await w.close();
@@ -2185,6 +2191,16 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
   const pageDir = () => { try { if (location.protocol !== 'file:') return ''; const p = decodeURIComponent(location.pathname).replace(/^\/([A-Za-z]:)/, '$1'); return p.slice(0, p.lastIndexOf('/')).replace(/\//g, '\\'); } catch (err) { return ''; } };
   // Saves go to the folder the Studio runs from: when the remembered Studio folder is another one, ask for the right one once.
   async function alignSrc(src) {
+    if (src && (await findViewer(src)).pkg) {   // a package folder was remembered as the Studio folder by mistake: forget it and ask for the right one
+      try { await idb.del('srcDir'); } catch (err) {} refreshSrc('');
+      pkgMsg(t('pkgSrcIsPkg', src.name));
+      try {
+        const dir = await g360Pick.dir({ id:'g360studio', mode:'readwrite' }), f0 = await findViewer(dir);
+        if (f0.html && f0.lib.length) { try { await idb.set('srcDir', dir); } catch (err) {} refreshSrc(await helperReq(dir, '?.') || ''); return dir; }
+        pkgMsg(f0.pkg ? t('pkgSrcIsPkg', f0.name) : t('pkgBadSrc', f0.name, !!f0.html, f0.lib.length));
+      } catch (err) {}
+      return null;
+    }
     const here = pageDir(); if (!here || !src) return src;
     const real = await helperReq(src, '?.');
     if (real && real !== srcReal) refreshSrc(real);
@@ -2325,7 +2341,7 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
       try {
         const dir = await g360Pick.dir({ id:'g360studio', mode:'readwrite' });
         const f0 = await findViewer(dir);
-        if (!f0.html || !f0.lib.length) { pkgMsg(t('pkgBadSrc', f0.name, !!f0.html, f0.lib.length)); return null; }
+        if (!f0.html || !f0.lib.length) { pkgMsg(f0.pkg ? t('pkgSrcIsPkg', f0.name) : t('pkgBadSrc', f0.name, !!f0.html, f0.lib.length)); return null; }
         try { await idb.set('srcDir', dir); } catch (err) {}
         refreshSrc(await helperReq(dir, '?.') || ''); src = dir;
       } catch (err) { if (!(err && err.name === 'AbortError')) pkgMsg(t('pkgFail') + err.message); return null; }
@@ -2574,7 +2590,7 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
     try { dir = await g360Pick.dir({ id:'g360studio', mode:'readwrite' }); }
     catch (err) { if (!(err && err.name === 'AbortError')) pkgMsg(t('pkgFail') + err.message); return; }
     const f0 = await findViewer(dir);
-    if (!f0.html || !f0.lib.length) { pkgMsg(t('pkgBadSrc', f0.name, !!f0.html, f0.lib.length)); return; }
+    if (!f0.html || !f0.lib.length) { pkgMsg(f0.pkg ? t('pkgSrcIsPkg', f0.name) : t('pkgBadSrc', f0.name, !!f0.html, f0.lib.length)); return; }
     try { await idb.set('srcDir', dir); } catch (err) {}
     const real = await helperReq(dir, '?.');   // the helper tells the real path of the chosen folder (when started from the launcher)
     refreshSrc(real || ''); pkgMsg(t('pkgSrcSaved'));
@@ -2845,6 +2861,7 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
     cpOld: 'upload.php בשרת ישן מכדי לשמור פרויקטים. פתחו פעם אחת את "סיורים חיים" במחשב הראשי והוא יתעדכן לבד.',
     cpStale: d => 'במחשב אחר נשמרה בינתיים גרסה של הפרויקט הזה (' + d + ').\nלשמור בענן את הגרסה שכאן במקומה?', cpGot: d => 'נטענה מהענן גרסה חדשה יותר של הפרויקט (' + d + ')',
     pubAsk: 'לפרסם את החבילה גם בשרת?\nהלקוח יקבל קישור ויצפה בה בדפדפן, ועם הקוד שהסטודיו ייתן לך הוא יוכל גם להוריד אותה. פרסום חוזר של אותו פרויקט מעדכן את אותו קישור.', pubYes: 'פרסום בשרת', pubNo: 'לא עכשיו',
+    pubName: b => 'השם בכתובת ללקוח (אותיות באנגלית, ספרות ומקף):\n' + b + '…/', pubNameBad: 'השם צריך להיות באנגלית: אותיות, ספרות ומקף, לפחות שני תווים.', pubNameTaken: n => 'השם "' + n + '" כבר תפוס בשרת על ידי חבילה אחרת. בחרו שם אחר.',
     pubAskUpd: 'לעדכן גם את החבילה בשרת?\nהלקוח יראה את השינויים באותו קישור. עולים רק הקבצים שהשתנו.', pubSame: 'כבר בשרת', pkgPubBtn: 'פרסום החבילה בשרת', pkgPubTip: 'מעלה לשרת את החבילה שכבר נמצאת במחשב (Export\\Client Packages) ונותן קישור ללקוח וקוד הורדה. עולים רק הקבצים שהשתנו.',
     pubNoPkg: n => 'לא נמצאה חבילה בשם "' + n + '" בתיקייה Export\\Client Packages. צרו אותה קודם בלחיצה על "יצירת חבילה ללקוח" כש"מודל" מסומן.',
     pubBusy: (i, n) => 'מעלה את החבילה לשרת… ' + i + ' מתוך ' + n, pubDone: (u, c) => 'החבילה פורסמה בשרת ✓ הקישור ללקוח: ' + u + ' · קוד להורדת החבילה: ' + c, pubCodeLine: c => 'קוד להורדת החבילה: ' + c, pubFail: e => 'הפרסום בשרת נכשל: ' + e + '. החבילה במחשב מוכנה ותקינה.',
@@ -2857,6 +2874,7 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
     cpOld: 'upload.php on the server is too old to keep projects. Open Live tours once on the main computer and it updates itself.',
     cpStale: d => 'Meanwhile another computer saved a version of this project (' + d + ').\nSave the version here in the cloud instead?', cpGot: d => 'A newer version of the project came in from the cloud (' + d + ')',
     pubAsk: 'Publish the package on the server too?\nThe client gets a link to view it in the browser, and with the code the Studio gives you, can also download it. Publishing the same project again updates the same link.', pubYes: 'Publish on the server', pubNo: 'Not now',
+    pubName: b => 'The name in the client\'s address (English letters, digits and dashes):\n' + b + '…/', pubNameBad: 'The name must be in English: letters, digits and dashes, at least two characters.', pubNameTaken: n => 'The name "' + n + '" is already used on the server by another package. Choose another name.',
     pubAskUpd: 'Update the package on the server too?\nThe client sees the changes at the same link. Only the files that changed are sent.', pubSame: 'already on the server', pkgPubBtn: 'Publish the package on the server', pkgPubTip: 'Uploads the package already on this computer (Export\\Client Packages) and gives a link for the client and a download code. Only the files that changed are sent.',
     pubNoPkg: n => 'No package named "' + n + '" was found in Export\\Client Packages. Create it first with "Create client package" with "Model" ticked.',
     pubBusy: (i, n) => 'Uploading the package… ' + i + ' of ' + n, pubDone: (u, c) => 'The package is on the server ✓ The client\'s link: ' + u + ' · Code to download the package: ' + c, pubCodeLine: c => 'Code to download the package: ' + c, pubFail: e => 'Publishing on the server failed: ' + e + '. The package on this computer is ready and fine.',
@@ -2938,15 +2956,33 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
 
   // ---- a client package on the site: after the package is made, the Studio asks whether the client should also get it as a link (packages/<token>/index.html).
   // The token is kept with the project, so publishing again (from any computer) updates the same link. ----
+  const PKG_NM = /^[a-z0-9][a-z0-9-]{1,59}$/, pkgSlug = s => String(s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
   async function pkgPublish(entries, safe, viewerName, o) {
     o = o || {};
     const c = await cpCfg(true); if (!c) { if (o.noAsk) pkgMsg(t('cpNoCloud')); return; }
     let tk = pkgPubOf(currentName), code = '';
-    if (!o.noAsk && !(await g360Ask(t(/^p[a-z0-9]{10}$/.test(tk) ? 'pubAskUpd' : 'pubAsk'), { ok:t('pubYes'), cancel:t('pubNo') }))) return; try { code = localStorage.getItem('tourViewerPkgCode:' + currentName) || ''; } catch (err) {}
-    if (!/^p[a-z0-9]{10}$/.test(tk)) { tk = 'p' + [...crypto.getRandomValues(new Uint8Array(10))].map(b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join(''); try { localStorage.setItem('tourViewerPkgPub:' + currentName, tk); } catch (err) {} }
+    const had = PKG_NM.test(tk), base = c.url.replace(/upload\.php$/, '') + 'packages/';
+    let nm = had ? tk : PKG_NM.test(pkgSlug(safe)) ? pkgSlug(safe) : 'p' + [...crypto.getRandomValues(new Uint8Array(10))].map(b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join('');
+    if (!(o.noAsk && had && !o.askName)) {   // the name in the client's address (packages/<name>/) is mine to choose; it is asked together with the question whether to publish
+      let err = '';
+      for (;;) {
+        const v = await g360Ask((err ? err + '\n\n' : '') + (o.noAsk ? '' : t(had ? 'pubAskUpd' : 'pubAsk') + '\n\n') + t('pubName', base), { input:true, value:nm, ok:t('pubYes'), cancel:t('pubNo') });
+        if (v == null) return;
+        nm = pkgSlug(v);
+        if (!PKG_NM.test(nm)) { err = t('pubNameBad'); continue; }
+        if (nm !== tk) { let j = null; try { j = await cpPost(c, { action:'pkglist', token:nm, proj:currentName }); } catch (e) {} if (j && j.taken) { err = t('pubNameTaken', nm); continue; } }
+        break;
+      }
+    }
+    try { code = localStorage.getItem('tourViewerPkgCode:' + currentName) || ''; } catch (err) {}
+    if (had && nm !== tk) {   // a new name: the package on the server moves, and the old address sends on to the new one
+      let j = null; try { j = await cpPost(c, { action:'pkgmove', token:tk, to:nm, proj:currentName }); } catch (err) { pkgMsg(t('pubFail', err.message || err)); return; }
+      if (!j.ok) { pkgMsg(t('pubFail', j.error === 'taken' ? t('pubNameTaken', nm) : j.error)); return; }
+    }
+    if (nm !== tk) { tk = nm; try { localStorage.setItem('tourViewerPkgPub:' + currentName, tk); } catch (err) {} }
     const list = entries.filter(e => e.path.startsWith(safe + '/')).map(e => { const rel = e.path.slice(safe.length + 1); return { rel:rel === viewerName ? 'index.html' : rel, fh:e.fh }; });
     try {
-      let have = {}; try { const h = await cpPost(c, { action:'pkglist', token:tk }); if (h && h.ok && h.have) have = h.have; } catch (err) {}   // what the server already has: a file that did not change is not sent again
+      let have = {}; try { const h = await cpPost(c, { action:'pkglist', token:tk, proj:currentName }); if (h && h.ok && h.have) have = h.have; } catch (err) {}   // what the server already has: a file that did not change is not sent again
       const sha = async f => [...new Uint8Array(await crypto.subtle.digest('SHA-256', await f.arrayBuffer()))].map(x => x.toString(16).padStart(2, '0')).join('');
       for (let i = 0; i < list.length; i++) {
         if (pkgAbort) throw new Error(t('pkgCancelledMsg'));
@@ -2959,7 +2995,7 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
       }
       const j = await cpPost(c, { action:'pkgdone', token:tk, keep:JSON.stringify(list.map(x => x.rel)) }); if (!j.ok) throw new Error(j.error);
       if (!/^[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(code)) { code = [0, 1].map(() => [...crypto.getRandomValues(new Uint8Array(4))].map(b => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join('')).join('-'); try { localStorage.setItem('tourViewerPkgCode:' + currentName, code); } catch (err) {} }
-      const k = await cpPost(c, { action:'pkgcode', token:tk, code, exp:expiryEnd(), name:safe }); if (!k.ok) throw new Error(k.error);   // the client downloads the package with this code (a ZIP the server builds from these same files)
+      const k = await cpPost(c, { action:'pkgcode', token:tk, code, exp:expiryEnd(), name:safe, proj:currentName }); if (!k.ok) throw new Error(k.error);   // the client downloads the package with this code (a ZIP the server builds from these same files)
     } catch (err) { pkgMsg(t('pubFail', err.message || err)); return; }
     const url = c.url.replace(/upload\.php$/, '') + 'packages/' + tk + '/index.html', txt = url + '\n' + t('pubCodeLine', code);
     pkgMsg(t('pubDone', url, code)); say(t('pubDone', url, code));
@@ -2978,7 +3014,7 @@ if (typeof THREE === 'undefined' || !THREE.OBJLoader || !THREE.MTLLoader) {
       b.onclick = async () => {
         if (pkgBusy) return;
         if (!(await cpCfg(true))) { pkgMsg(t('cpNoCloud')); return; }
-        b.disabled = true; try { await pkgPublishFolder({ noAsk:true }); } finally { b.disabled = false; }
+        b.disabled = true; try { await pkgPublishFolder({ noAsk:true, askName:true }); } finally { b.disabled = false; }   // the button asks only for the name in the address (to keep or change)
       };
       const r2 = document.createElement('div'); r2.className = 'mprow'; r2.appendChild(b); row.insertAdjacentElement('afterend', r2);
       const prev = window.G360_relang; window.G360_relang = function () { if (prev) prev.apply(this, arguments); lbl(); };
@@ -6017,7 +6053,7 @@ renderer.domElement.addEventListener('mousedown', e => {
   // ---- Client: a package published on the site (…/packages/<token>/) can be downloaded as a ZIP with the code the owner gave ----
   Object.assign(I18N.he, { dlPkgBtn: 'הורדת החבילה', dlPkgAsk: 'הקלידו את הקוד להורדת החבילה (קיבלתם אותו יחד עם הקישור):', dlPkgBad: 'הקוד שגוי.', dlPkgWait: 'יותר מדי ניסיונות. נסו שוב בעוד רבע שעה.', dlPkgNone: 'אי אפשר להוריד את החבילה הזו.', dlPkgFail: 'השרת לא ענה. נסו שוב.', dlPkgGo: 'ההורדה מתחילה…' });
   Object.assign(I18N.en, { dlPkgBtn: 'Download the package', dlPkgAsk: 'Type the code to download the package (you got it with the link):', dlPkgBad: 'Wrong code.', dlPkgWait: 'Too many tries. Try again in 15 minutes.', dlPkgNone: 'This package cannot be downloaded.', dlPkgFail: 'The server did not answer. Try again.', dlPkgGo: 'The download is starting…' });
-  const pkgM = location.pathname.match(/\/(packages|p)\/(p[a-z0-9]{10})\/(index\.html)?$/) || [], pkgTk = pkgM[2] || '', siteBase = () => location.href.slice(0, location.href.indexOf('/' + pkgM[1] + '/' + pkgTk + '/') + 1);   // packages/<token>/ (older ones: p/<token>/)
+  const pkgM = location.pathname.match(/\/(packages|p)\/([a-z0-9][a-z0-9-]{1,59})\/(index\.html)?$/) || [], pkgTk = pkgM[2] || '', siteBase = () => location.href.slice(0, location.href.indexOf('/' + pkgM[1] + '/' + pkgTk + '/') + 1);   // packages/<token>/ (older ones: p/<token>/)
   if (window.G360_CLIENT && pkgTk && /^https?:$/.test(location.protocol)) {
     const b = document.createElement('button'); b.type = 'button'; b.id = 'dlPkgBtn'; b.className = 'ib'; b.hidden = true;
     b.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M4 19h16"/></svg><span></span>';
@@ -6973,7 +7009,7 @@ const G360Card = (() => {
 // It also keeps the Studio's synced data (a private _bk_ folder: the live tours and the point-cloud projects), lets another computer connect with a password,
 // serves the Studio online at /app/ after that password, replaces itself when the Studio has a newer copy, and emails the clients' view reports.
 $KEY_SHA256 = '@@KEYHASH@@';
-$VER = 11;   // grows with every change to this file: the Studio replaces an older copy on the server by itself
+$VER = 12;   // grows with every change to this file: the Studio replaces an older copy on the server by itself
 $LOGO = '@@LOGO@@';   // the Gambit360 logo for the sign-in page, filled in by the Studio
 $MAX_BYTES = 500 * 1024 * 1024;
 
@@ -7193,7 +7229,7 @@ if (isset($_GET['rep'])) {   // the link at the bottom of a report: the recipien
 if (isset($_GET['pkgget']) || (isset($_POST['action']) && ($_POST['action'] === 'pkginfo' || $_POST['action'] === 'pkgdl'))) {   // a client package on the site (packages/<token>/): may it be downloaded, the client's code, and the download itself
   $pj = function ($c, $a) { http_response_code($c); header('Content-Type: application/json; charset=utf-8'); header('Cache-Control: no-store'); header('X-Robots-Tag: noindex'); echo json_encode($a); exit; };
   $tk = (string)(isset($_GET['pkgget']) ? $_GET['pkgget'] : (isset($_POST['token']) ? $_POST['token'] : ''));
-  if (!$keyOk || !preg_match('#^p[a-z0-9]{10}$#', $tk)) $pj(400, array('ok' => false, 'error' => 'path'));
+  if (!$keyOk || !preg_match('#^[a-z0-9][a-z0-9-]{1,59}$#', $tk)) $pj(400, array('ok' => false, 'error' => 'path'));
   $pd = $root . '/packages/' . $tk; if (!is_dir($pd)) $pd = $root . '/p/' . $tk; $jf = $bd . '/pkg/' . $tk . '.json'; $info = @json_decode((string)@file_get_contents($jf), true);   // older packages are still in p/<token>/
   try { $today = (new DateTime('now', new DateTimeZone('Asia/Jerusalem')))->format('Y-m-d'); } catch (Exception $x) { $today = date('Y-m-d'); }
   $live = is_array($info) && !empty($info['hash']) && is_file($pd . '/index.html') && (empty($info['exp']) || $today <= $info['exp']);   // the package's storage period has not ended
@@ -7443,25 +7479,42 @@ if ($action === 'pclist' || $action === 'pcget' || $action === 'pcput' || $actio
   if (!@rename($f . '.part', $f)) { @unlink($f); if (!@rename($f . '.part', $f)) out(500, array('ok' => false, 'error' => 'rename')); }
   out(200, array('ok' => true, 'saved' => isset($j['saved']) ? (string)$j['saved'] : ''));
 }
-if ($action === 'pkgput' || $action === 'pkgdone' || $action === 'pkgcode' || $action === 'pkglist') {   // a client package published on the site: packages/<token>/index.html with its lib/ and model/ files, the link the client gets
+if ($action === 'pkgput' || $action === 'pkgdone' || $action === 'pkgcode' || $action === 'pkglist' || $action === 'pkgmove') {   // a client package published on the site: packages/<token>/index.html with its lib/ and model/ files, the link the client gets
   $tk = isset($_POST['token']) ? (string)$_POST['token'] : '';
-  if (!preg_match('#^p[a-z0-9]{10}$#', $tk)) out(400, array('ok' => false, 'error' => 'path'));
+  if (!preg_match('#^[a-z0-9][a-z0-9-]{1,59}$#', $tk)) out(400, array('ok' => false, 'error' => 'path'));   // the name in the client's address: chosen in the Studio (older packages got a random p + 10 characters)
   $pd = $root . '/packages/' . $tk;
   if (!is_file($root . '/packages/.htaccess')) { if (!is_dir($root . '/packages')) @mkdir($root . '/packages', 0755, true); @file_put_contents($root . '/packages/.htaccess', "Options -Indexes\n<IfModule mod_headers.c>\nHeader set X-Robots-Tag \"noindex, nofollow\"\n</IfModule>\n"); }
   $od = $root . '/p/' . $tk;   // a package from an older version lived in p/<token>/: it moves to packages/, and its old link keeps working through a small page that sends on
-  if (is_dir($od) && !is_dir($pd) && @rename($od, $pd)) { @mkdir($od, 0755); @file_put_contents($od . '/index.html', '<!DOCTYPE html><meta charset="utf-8"><meta name="robots" content="noindex"><meta http-equiv="refresh" content="0;url=../../packages/' . $tk . '/index.html"><' . 'script>location.replace("../../packages/' . $tk . '/index.html"+location.search+location.hash)<' . '/script>'); }
+  $fwd = function ($dir, $to) { @mkdir($dir, 0755); @file_put_contents($dir . '/index.html', '<!DOCTYPE html><meta charset="utf-8"><meta name="robots" content="noindex"><meta http-equiv="refresh" content="0;url=../../packages/' . $to . '/index.html"><' . 'script>location.replace("../../packages/' . $to . '/index.html"+location.search+location.hash)<' . '/script>'); };   // a page left at an old address that sends the client on
+  if (is_dir($od) && !is_dir($pd) && @rename($od, $pd)) $fwd($od, $tk);
+  $proj = mb_substr((string)(isset($_POST['proj']) ? $_POST['proj'] : ''), 0, 200);
+  $owner = function ($t) use ($root, $bd) { $j = @json_decode((string)@file_get_contents($bd . '/pkg/' . $t . '.json'), true); return is_array($j) && isset($j['proj']) ? (string)$j['proj'] : null; };
+  $stub = function ($d) { return is_dir($d) && !is_dir($d . '/lib'); };   // only a page that sends on: the name is free again
+  $taken = function ($t) use ($root, $owner, $stub, $proj) { $d = $root . '/packages/' . $t; return is_dir($d) && !$stub($d) && $owner($t) !== $proj; };   // another project's package already has this name
+  if ($action === 'pkgmove') {   // the package gets a new name: its folder moves, and the old address sends on to the new one
+    $to = isset($_POST['to']) ? (string)$_POST['to'] : '';
+    if (!preg_match('#^[a-z0-9][a-z0-9-]{1,59}$#', $to) || $to === $tk) out(400, array('ok' => false, 'error' => 'path'));
+    $nd = $root . '/packages/' . $to;
+    if ($taken($to)) out(200, array('ok' => false, 'error' => 'taken'));
+    if (!is_dir($pd) || $stub($pd)) out(200, array('ok' => true, 'moved' => false));
+    if ($stub($nd)) { @unlink($nd . '/index.html'); @rmdir($nd); }
+    if (!@rename($pd, $nd)) out(500, array('ok' => false, 'error' => 'rename'));
+    $fwd($pd, $to);
+    if (is_file($bd . '/pkg/' . $tk . '.json')) @rename($bd . '/pkg/' . $tk . '.json', $bd . '/pkg/' . $to . '.json');
+    out(200, array('ok' => true, 'moved' => true));
+  }
   if ($action === 'pkgcode') {   // the client's download code (only its hash is kept, in the private folder), the last day of the package and its name in the ZIP
     $code = strtoupper(preg_replace('#[^A-Za-z0-9]#', '', isset($_POST['code']) ? (string)$_POST['code'] : '')); $exp = isset($_POST['exp']) ? (string)$_POST['exp'] : '';
     if (strlen($code) < 6 || ($exp !== '' && !preg_match('#^[0-9]{4}-[0-9]{2}-[0-9]{2}$#', $exp))) out(400, array('ok' => false, 'error' => 'code'));
     denyDir($bd); if (!is_dir($bd . '/pkg') && !@mkdir($bd . '/pkg', 0755, true)) out(500, array('ok' => false, 'error' => 'mkdir'));
     $nm = mb_substr(trim(isset($_POST['name']) ? (string)$_POST['name'] : ''), 0, 100);
-    if (!@file_put_contents($bd . '/pkg/' . $tk . '.json', json_encode(array('hash' => password_hash($code, PASSWORD_DEFAULT), 'exp' => $exp, 'name' => $nm, 'at' => time())))) out(500, array('ok' => false, 'error' => 'write'));
+    if (!@file_put_contents($bd . '/pkg/' . $tk . '.json', json_encode(array('hash' => password_hash($code, PASSWORD_DEFAULT), 'exp' => $exp, 'name' => $nm, 'proj' => $proj, 'at' => time())))) out(500, array('ok' => false, 'error' => 'write'));
     out(200, array('ok' => true));
   }
   if ($action === 'pkglist') {   // what is already there (size and sha256 of each file), so publishing again sends only the files that changed
     $have = array();
     foreach (array('', '/lib', '/model') as $sub) foreach ((array)glob($pd . $sub . '/*') as $g) { if (!is_file($g) || substr($g, -5) === '.part' || ($sub !== '' && basename($g) === 'index.html')) continue; $have[ltrim($sub . '/' . basename($g), '/')] = array(filesize($g), hash_file('sha256', $g)); }
-    out(200, array('ok' => true, 'have' => (object)$have));
+    out(200, array('ok' => true, 'have' => (object)$have, 'taken' => $taken($tk)));
   }
   if ($action === 'pkgdone') {   // the files of an older version of the package that this one no longer has are taken away
     $keep = json_decode(isset($_POST['keep']) ? (string)$_POST['keep'] : '', true); if (!is_array($keep)) out(400, array('ok' => false, 'error' => 'json'));

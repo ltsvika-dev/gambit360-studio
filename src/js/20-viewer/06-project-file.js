@@ -126,7 +126,7 @@
     try { dir = await g360Pick.dir({ id:'g360studio', mode:'readwrite' }); }
     catch (err) { if (!(err && err.name === 'AbortError')) pkgMsg(t('pkgFail') + err.message); return; }
     const f0 = await findViewer(dir);
-    if (!f0.html || !f0.lib.length) { pkgMsg(t('pkgBadSrc', f0.name, !!f0.html, f0.lib.length)); return; }
+    if (!f0.html || !f0.lib.length) { pkgMsg(f0.pkg ? t('pkgSrcIsPkg', f0.name) : t('pkgBadSrc', f0.name, !!f0.html, f0.lib.length)); return; }
     try { await idb.set('srcDir', dir); } catch (err) {}
     const real = await helperReq(dir, '?.');   // the helper tells the real path of the chosen folder (when started from the launcher)
     refreshSrc(real || ''); pkgMsg(t('pkgSrcSaved'));

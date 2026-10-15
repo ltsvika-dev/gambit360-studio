@@ -282,7 +282,7 @@
   async function cloudSt() {
     const st = $('lvCloudSt'), on = !!settings.upKey;
     ['lvCloudSync', 'lvCloudPass', 'lvCloudOut'].forEach(id => { $(id).hidden = !on; }); $('lvCloudIn').hidden = on;
-    $('lvCloudApp').hidden = !on || HOSTED || !window.showDirectoryPicker; $('lvCloudOpen').hidden = !on || HOSTED || !(srvInfo && srvInfo.app);
+    $('lvCloudApp').hidden = true;   /* the Studio on the server updates by itself whenever the Studio opens, so no button (user's choice) */ $('lvCloudOpen').hidden = !on || HOSTED || !(srvInfo && srvInfo.app);
     $('lvCloudPass').textContent = L(srvInfo && srvInfo.pass ? 'cloudPass2' : 'cloudPass');
     if (!on) { st.textContent = L('cloudOff'); return; }
     let at = 0; try { at = await db.kget('srvBkAt'); } catch (e) {}

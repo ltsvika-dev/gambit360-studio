@@ -1,7 +1,7 @@
   // ---- Snapshot: the current view with the logo and project name ----
   function screenshot() {
     renderer.render(scene, camera);
-    const src = renderer.domElement, W = src.width, H = src.height, k = W / innerWidth;
+    const src = renderer.domElement, W = src.width, H = src.height, k = W / VW();
     const c = document.createElement('canvas'); c.width = W; c.height = H;
     const g = c.getContext('2d'); g.drawImage(src, 0, 0);
     const img = document.querySelector('#logo img'), m = 16 * k, pad = 10 * k;

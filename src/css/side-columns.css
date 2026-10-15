@@ -1,0 +1,56 @@
+  /* ===== Point-cloud module laid out like Live Tours (Studio, wide screens): top bar with the module tabs, two columns on the right (js/34-side-columns.js) ===== */
+  #pcTop { position:fixed; top:0; left:0; right:0; height:58px; box-sizing:border-box; z-index:7; display:flex; align-items:center; gap:8px; padding:0 14px; background:var(--panel); border-bottom:1px solid var(--line); }
+  #pcTop[hidden], #pcSide[hidden] { display:none; }
+  .modTabs { display:inline-flex; gap:2px; padding:3px; border-radius:999px; background:var(--hov, rgba(255,255,255,.06)); border:1px solid var(--line); flex:none; }
+  .modTabs button { height:32px; padding:0 16px; border:0 !important; border-radius:999px !important; background:transparent; color:var(--mute); font:inherit; font-size:.95rem; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .modTabs button:hover:not(.on) { color:var(--ink); }
+  .modTabs button.on { background:var(--accent); color:var(--on-accent); cursor:default; }
+  #live .lvTop .modTabs button { height:32px; width:auto; padding:0 16px; }
+  #live .lvTop #lvTitle { display:none; }
+  .pcIb { display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; padding:0; border-radius:999px; border:1px solid var(--line2, var(--line)); background:var(--btn); color:var(--ink); cursor:pointer; flex:none; }
+  .pcIb:hover { border-color:var(--accent); }
+  .pcIb.off { opacity:.55; }
+  .pcIb svg, .pcSecH svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+
+  /* the logo and the Options button sit in the top bar, on the side away from the tabs */
+  body.pcTopOn #brand { z-index:8; top:8px; direction:ltr; flex-direction:row; align-items:center; width:auto; gap:8px; }
+  body.pcTopOn #logo { height:42px; width:auto; max-width:200px; padding:4px 8px; display:flex; align-items:center; }
+  body.pcTopOn #logo img { height:34px !important; width:auto !important; max-width:184px !important; max-height:none !important; margin:0; object-fit:contain; }
+  body.pcTopOn #top-tools #optBtn { height:38px; padding:0 14px; }
+  body.pcTopOn #projTitle { z-index:6; top:9px; }
+  body.pcTopOn #status { top:70px; }
+
+  /* the two columns; the 3D view keeps the rest of the window (VW() in 00-core.js) */
+  #pcSide { position:fixed; top:58px; right:0; bottom:0; z-index:6; width:var(--pcSideW, 640px); display:flex; background:var(--panel); border-inline-start:1px solid var(--line); }
+  :root[dir=ltr] #pcSide { flex-direction:row-reverse; }   /* the points of interest stay on the outer edge in English too */
+  #pcSide .pcCol { min-height:0; overflow-y:auto; overscroll-behavior:contain; box-sizing:border-box; padding:12px; }
+  #pcListCol { width:280px; flex:none; display:flex; flex-direction:column; gap:10px; }
+  #pcEditCol { width:360px; flex:none; border-inline-start:1px solid var(--line); display:flex; flex-direction:column; gap:10px; }
+  #pcSide.noList #pcListCol, #pcSide.noEdit #pcEditCol { display:none; }
+  #pcSide.noList #pcEditCol { border:0; }
+
+  /* the panels that used to float under the top-right buttons live in the columns */
+  body.pcSide #topRight { position:static; width:auto; display:flex; gap:6px; flex:none; }
+  body.pcSide #topRight > button { flex:1 1 0; justify-content:center; }
+  body.pcSide #viewsPanel, body.pcSide #pkgPanel, body.pcSide #planPanel { position:static !important; width:auto !important; max-height:none !important; left:auto !important; right:auto !important; top:auto !important; box-shadow:none; z-index:auto; }
+  body.pcSide #viewsPanel { flex:1 1 auto; min-height:220px; }
+  body.pcSide #pkgPanel, body.pcSide #planPanel { border:0; border-radius:0; padding:0 12px 12px; background:transparent; overflow:visible; }
+  body.pcSide #viewsClose, body.pcSide #viewsBtn, body.pcSide #pkgTopBtn, body.pcSide #pdfBtn { display:none !important; }
+
+  /* the cards in the second column, like the sections of a tour in Live Tours */
+  .pcSec { border:1px solid var(--line); border-radius:12px; background:var(--bg2, rgba(255,255,255,.03)); flex:none; }
+  .pcSec[hidden] { display:none; }
+  .pcSecH { display:flex; align-items:center; gap:8px; width:100%; padding:12px 14px; border:0; background:transparent; color:var(--ink); font:inherit; font-weight:700; font-size:1rem; cursor:pointer; text-align:start; }
+  .pcSecH .chev { width:14px; height:14px; transition:transform .15s; opacity:.7; }
+  .pcSec.shut .chev { transform:rotate(-90deg); }
+  :root[dir=rtl] .pcSec.shut .chev { transform:rotate(90deg); }
+  .pcSec.shut .pcSecB { display:none; }
+
+  /* what is centred on the screen is centred on the 3D view */
+  body.pcSide #dock, body.pcSide #floors, body.pcSide #hint, body.pcSide #status, body.pcSide #projTitle, body.pcSide #pkgFloat, body.pcSide #tagCard, body.pcSide #tagEd, body.pcSide #tagTyEd { left:calc((100vw - var(--pcSideW, 0px)) / 2); }
+  body.pcSide #dot { left:calc((100vw - var(--pcSideW, 0px)) / 2); }
+  body.pcSide #dock { max-width:calc(100vw - var(--pcSideW, 0px) - 24px); }
+  body.pcSide #copyright { right:calc(var(--pcSideW, 0px) + 12px); }
+  body.pcSide > canvas:not(#mini) { position:fixed; left:0; top:0; }   /* the 3D view starts at the left edge (a right-to-left page would push it right) */
+  #pcTop { direction:rtl; }   /* the tabs stay on the right, away from the logo, in English too */
+  :root[dir=ltr] #pcTop .modTabs { direction:ltr; }

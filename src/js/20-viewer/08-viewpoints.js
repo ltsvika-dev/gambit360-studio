@@ -49,7 +49,7 @@
           if (!overview || dollhouse || v.locked || placingRoom) return;
           e.preventDefault(); e.stopPropagation(); el.setPointerCapture(e.pointerId);
           const move = ev => {
-            ray.setFromCamera(new THREE.Vector2(ev.clientX / innerWidth * 2 - 1, -(ev.clientY / innerHeight) * 2 + 1), camera); ray.far = Infinity;
+            ray.setFromCamera(new THREE.Vector2(ev.clientX / VW() * 2 - 1, -(ev.clientY / innerHeight) * 2 + 1), camera); ray.far = Infinity;
             const h = cast().find(floorLike); if (h) { v.p = [h.point.x, h.point.y + EYE, h.point.z]; mini.dirty = true; }
           };
           const up = () => { el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); saveViews(); };

@@ -2,34 +2,36 @@
   // another computer connects with a password, the Studio itself opens online at <site>/app/ after that password,
   // and upload.php on the server replaces itself when this Studio carries a newer one ----
   Object.assign(STR.he, {
-    cloudL: 'ענן: עבודה מכל מחשב', cloudN: 'הסיורים, הקבצים וההגדרות נשמרים גם בשרת ומסתנכרנים אוטומטית: בכל פתיחה, בכל חזרה לחלון ואחרי כל שינוי. במחשב אחר: "חיבור עם סיסמה", או פשוט לפתוח את הסטודיו בענן. אם אותו סיור נערך בשני מחשבים, הגרסה שנשמרה אחרונה נשארת.',
-    cloudIn: 'חיבור עם סיסמה…', cloudSync: 'סנכרון עכשיו', cloudPass: 'קביעת שם משתמש וסיסמה…', cloudPass2: 'שינוי שם משתמש וסיסמה…', cloudApp: 'עדכון הסטודיו בענן', cloudOpen: 'פתיחת הסטודיו בענן', cloudOut: 'ניתוק המחשב הזה',
+    cloudL: 'ענן: עבודה מכל מחשב', cloudN: 'הסיורים, הקבצים וההגדרות נשמרים גם בשרת ומסתנכרנים אוטומטית: בכל פתיחה, בכל חזרה לחלון ואחרי כל שינוי. במחשב אחר: "חיבור עם סיסמה", או פשוט לפתוח את הסטודיו בשרת. אם אותו סיור נערך בשני מחשבים, הגרסה שנשמרה אחרונה נשארת.',
+    cloudIn: 'חיבור עם סיסמה…', cloudSync: 'סנכרון עכשיו', cloudPass: 'קביעת שם משתמש וסיסמה…', cloudPass2: 'שינוי שם משתמש וסיסמה…', cloudApp: 'עדכון הסטודיו בשרת', cloudOpen: 'פתיחת הסטודיו בשרת', cloudOut: 'ניתוק המחשב הזה',
     cloudOff: 'המחשב הזה לא מחובר לענן.', cloudOn: b => 'מחובר לענן: ' + b, cloudAt: d => 'סנכרון אחרון: ' + d, cloudNoPass: 'עוד לא נקבעה סיסמה, ולכן אי אפשר להתחבר ממחשב אחר.', cloudHasPass: 'יש סיסמה לחיבור ממחשבים אחרים.',
-    cloudAppAt: (u, d) => 'הסטודיו בענן: ' + u + ' (עודכן ' + d + ')', cloudAppNone: 'הסטודיו עוד לא הועלה לענן.', cloudPhpOld: 'upload.php בשרת ישן מכדי להתעדכן לבד. פעם אחרונה: "שמירת upload.php מעודכן" והעלאה ידנית, ומאז הוא יתעדכן לבד.',
+    appAsk: 'הסטודיו בשרת לא מעודכן לגרסה שבמחשב הזה. לעדכן אותו עכשיו?\nהדפדפן ישאל פעם אחת אם לאפשר גישה לתיקיית הסטודיו.', appAskYes: 'לעדכן', appAskNo: 'לא עכשיו',
+    cloudAppAt: (u, d) => 'הסטודיו בשרת: ' + u + ' (עודכן ' + d + ')', cloudAppNone: 'הסטודיו עוד לא הועלה לשרת.', cloudPhpOld: 'upload.php בשרת ישן מכדי להתעדכן לבד. פעם אחרונה: "שמירת upload.php מעודכן" והעלאה ידנית, ומאז הוא יתעדכן לבד.',
     cloudPhpUp: 'upload.php בשרת עודכן לגרסה החדשה ✓', cloudPhpFail: e => 'העדכון של upload.php בשרת נכשל (' + e + '). הקובץ הקיים נשאר בשרת ועובד.',
     inH: 'חיבור לענן', inBase: 'כתובת האתר של הסיורים', inUser: 'שם משתמש', inPass: 'סיסמת הענן', inGo: 'חיבור', inBad: 'שם משתמש או סיסמה שגויים.', inWait: 'יותר מדי ניסיונות. נסו שוב בעוד רבע שעה.', inNoPass: 'עוד לא נקבעה סיסמה. קובעים אותה בסטודיו של המחשב הראשי: אפשרויות ← ענן ← "קביעת שם משתמש וסיסמה".', inNoSrv: 'השרת לא ענה. בדקו את הכתובת.', inOld: 'upload.php בשרת עדיין לא תומך בחיבור עם סיסמה. עדכנו אותו מהמחשב הראשי.',
     inDone: n => 'מחובר לענן ✓ ' + n + ' סיורים במחשב הזה.',
     passH: 'שם משתמש וסיסמה לענן', passUser: 'שם משתמש', pass1Keep: 'סיסמה חדשה (להשאיר ריק כדי לא לשנות)', passUserShort: 'שם המשתמש קצר מדי (לפחות 2 תווים).', userDone: 'שם המשתמש נשמר ✓', cloudUser: u => 'שם משתמש: ' + u,
     cloudNoUser: 'עוד לא נקבע שם משתמש לכניסה לענן. קבעו אותו עכשיו, ומאז הכניסה ממחשב אחר ולסטודיו באתר תבקש גם אותו.', passUserN: 'קבעו שם משתמש לכניסה לענן (למשל השם או המייל שלכם). הסיסמה נשארת כמו שהיא. מעכשיו הכניסה ממחשב אחר ולסטודיו באתר תבקש את שניהם.',
     passN: 'בשם המשתמש ובסיסמה האלה מתחברים ממחשב אחר ונכנסים לסטודיו באתר. סיסמה של לפחות 8 תווים. השרת שומר רק גרסה מוצפנת שלה, ואם שוכחים אותה פשוט קובעים חדשה כאן.', pass1: 'סיסמה', pass2: 'שוב, לאימות', passGo: 'שמירה', passShort: 'הסיסמה קצרה מדי (לפחות 8 תווים).', passDiff: 'הסיסמאות לא זהות.', passDone: 'הסיסמה נשמרה ✓', passOld: 'upload.php בשרת עדיין לא תומך בסיסמה. הוא יתעדכן לבד בסנכרון הבא, או ידנית: "שמירת upload.php מעודכן".',
-    appBusy: (i, n) => 'מעלה את הסטודיו לענן… ' + i + ' מתוך ' + n, appDone: u => 'הסטודיו עודכן בענן ✓ ' + u, appSame: u => 'הסטודיו בענן כבר מעודכן: ' + u, appNoHtml: 'לא מצאתי בתיקייה הזו את קובץ הסטודיו (Gambit360 Studio.html). בחרו את התיקייה שבה הוא נמצא.', appFail: e => 'העלאת הסטודיו נכשלה: ' + e,
+    appBusy: (i, n) => 'מעלה את הסטודיו לשרת… ' + i + ' מתוך ' + n, appDone: u => 'הסטודיו עודכן בשרת ✓ ' + u, appSame: u => 'הסטודיו בשרת כבר מעודכן: ' + u, appNoHtml: 'לא מצאתי בתיקייה הזו את קובץ הסטודיו (Gambit360 Studio.html). בחרו את התיקייה שבה הוא נמצא.', appFail: e => 'העלאת הסטודיו נכשלה: ' + e,
     outAsk: 'לנתק את המחשב הזה מהענן? הסיורים בשרת לא נמחקים, ואפשר להתחבר שוב עם הסיסמה.', outWipe: 'למחוק גם את העותק של הסיורים מהמחשב הזה? (מומלץ במחשב שאינו שלכם)\n\nאישור = למחוק מהמחשב הזה\nביטול = להשאיר', outDone: 'המחשב נותק מהענן.',
     syncGot: n => 'התקבלו מהענן ' + n + ' עדכונים ממחשב אחר.', syncBusy: 'מסנכרן עם הענן…', syncDone: n => 'מסונכרן עם הענן ✓ (' + n + ' סיורים)', rekeyDone: 'נוצר מפתח חדש והשרת עבר אליו לבד ✓ קבעו שוב את סיסמת הענן.',
     keyConfirm: 'מפתח חדש יחליף את הקודם. כשהשרת זמין הוא עובר למפתח החדש לבד; אחרת צריך להעלות שוב את upload.php. להמשיך?',
     srvBkOn: 'סנכרון אוטומטי עם הענן (בין כל המחשבים)', srvRestore: 'שחזור מלא מהענן'
   });
   Object.assign(STR.en, {
-    cloudL: 'Cloud: work from any computer', cloudN: 'Tours, files and settings are also kept on the server and sync by themselves: on opening, on coming back to the window and after every change. On another computer: "Connect with password", or just open the Studio in the cloud. If one tour was edited on two computers, the one saved last stays.',
-    cloudIn: 'Connect with password…', cloudSync: 'Sync now', cloudPass: 'Set user name and password…', cloudPass2: 'Change user name and password…', cloudApp: 'Update the Studio in the cloud', cloudOpen: 'Open the Studio in the cloud', cloudOut: 'Disconnect this computer',
+    cloudL: 'Cloud: work from any computer', cloudN: 'Tours, files and settings are also kept on the server and sync by themselves: on opening, on coming back to the window and after every change. On another computer: "Connect with password", or just open the Studio on the server. If one tour was edited on two computers, the one saved last stays.',
+    cloudIn: 'Connect with password…', cloudSync: 'Sync now', cloudPass: 'Set user name and password…', cloudPass2: 'Change user name and password…', cloudApp: 'Update the Studio on the server', cloudOpen: 'Open the Studio on the server', cloudOut: 'Disconnect this computer',
     cloudOff: 'This computer is not connected to the cloud.', cloudOn: b => 'Connected to the cloud: ' + b, cloudAt: d => 'Last sync: ' + d, cloudNoPass: 'No password yet, so no other computer can connect.', cloudHasPass: 'A password for other computers is set.',
-    cloudAppAt: (u, d) => 'The Studio in the cloud: ' + u + ' (updated ' + d + ')', cloudAppNone: 'The Studio is not in the cloud yet.', cloudPhpOld: 'upload.php on the server is too old to update itself. One last time: "Save updated upload.php" and upload it by hand; from then on it updates itself.',
+    appAsk: 'The Studio on the server is not up to date with the version on this computer. Update it now?\nThe browser asks once for access to the Studio folder.', appAskYes: 'Update', appAskNo: 'Not now',
+    cloudAppAt: (u, d) => 'The Studio on the server: ' + u + ' (updated ' + d + ')', cloudAppNone: 'The Studio is not on the server yet.', cloudPhpOld: 'upload.php on the server is too old to update itself. One last time: "Save updated upload.php" and upload it by hand; from then on it updates itself.',
     cloudPhpUp: 'upload.php on the server was updated ✓', cloudPhpFail: e => 'Updating upload.php on the server failed (' + e + '). The existing file stays and works.',
     inH: 'Connect to the cloud', inBase: 'Live tours site address', inUser: 'User name', inPass: 'Cloud password', inGo: 'Connect', inBad: 'Wrong user name or password.', inWait: 'Too many tries. Try again in 15 minutes.', inNoPass: 'No password was set yet. Set it in the Studio on the main computer: Options, Cloud, "Set user name and password".', inNoSrv: 'The server did not answer. Check the address.', inOld: 'upload.php on the server does not support passwords yet. Update it from the main computer.',
     inDone: n => 'Connected to the cloud ✓ ' + n + ' tours on this computer.',
     passH: 'Cloud user name and password', passUser: 'User name', pass1Keep: 'New password (leave empty to keep it)', passUserShort: 'The user name is too short (at least 2 characters).', userDone: 'User name saved ✓', cloudUser: u => 'User name: ' + u,
-    cloudNoUser: 'No user name is set for the cloud yet. Set one now; from then on another computer and the Studio in the cloud ask for it too.', passUserN: 'Set a user name for the cloud (your name or email, for example). The password stays as it is. From now on another computer and the Studio in the cloud ask for both.',
-    passN: 'This user name and password connect another computer and open the Studio in the cloud. A password of at least 8 characters. The server keeps only a scrambled form of it; if you forget it, just set a new one here.', pass1: 'Password', pass2: 'Again, to check', passGo: 'Save', passShort: 'Too short (at least 8 characters).', passDiff: 'The passwords differ.', passDone: 'Password saved ✓', passOld: 'upload.php on the server does not support passwords yet. It updates itself on the next sync, or by hand: "Save updated upload.php".',
-    appBusy: (i, n) => 'Uploading the Studio to the cloud… ' + i + ' of ' + n, appDone: u => 'The Studio in the cloud was updated ✓ ' + u, appSame: u => 'The Studio in the cloud is already up to date: ' + u, appNoHtml: 'No Studio file (Gambit360 Studio.html) in that folder. Choose the folder it is in.', appFail: e => 'Uploading the Studio failed: ' + e,
+    cloudNoUser: 'No user name is set for the cloud yet. Set one now; from then on another computer and the Studio on the server ask for it too.', passUserN: 'Set a user name for the cloud (your name or email, for example). The password stays as it is. From now on another computer and the Studio on the server ask for both.',
+    passN: 'This user name and password connect another computer and open the Studio on the server. A password of at least 8 characters. The server keeps only a scrambled form of it; if you forget it, just set a new one here.', pass1: 'Password', pass2: 'Again, to check', passGo: 'Save', passShort: 'Too short (at least 8 characters).', passDiff: 'The passwords differ.', passDone: 'Password saved ✓', passOld: 'upload.php on the server does not support passwords yet. It updates itself on the next sync, or by hand: "Save updated upload.php".',
+    appBusy: (i, n) => 'Uploading the Studio to the server… ' + i + ' of ' + n, appDone: u => 'The Studio on the server was updated ✓ ' + u, appSame: u => 'The Studio on the server is already up to date: ' + u, appNoHtml: 'No Studio file (Gambit360 Studio.html) in that folder. Choose the folder it is in.', appFail: e => 'Uploading the Studio failed: ' + e,
     outAsk: 'Disconnect this computer from the cloud? Nothing is deleted on the server, and you can connect again with the password.', outWipe: 'Also delete the copy of the tours from this computer? (best on a computer that is not yours)\n\nOK = delete from this computer\nCancel = keep it', outDone: 'This computer was disconnected.',
     syncGot: n => n + ' updates from another computer came in from the cloud.', syncBusy: 'Syncing with the cloud…', syncDone: n => 'In sync with the cloud ✓ (' + n + ' tours)', rekeyDone: 'A new key was made and the server switched to it by itself ✓ Set the cloud password again.',
     keyConfirm: 'A new key replaces the old one. When the server answers it switches to the new key by itself; otherwise upload.php must be uploaded again. Continue?',
@@ -176,9 +178,10 @@
   addEventListener('focus', syncSoon); document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncSoon(); });
 
   // ---- the Studio online: this Studio's own file and its lib folder go to the server (only from a computer, never from the online copy itself) ----
-  async function appSrcDir(ask) {
+  let appAsked = false;
+  async function appSrcDir(ask, perm) {
     let d = null; try { d = await db.kget('appDir'); } catch (e) {} if (!d) d = await studioDirHandle();
-    if (d) { try { let p = await d.queryPermission({ mode: 'read' }); if (p !== 'granted' && ask) p = await d.requestPermission({ mode: 'read' }); if (p !== 'granted') d = null; } catch (e) { d = null; } }
+    if (d) { try { let p = await d.queryPermission({ mode: 'read' }); if (p !== 'granted' && (ask || perm)) p = await d.requestPermission({ mode: 'read' }); if (p !== 'granted') d = null; } catch (e) { d = null; } }
     if (!d && ask) d = await g360Pick.dir({ id: 'g360studio', mode: 'read' });
     return d;
   }
@@ -192,11 +195,16 @@
   }
   const appUrl = () => settings.base.replace(/\/?$/, '/') + 'app/';
   let appBusy = false;
-  async function appUpload(ask) {   // automatic: only when the file here is newer than the one online; from the button: whenever it differs
+  async function appUpload(ask, perm) {   // automatic: only when the file here is newer than the one online; from the button: whenever it differs
     if (HOSTED || appBusy || !settings.upKey || !window.showDirectoryPicker) return false;
     appBusy = true;
     try {
-      const d = await appSrcDir(ask); if (!d) return false;
+      const d = await appSrcDir(ask, perm);
+      if (!d) {   // the browser forgot its permission for the Studio folder: when the Studio online is another build than this one, one click lets it update
+        const a = srvInfo && srvInfo.app, me = window.G360_BUILD || '';
+        if (!ask && !perm && a && a.build !== me && /^[0-9a-f]{12}$/.test(me) && !appAsked) { appAsked = true; setTimeout(async () => { if (await g360Ask(L('appAsk'), { ok: L('appAskYes'), cancel: L('appAskNo') })) appUpload(false, true).then(r => { if (r) msg(L('appDone', appUrl())); }).catch(() => {}); }, 0); }
+        return false;
+      }
       const { html, lib } = await appFiles(d); if (!html) { if (ask) throw new Error(L('appNoHtml')); return false; }
       const f = await html.getFile(), txt = await f.text(), sha = await sha256hex(txt), a = srvInfo && srvInfo.app;
       if (a && a.sha === sha) { if (ask) msg(L('appSame', appUrl())); return false; }
@@ -205,10 +213,11 @@
       for (let i = 0; i < lib.length; i++) { if (ask) msg(L('appBusy', i + 1, n)); const j = await upPost({ key: settings.upKey, action: 'appput', name: 'lib/' + lib[i].name }, await lib[i].getFile()); if (!j.ok) throw new Error(j.error); }
       if (ask) msg(L('appBusy', n, n));
       const ver = (txt.match(/G360_VERSION\s*=\s*'([^']*)'/) || [])[1] || '';
-      const j = await upPost({ key: settings.upKey, action: 'appput', name: 'studio.html', sha, mtime: f.lastModified, ver }, new Blob([txt], { type: 'text/html' }));
+      const build = (txt.match(/G360_BUILD\s*=\s*'([0-9a-f]*)'/) || [])[1] || '';
+      const j = await upPost({ key: settings.upKey, action: 'appput', name: 'studio.html', sha, mtime: f.lastModified, ver, build }, new Blob([txt], { type: 'text/html' }));
       if (!j.ok) throw new Error(j.error === 'action' ? L('srvOld') : j.error);
       try { await db.kset('appDir', d); } catch (e) {}
-      if (srvInfo) srvInfo.app = { sha, mtime: f.lastModified, ver, at: Date.now() / 1000 };
+      if (srvInfo) srvInfo.app = { sha, mtime: f.lastModified, ver, build, at: Date.now() / 1000 };
       if (ask) msg(L('appDone', appUrl())); cloudSt();
       return true;
     } finally { appBusy = false; }

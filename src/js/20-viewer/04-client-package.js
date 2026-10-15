@@ -482,7 +482,7 @@
       const root = await exportDir(sf.src, 'Client Packages', true);
       const dir = await root.getDirectoryHandle(safe, { create:true });   // the project's own package folder: the old viewer file is replaced
       const fh = await dir.getFileHandle(safe + '.html', { create:true }); const w = await fh.createWritable(); await w.write(html); await w.close();
-      pkgMsg(t(o.noSettings ? 'pkgUiDone' : o.both ? 'pkgBothDone' : 'htmlFileDone', safe + '.html', safe)); openPkgFolder(sf.src, safe);
+      pkgMsg(t(o.noSettings ? 'pkgUiDone' : o.both ? 'pkgBothDone' : 'htmlFileDone', safe + '.html', safe)); if (!o.quiet) openPkgFolder(sf.src, safe);
       return true;
     } catch (err) { console.error(err); pkgMsg(t('pkgFail') + err.message); return false; }
   }
@@ -524,6 +524,10 @@
       }
       if (!entries.some(e => e.path === safe + '/model/manifest.js')) throw 0;
     } catch (err) { pkgMsg(t('pubNoPkg', safe)); return; }
+    if (!CP_HOSTED) {   // a viewer made by an older Studio lacks what the newer one does on the server (the download button): offer to make it again first
+      let vb = null; try { vb = ((await (await entries[0].fh.getFile()).text()).match(/G360_BUILD\s*=\s*'([0-9a-f]*)'/) || [])[1] || ''; } catch (err) {}
+      if (vb !== null && vb !== (window.G360_BUILD || '') && await g360Ask(t('pkgOldViewer'), { ok:t('pkgOldViewerYes'), cancel:t('pkgOldViewerNo') })) { if (!(await createHtmlFile({ quiet:true }))) return; }
+    }
     await pkgPublish(entries, safe, viewerName, o);
   }
   try { $('pkgObf').checked = localStorage.getItem('g360Obf') !== '0'; } catch (err) {}

@@ -41,7 +41,7 @@ if ($action === 'appput') {   // the Studio online: its page goes into the priva
   if ($n === 'studio.html') {
     denyDir($bd);
     if (!move_uploaded_file($_FILES['file']['tmp_name'], $bd . '/app.html.part') || !@rename($bd . '/app.html.part', $bd . '/app.html')) out(500, array('ok' => false, 'error' => 'write'));
-    @file_put_contents($bd . '/app.json', json_encode(array('sha' => isset($_POST['sha']) ? substr(preg_replace('#[^0-9a-f]#', '', $_POST['sha']), 0, 64) : '', 'mtime' => isset($_POST['mtime']) ? (float)$_POST['mtime'] : 0, 'ver' => isset($_POST['ver']) ? substr(preg_replace('#[^0-9.]#', '', $_POST['ver']), 0, 20) : '', 'at' => time())));
+    @file_put_contents($bd . '/app.json', json_encode(array('sha' => isset($_POST['sha']) ? substr(preg_replace('#[^0-9a-f]#', '', $_POST['sha']), 0, 64) : '', 'mtime' => isset($_POST['mtime']) ? (float)$_POST['mtime'] : 0, 'ver' => isset($_POST['ver']) ? substr(preg_replace('#[^0-9.]#', '', $_POST['ver']), 0, 20) : '', 'build' => isset($_POST['build']) ? substr(preg_replace('#[^0-9a-f]#', '', $_POST['build']), 0, 16) : '', 'at' => time())));
     if (!is_dir($root . '/app')) @mkdir($root . '/app', 0755, true);
     @file_put_contents($root . '/app/index.php', "<?php\n// Gambit360 Studio online: the page itself is served by upload.php after the cloud password\n\$G360_APP = true;\nrequire __DIR__ . '/../upload.php';\n");
     out(200, array('ok' => true));

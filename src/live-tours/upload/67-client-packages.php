@@ -14,9 +14,11 @@ if ($action === 'pkgput' || $action === 'pkgdone' || $action === 'pkgcode' || $a
     $to = isset($_POST['to']) ? (string)$_POST['to'] : '';
     if (!preg_match('#^[a-z0-9][a-z0-9-]{1,59}$#', $to) || $to === $tk) out(400, array('ok' => false, 'error' => 'path'));
     $nd = $root . '/packages/' . $to;
-    if ($taken($to)) out(200, array('ok' => false, 'error' => 'taken'));
+    $force = !empty($_POST['force']);
+    if ($taken($to) && !$force) out(200, array('ok' => false, 'error' => 'taken'));
     if (!is_dir($pd) || $stub($pd)) out(200, array('ok' => true, 'moved' => false));
     if ($stub($nd)) { @unlink($nd . '/index.html'); @rmdir($nd); }
+    elseif (is_dir($nd)) { denyDir($bd . '/pkg-replaced'); if (!@rename($nd, $bd . '/pkg-replaced/' . $to . '-' . time())) out(500, array('ok' => false, 'error' => 'rename')); }   // the package it replaces is kept aside in the private folder, not deleted
     if (!@rename($pd, $nd)) out(500, array('ok' => false, 'error' => 'rename'));
     $fwd($pd, $to);
     if (is_file($bd . '/pkg/' . $tk . '.json')) @rename($bd . '/pkg/' . $tk . '.json', $bd . '/pkg/' . $to . '.json');

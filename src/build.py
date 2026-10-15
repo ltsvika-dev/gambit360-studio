@@ -8,9 +8,11 @@ Usage:  python build.py                 -> writes ../Gambit360 Studio.html
 file's exact text (paths are relative to this folder; included files may include others).
 An @@include that stands alone on its line replaces the whole line, its line break included
 (each piece ends with its own line break).
-Nothing else is changed, so the result is byte-for-byte what the pieces say.
+Nothing else is changed, so the result is byte-for-byte what the pieces say, except @@BUILD@@:
+it becomes a short fingerprint of the whole result, so a running Studio knows which build it is
+(the Studio online is compared with it to see whether it needs updating).
 """
-import os, re, sys
+import hashlib, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 INC = re.compile(r'@@include\(([^)]+)\)@@')
@@ -22,8 +24,12 @@ def read(rel, stack=()):
     text = LINE.sub(lambda m: read(m.group(1), stack + (rel,)), text)
     return INC.sub(lambda m: read(m.group(1), stack + (rel,)), text)
 
+def build():
+    text = read('Gambit360 Studio.src.html')
+    return text.replace('@@BUILD@@', hashlib.sha256(text.encode('utf-8')).hexdigest()[:12])
+
 def main(argv):
-    out = read('Gambit360 Studio.src.html')
+    out = build()
     if argv[:1] == ['--check']:
         with open(argv[1], encoding='utf-8', newline='') as f: same = f.read() == out
         print('identical' if same else 'DIFFERENT'); return 0 if same else 1

@@ -40,7 +40,7 @@ def main(argv):
         print(('ok    ' if ok else 'FAIL  ') + what)
         if not ok: bad += 1; print('      ' + detail.replace('\n', '\n      '))
 
-    report(html == build.read('Gambit360 Studio.src.html'), 'the built HTML matches src/', 'run: python build.py')
+    report(html == build.build(), 'the built HTML matches src/', 'run: python build.py')
 
     node, php = shutil.which('node'), shutil.which('php')
     page = TPL(html, 'g360LiveTpl').replace('<\\/script>', '</script>')

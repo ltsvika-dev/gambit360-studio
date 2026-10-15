@@ -57,6 +57,9 @@
     await openSet();
   }
   window.G360_openSet = openSetHere;
+  // When the Studio opens on a computer connected to the cloud, the server is checked at once (not only when the tours screen opens):
+  // an older upload.php replaces itself, and a newer Studio goes online by itself.
+  if (!HOSTED && !window.G360_CLIENT) setTimeout(async () => { try { if ($('live').hidden) { const st = await db.kget('settings'); if (st) Object.assign(settings, st); } if (settings.upKey && settings.base) await srvCheck(false); } catch (e) {} }, 4000);
   texts();
   const prevRelang = window.G360_relang;
   window.G360_relang = function () { if (prevRelang) prevRelang.apply(this, arguments); texts(); if (!$('live').hidden) { renderList(); renderEdit(); preview(); } };

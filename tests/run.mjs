@@ -276,10 +276,11 @@ try {
   await answer('Taken X');
   await c.page.waitForFunction(() => { const a = document.getElementById('g360Ask'); return a && !a.hidden && /taken-x/.test(a.querySelector('p').textContent); }, null, { timeout: 15000 }).catch(() => {});
   const takenMsg = await c.page.evaluate(() => document.querySelector('#g360Ask p').textContent);
+  await c.page.click('#g360Ask .no'); await c.page.waitForTimeout(300);   // "choose another name" asks for the name again
   await answer('My Client');
   const renLink = await ren;
   const fwdPage = await (await fetch(SITE + 'packages/' + tok + '/index.html')).text();
-  ok(/taken-x/.test(takenMsg) && /\/packages\/my-client\/index\.html$/.test(renLink) && (await (await fetch(renLink)).text()).includes('<title>client</title>') && fwdPage.includes('../../packages/my-client/index.html'), 'a name in use is refused; a new name moves the package and the old address sends on', takenMsg + ' / ' + renLink + ' / ' + fwdPage.slice(0, 200));
+  ok(/taken-x/.test(takenMsg) && /\/packages\/my-client\/index\.html$/.test(renLink) && (await (await fetch(renLink)).text()).includes('<title>client</title>') && fwdPage.includes('../../packages/my-client/index.html'), 'a name in use asks whether to replace it (here: no, another name); a new name moves the package and the old address sends on', takenMsg + ' / ' + renLink + ' / ' + fwdPage.slice(0, 200));
   ok(c.errors.length === 0 && s.errors.length === 0, 'no errors with projects in the cloud', c.errors.concat(s.errors).join('\n'));
 
   // ---- 7. the Options screen opens from the point-cloud module; my logo there becomes the Studio's logo; its width is for outputs only ----

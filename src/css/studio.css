@@ -20,6 +20,7 @@
   #logo { display:block; padding:6px 10px; background:#fff; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,.35); }
   #logo img { display:block; width:100%; height:auto; }
   #logo.custom { cursor:default; }
+  #logo.light { background:#1f242b; }   /* a white logo on a see-through background */
   #logo.custom img, #logo.brand img { width:auto; max-width:100%; max-height:64px; margin:0 auto; }
   #logo { width:var(--logoW, auto); max-width:calc(100vw - 24px); box-sizing:border-box; }   /* a client package can show my logo at the width chosen in the Studio */
   #logo.brand img { max-height:var(--logoMH, 64px); }

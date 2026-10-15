@@ -9,8 +9,8 @@
   if (window.G360_CLIENT) return;
   const $ = id => document.getElementById(id);
   const TX = {
-    he: { pc:'ענני נקודות', live:'סיורים חיים', colList:'הצגה או הסתרה של נקודות העניין', colEdit:'הצגה או הסתרה של כרטיסי הפרויקט', pkg:'חבילה ללקוח', close:'סגירה', closeTip:'סגירת המודל וחזרה למסך הפתיחה', lang:'English', plan:'ייצוא תכניות קומה', acc:'צבע הממשק (הצבע בתפריט האפשרויות הוא של החבילה ללקוח)', src:'תיקיית ה-Studio' },
-    en: { pc:'Point clouds', live:'Live tours', colList:'Show or hide the points of interest', colEdit:'Show or hide the project cards', pkg:'Client package', close:'Close', closeTip:'Close the model and go back to the start screen', lang:'עברית', plan:'Export floor plans', acc:'Colour of the Studio (the colour in the Options menu is for the client package)', src:'Studio folder' }
+    he: { pc:'ענני נקודות', live:'סיורים חיים', colList:'הצגה או הסתרה של נקודות העניין', colEdit:'הצגה או הסתרה של כרטיסי הפרויקט', pkg:'חבילה ללקוח', close:'סגירה', closeTip:'סגירת המודל וחזרה למסך הפתיחה', lang:'English', plan:'ייצוא תכניות קומה', acc:'צבע הסטודיו (אחד לענני נקודות ולסיורים חיים). הצבע בתפריט האפשרויות הוא של החבילה ללקוח', src:'תיקיית ה-Studio' },
+    en: { pc:'Point clouds', live:'Live tours', colList:'Show or hide the points of interest', colEdit:'Show or hide the project cards', pkg:'Client package', close:'Close', closeTip:'Close the model and go back to the start screen', lang:'עברית', plan:'Export floor plans', acc:'Colour of the Studio (one for point clouds and live tours). The colour in the Options menu is for the client package', src:'Studio folder' }
   };
   const T = k => TX[document.documentElement.lang === 'en' ? 'en' : 'he'][k];
   const LIST_W = 280, EDIT_W = 360, WIDE = matchMedia('(min-width:901px)');
@@ -35,13 +35,40 @@
   document.body.appendChild(top);
   // the Studio's own colour (the colour in the Options menu is the client package's, js/20-viewer/01-accent-help-esc.js)
   const accIn = $('pcAcc').querySelector('input');
-  const accShow = () => { const a = window.G360_uiAccent ? window.G360_uiAccent() : '#5ec4b6'; accIn.value = a; $('pcAcc').style.setProperty('--sw', a); };
+  const uiAcc = () => window.G360_uiAccent ? window.G360_uiAccent() : '#5ec4b6';
+  const accShow = () => { const a = uiAcc(); accIn.value = a; $('pcAcc').style.setProperty('--sw', a); const lv = $('lvAcc'); if (lv) { lv.style.setProperty('--sw', a); if (lv.firstChild) lv.firstChild.value = a; } if (!ucol.hidden) ucMark(); };
   accIn.oninput = e => { if (window.G360_setUiAccent) window.G360_setUiAccent(e.target.value); accShow(); };
   const setUi = window.G360_setUiAccent;   // the Live Tours bar changes the same colour, so this swatch follows it
   if (setUi) window.G360_setUiAccent = hex => { setUi(hex); accShow(); };
+  // The colour button of either bar opens the same colour window as the Options menu: swatches, a custom colour, dark / light, reset.
+  // Here it sets the Studio's colour (both modules); the window in the Options menu sets the client package's.
+  const ucol = document.createElement('div'); ucol.id = 'uiColor'; ucol.hidden = true;
+  ucol.innerHTML = '<div class="ucSw"></div><label><span></span> <input type="color"></label><button type="button" class="txt" data-b="theme"></button><button type="button" class="txt" data-b="reset"></button>';
+  document.body.appendChild(ucol);
+  const ucPick = ucol.querySelector('input');
+  [...$('swatches').children].forEach(o => { const b = document.createElement('button'); b.type = 'button'; b.className = 'sw'; b.dataset.c = o.dataset.c; b.style.background = o.dataset.c; ucol.firstChild.appendChild(b); });
+  const ucSet = hex => { if (window.G360_setUiAccent) window.G360_setUiAccent(hex.toLowerCase()); };
+  function ucMark() { const a = uiAcc(); ucol.querySelectorAll('.sw').forEach(b => b.classList.toggle('on', b.dataset.c === a)); ucPick.value = a; }
+  function ucTexts() {
+    const tx = sel => { const e = document.querySelector(sel); return e ? e.textContent : ''; };
+    ucol.querySelector('label span').textContent = tx('#colorPanel label span'); ucol.querySelector('[data-b="theme"]').textContent = tx('#themeBtn'); ucol.querySelector('[data-b="reset"]').textContent = tx('#colorReset');
+    const own = [...$('swatches').children]; ucol.querySelectorAll('.sw').forEach((b, i) => { if (own[i]) b.title = own[i].title; });
+  }
+  ucol.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return;
+    if (b.classList.contains('sw')) ucSet(b.dataset.c); else if (b.dataset.b === 'theme') $('themeBtn').click(); else if (b.dataset.b === 'reset') ucSet('#5ec4b6'); });
+  ucPick.oninput = e => ucSet(e.target.value);
+  function ucOpen(btn) {
+    if (!ucol.hidden && ucol.dataset.by === btn.id) { ucol.hidden = true; return; }
+    ucTexts(); ucMark(); ucol.dataset.by = btn.id; ucol.hidden = false;
+    const r = btn.getBoundingClientRect(), w = ucol.offsetWidth;
+    ucol.style.top = Math.round(r.bottom + 8) + 'px'; ucol.style.left = Math.round(Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2))) + 'px';
+  }
+  ['pcAcc', 'lvAcc'].forEach(id => { const b = $(id); if (b) b.addEventListener('click', e => { e.preventDefault(); ucOpen(b); }, true); });
+  document.addEventListener('pointerdown', e => { if (!ucol.hidden && !e.target.closest('#uiColor, #pcAcc, #lvAcc')) ucol.hidden = true; }, true);
+  addEventListener('keydown', e => { if (e.key === 'Escape' && !ucol.hidden) { ucol.hidden = true; e.stopImmediatePropagation(); } }, true);
   $('pcSrc').onclick = () => { const b = $('srcBtn'); if (b) b.click(); };
   $('pcLang').onclick = () => { const b = $('langBtn'); if (b) b.click(); };   // the Studio's language (the same button as in the Options menu)
-  $('pcClose').onclick = () => { const b = $('homeBtn'); if (b) b.click(); };   // closes the model: back to the start screen
+  $('pcClose').onclick = () => location.reload();   // closes the model: the Studio starts again on its start screen, as when it is opened (the last file is offered as a button)
   $('pcSrc').onmouseenter = () => { const p = $('srcPath'); $('pcSrc').title = T('src') + (p && p.textContent ? ': ' + p.textContent : ''); };
   // the Studio-only buttons of the Options menu move into the bar on wide screens (and back on a phone)
   const BAR = [['liveSetMenuBtn', 'pcSlotSet'], ['projSave', 'pcSlotSave'], ['projOpen', 'pcSlotOpen']], barMarks = {};

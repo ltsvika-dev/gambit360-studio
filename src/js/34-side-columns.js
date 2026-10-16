@@ -97,18 +97,19 @@
     s.querySelector('.pcSecH').onclick = () => { ui.shut[s.dataset.s] = s.classList.toggle('shut'); saveUi(); };
   });
   // where each panel goes; a comment keeps its place for when it goes back (phone width, start screen)
-  const PLACES = [['topRight', () => $('pcListCol')], ['viewsPanel', () => $('pcListCol')], ['pkgPanel', () => secEl('pkg').querySelector('.pcSecB')], ['planPanel', () => secEl('plan').querySelector('.pcSecB')], ['pkgClientBox', () => secEl('cx').querySelector('.pcSecB')], ['promoBtn', () => secEl('video').querySelector('.pcSecB')]];
+  const vidBox = () => secEl('video').querySelector('.pcSecB');   // the video options sit in the section itself instead of the pop-up window
+  const PLACES = [['topRight', () => $('pcListCol')], ['viewsPanel', () => $('pcListCol')], ['pkgPanel', () => secEl('pkg').querySelector('.pcSecB')], ['planPanel', () => secEl('plan').querySelector('.pcSecB')], ['pkgClientBox', () => secEl('cx').querySelector('.pcSecB')], ['promoOptTitleSw', vidBox, () => $('promoOptTitleSw') && $('promoOptTitleSw').closest('label')], ['promoOptLogoSw', vidBox, () => $('promoOptLogoSw') && $('promoOptLogoSw').closest('label')], ['promoOptGo', vidBox]];
   const PANELS = ['viewsPanel', 'pkgPanel', 'planPanel'];
   const marks = {};
   let isOn = false;
   function enter() {
-    PLACES.forEach(([id, to]) => { const el = $(id); if (!el) return; if (!marks[id]) { marks[id] = document.createComment(id); el.replaceWith(marks[id]); } to().appendChild(el); });
+    PLACES.forEach(([id, to, get]) => { const el = get ? get() : $(id); if (!el) return; if (!marks[id]) { marks[id] = document.createComment(id); el.replaceWith(marks[id]); } to().appendChild(el); });
     PANELS.forEach(id => { const el = $(id); if (el) el.hidden = false; });
     ['optMenu', 'colorPanel'].forEach(id => { const el = $(id); if (el) el.hidden = true; });
   }
   function leave() {
     PANELS.forEach(id => { const el = $(id); if (el) el.hidden = true; });
-    PLACES.forEach(([id]) => { const el = $(id); if (el && marks[id]) { marks[id].replaceWith(el); delete marks[id]; } });
+    PLACES.forEach(([id, , get]) => { const el = get ? get() : $(id); if (el && marks[id]) { marks[id].replaceWith(el); delete marks[id]; } });
   }
   // while the columns are open their panels stay open (the old buttons closed one panel when another opened)
   const keepOpen = new MutationObserver(recs => { if (isOn) recs.forEach(r => { if (r.target.hidden) r.target.hidden = false; }); });

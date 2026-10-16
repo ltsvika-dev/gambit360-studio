@@ -341,6 +341,7 @@ try {
   ok(await s.page.evaluate(() => document.getElementById('live').hidden) && L1.side === 640 && L1.views, 'the Point clouds tab goes back to the open model at once', JSON.stringify(L1));
   const bar = await s.page.evaluate(() => { const q = id => document.getElementById(id), inBar = id => !!q(id) && !!q(id).closest('#pcTop') && !!q(id).offsetWidth;
     return { open: inBar('projOpen'), save: inBar('projSave'), set: inBar('liveSetMenuBtn'), liveInMenu: !!q('liveMenuBtn').offsetWidth || getComputedStyle(q('liveMenuBtn')).display !== 'none', logoTop: Math.round(q('logo').getBoundingClientRect().top) }; });
+  ok(await s.page.evaluate(() => /סגירה|Close/.test(document.getElementById('projOpen').title)), 'the Open project button tells you to press Close for a new project', await s.page.evaluate(() => document.getElementById('projOpen').title));
   ok(bar.open && bar.save && bar.set && !bar.liveInMenu && bar.logoTop >= 58, 'open / save project and the Options screen are in the top bar, Live tours left the menu, and the logo sits under the bar', JSON.stringify(bar));
   const acc = () => s.page.evaluate(() => [getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), localStorage.getItem('g360PkgAccent'), getComputedStyle(document.getElementById('pcTop')).getPropertyValue('--accent').trim(), getComputedStyle(document.getElementById('pcSide')).getPropertyValue('--accent').trim()]);
   const acc0 = await acc();

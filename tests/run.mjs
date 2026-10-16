@@ -346,7 +346,10 @@ try {
   const acc0 = await acc();
   await s.page.click('#optBtn'); await s.page.click('#colorBtn'); await s.page.click('#swatches .sw[data-c="#ff7eb6"]'); await s.page.waitForTimeout(200);
   const acc1 = await acc();
-  ok(acc1[0] === acc0[0] && acc1[1] === '#ff7eb6', 'the colour in the Options menu is the client package\'s; the Studio keeps its own', JSON.stringify([acc0, acc1]));
+  await s.page.evaluate(() => { document.getElementById('colorPanel').hidden = true; }); await s.page.waitForTimeout(100);
+  const acc1b = await acc();
+  ok(acc1[0] === '#ff7eb6' && acc1[1] === '#ff7eb6' && acc1b[0] === acc0[0], 'the colour in the Options menu is the client package\'s: shown on the model while its window is open, then the Studio keeps its own', JSON.stringify([acc0, acc1, acc1b]));
+  await s.page.evaluate(() => { document.getElementById('colorPanel').hidden = false; });
   await s.page.evaluate(() => { const i = document.querySelector('#pcAcc input'); i.value = '#4da3ff'; i.dispatchEvent(new Event('input', { bubbles: true })); }); await s.page.waitForTimeout(200);
   const acc2 = await acc();
   ok(acc2[0] === '#4da3ff' && acc2[1] === '#ff7eb6', 'the colour in the top bar is the Studio\'s own', JSON.stringify(acc2));
@@ -370,8 +373,8 @@ try {
   ok(await s.page.evaluate(() => document.getElementById('start').hidden), '"Open project" in the top bar does not bring up the start screen');
   await Promise.all([s.page.waitForNavigation(), s.page.click('#pcClose')]); await s.page.waitForTimeout(1500);
   ok(await s.page.evaluate(() => !document.getElementById('start').hidden && document.getElementById('pcSide').hidden && document.getElementById('cancelImport').hidden && !document.querySelector('body > canvas:not(#mini)')), '"Close" in the top bar goes back to the start screen as when the Studio opens');
-  const st = await s.page.evaluate(() => ({ title: !!document.getElementById('projTitle').offsetWidth, shown: [...document.getElementById('pcTop').children].filter(e => e.offsetWidth && !e.classList.contains('sp')).map(e => e.id || e.className) }));
-  ok(!st.title && st.shown.length === 1 && st.shown[0] === 'modTabs', 'the start screen shows only the module tabs in the bar, and no project title', JSON.stringify(st));
+  const st = await s.page.evaluate(() => ({ title: !!document.getElementById('projTitle').offsetWidth, bar: !!document.getElementById('pcTop').offsetWidth, logoTop: Math.round(document.getElementById('logo').getBoundingClientRect().top) }));
+  ok(!st.title && !st.bar && st.logoTop < 40, 'the start screen has no top bar and no project title', JSON.stringify(st));
   ok(s.errors.length === 0, 'no errors in the two-column layout', s.errors.join('\n'));
   // ---- 9. on a phone the Options button is the rightmost button at the top, in Hebrew and in English ----
   await s.page.setViewportSize({ width: 390, height: 800 }); await s.page.waitForTimeout(300);

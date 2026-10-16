@@ -28,9 +28,12 @@
     if (window.G360_CLIENT) { applyAccent(hex, true); return; }
     pkgAccent = hex.toLowerCase(); markSw(pkgAccent);
     try { if (pkgAccent === DEFAULT_ACCENT) localStorage.removeItem(PKG_ACC_KEY); else localStorage.setItem(PKG_ACC_KEY, pkgAccent); } catch (e) {}
+    if (!$('colorPanel').hidden) applyAccent(pkgAccent);   // shown on the model at once, as the client will see it
   }
-  window.G360_setUiAccent = hex => applyAccent(hex, true);
-  window.G360_uiAccent = () => accent;
+  let uiAccent = accent;   // the Studio's own colour; while the client colour window is open the view shows the client's colour instead
+  window.G360_setUiAccent = hex => { uiAccent = hex.toLowerCase(); applyAccent(uiAccent, true); };
+  window.G360_uiAccent = () => uiAccent;
+  if (!window.G360_CLIENT) new MutationObserver(() => applyAccent($('colorPanel').hidden ? uiAccent : pkgAccent)).observe($('colorPanel'), { attributes:true, attributeFilter:['hidden'] });
   const pkgAccField = () => pkgAccent !== DEFAULT_ACCENT ? pkgAccent : undefined;   // the manifest's 'acc'
   function pkgBaseAccent(hex) {   // the client's copy: the package's colour, unless the client chose one
     if (!/^#[0-9a-f]{6}$/i.test(hex || '')) return;

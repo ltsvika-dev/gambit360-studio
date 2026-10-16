@@ -9,8 +9,8 @@
   if (window.G360_CLIENT) return;
   const $ = id => document.getElementById(id);
   const TX = {
-    he: { pc:'ענני נקודות', live:'סיורים חיים', colList:'הצגה או הסתרה של נקודות העניין', colEdit:'הצגה או הסתרה של כרטיסי הפרויקט', pkg:'חבילה ללקוח', close:'סגירה', closeTip:'סגירת המודל וחזרה למסך הפתיחה', lang:'English', plan:'ייצוא תכניות קומה', acc:'צבע הסטודיו (אחד לענני נקודות ולסיורים חיים). הצבע בתפריט האפשרויות הוא של החבילה ללקוח', src:'תיקיית ה-Studio' },
-    en: { pc:'Point clouds', live:'Live tours', colList:'Show or hide the points of interest', colEdit:'Show or hide the project cards', pkg:'Client package', close:'Close', closeTip:'Close the model and go back to the start screen', lang:'עברית', plan:'Export floor plans', acc:'Colour of the Studio (one for point clouds and live tours). The colour in the Options menu is for the client package', src:'Studio folder' }
+    he: { pc:'ענני נקודות', live:'סיורים חיים', colList:'הצגה או הסתרה של נקודות העניין', colEdit:'הצגה או הסתרה של כרטיסי הפרויקט', pkg:'חבילה ללקוח', close:'סגירה', closeTip:'סגירת המודל וחזרה למסך הפתיחה', lang:'English', plan:'ייצוא תכניות קומה', acc:'צבע הממשק', src:'תיקיית ה-Studio' },
+    en: { pc:'Point clouds', live:'Live tours', colList:'Show or hide the points of interest', colEdit:'Show or hide the project cards', pkg:'Client package', close:'Close', closeTip:'Close the model and go back to the start screen', lang:'עברית', plan:'Export floor plans', acc:'Interface colour', src:'Studio folder' }
   };
   const T = k => TX[document.documentElement.lang === 'en' ? 'en' : 'he'][k];
   const LIST_W = 280, EDIT_W = 360, WIDE = matchMedia('(min-width:901px)');
@@ -117,8 +117,9 @@
   let barOn = false;
   function apply() {
     const wide = WIDE.matches, on = wide && loaded();
-    top.hidden = !wide; document.body.classList.toggle('pcTopOn', wide);
-    document.body.classList.toggle('pcStart', !!$('start') && !$('start').hidden);   // the start screen: only the module tabs in the bar, and no project title
+    const startOn = !!$('start') && !$('start').hidden;   // the start screen has no bar (it has its own buttons) and no project title
+    top.hidden = !wide || startOn; document.body.classList.toggle('pcTopOn', wide && !startOn); document.body.classList.toggle('pcWide', wide);
+    document.body.classList.toggle('pcStart', startOn);
     if (wide !== barOn) { barOn = wide; barIn(wide); }
     if (on !== isOn) { isOn = on; document.body.classList.toggle('pcSide', on); if (on) enter(); else leave(); }
     const pkgOk = !!$('pkgTopBtn') && !$('pkgTopBtn').hidden, planOk = !!$('pdfBtn') && !$('pdfBtn').hidden;

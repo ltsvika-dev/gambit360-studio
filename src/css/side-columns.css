@@ -19,7 +19,6 @@
   body.pcStart #projTitle { display:none !important; }
   body.pcTopOn #start.panel { padding-top:calc(var(--pcTopH) + 12px); align-items:flex-start; overflow-y:auto; overscroll-behavior:contain; }   /* the start window starts under the bar, and scrolls when the window is low */
   body.pcTopOn #start.panel > div { margin:auto 0; }
-  body.pcStart #pcTop > :not(.modTabs):not(.sp) { display:none !important; }   /* the start screen has its own buttons */
   #pcTop .sp { flex:1; }
   #pcTop #pcAcc { position:relative; border-color:var(--line2, var(--line)); }
   #pcTop #pcAcc::after { content:''; width:18px; height:18px; border-radius:50%; background:var(--sw, var(--accent)); box-shadow:0 0 0 1px rgba(0,0,0,.25); pointer-events:none; }
@@ -34,7 +33,7 @@
   #pcTop .pcIb[hidden] { display:none; }
   #pcTop #liveSetMenuBtn { width:38px; padding:0; justify-content:center; }
   #pcTop #liveSetMenuBtn span { display:none; }
-  body.pcTopOn #liveMenuBtn, body.pcTopOn #optMenu .srcBox { display:none !important; }   /* the tabs and the folder button in the bar do these */
+  body.pcWide #liveMenuBtn, body.pcWide #optMenu .srcBox { display:none !important; }   /* the tabs and the folder button in the bar do these */
   body.pcTopOn #status { top:calc(var(--pcTopH) + 12px); } body.pcTopOn.hasTitle #status { top:calc(var(--pcTopH) + 68px); }
   body.pcTopOn.hasTitle #pkgFloat { top:calc(var(--pcTopH) + 92px); } body.pcTopOn.hasMgr #pkgFloat { top:calc(var(--pcTopH) + 118px); }
 

@@ -329,6 +329,10 @@ try {
       views: !!q('viewsPanel').closest('#pcListCol') && !q('viewsPanel').hidden, pkg: !!q('pkgPanel').closest('.pcSec') && !q('pkgPanel').hidden }; });
   let L1 = await lay();
   ok(L1.top && L1.side === 640 && L1.cvL === 0 && L1.cvW === 1400 - 640 && L1.views && L1.pkg, 'a model opens in two columns on the right (points of interest, client package) with the 3D view beside them', JSON.stringify(L1));
+  const secs = await s.page.evaluate(() => { const q = id => document.getElementById(id), sec = k => document.querySelector('#pcEditCol .pcSec[data-s="' + k + '"]');
+    return { order: [...document.querySelectorAll('#pcEditCol .pcSec:not([hidden])')].map(e => e.dataset.s).join(), cx: !!q('pkgClientBox').closest('.pcSec[data-s="cx"]') && !!q('pkgCloud').closest('#pkgClientBox'), video: !!q('promoBtn').closest('.pcSec[data-s="video"]') && !!q('promoBtn').offsetWidth, promoFile: !!q('pkgPromoRow').closest('#pkgPanel') && !!q('pkgPromoModeRow').closest('#pkgPanel'), title: sec('video').querySelector('.pcSecH span').textContent }; });
+  ok(secs.order === 'pkg,cx,plan,video' && secs.cx && secs.video && secs.promoFile && /וידאו|video/i.test(secs.title), 'the edit column has client package, client experience, floor plans and video export sections; the package keeps the video file and the client\'s video button', JSON.stringify(secs));
+  if (process.env.SHOT_DIR) await s.page.screenshot({ path: path.join(process.env.SHOT_DIR, 'pc-sections.png') }).catch(() => {});
   await s.page.click('#viewsBtn').catch(() => {}); await s.page.click('#tagQuick').catch(() => {});
   ok(await s.page.evaluate(() => !document.getElementById('viewsPanel').hidden), 'the points of interest stay open in their column');
   await s.page.keyboard.press('Escape');

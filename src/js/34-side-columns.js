@@ -89,7 +89,7 @@
   const side = document.createElement('div'); side.id = 'pcSide'; side.hidden = true;
   const sec = k => '<div class="pcSec" data-s="' + k + '"><button type="button" class="pcSecH">' + CHEV + '<span></span></button><div class="pcSecB"></div></div>';
   side.innerHTML = '<div class="pcCol" id="pcListCol"></div><div class="pcCol" id="pcEditCol">' + sec('pkg') + sec('cx') + sec('plan') + sec('video') + '</div>';
-  side.querySelector('.pcSec[data-s="video"] .pcSecB').innerHTML = '<p class="pcNote"></p>';
+  side.querySelector('.pcSec[data-s="video"] .pcSecB').innerHTML = '<p class="pcNote"></p><div class="vidOpts"></div><div class="mprow"></div>';
   document.body.appendChild(side);
   const secEl = k => side.querySelector('.pcSec[data-s="' + k + '"]');
   side.querySelectorAll('.pcSec').forEach(s => {
@@ -97,18 +97,21 @@
     s.querySelector('.pcSecH').onclick = () => { ui.shut[s.dataset.s] = s.classList.toggle('shut'); saveUi(); };
   });
   // where each panel goes; a comment keeps its place for when it goes back (phone width, start screen)
-  const vidBox = () => secEl('video').querySelector('.pcSecB');   // the video options sit in the section itself instead of the pop-up window
-  const PLACES = [['topRight', () => $('pcListCol')], ['viewsPanel', () => $('pcListCol')], ['pkgPanel', () => secEl('pkg').querySelector('.pcSecB')], ['planPanel', () => secEl('plan').querySelector('.pcSecB')], ['pkgClientBox', () => secEl('cx').querySelector('.pcSecB')], ['promoOptTitleSw', vidBox, () => $('promoOptTitleSw') && $('promoOptTitleSw').closest('label')], ['promoOptLogoSw', vidBox, () => $('promoOptLogoSw') && $('promoOptLogoSw').closest('label')], ['promoOptGo', vidBox]];
+  const vidBox = () => secEl('video').querySelector('.vidOpts');   // the video options sit in the section itself instead of the pop-up window
+  const vidRow = () => secEl('video').querySelector('.mprow');
+  const PLACES = [['topRight', () => $('pcListCol')], ['viewsPanel', () => $('pcListCol')], ['pkgPanel', () => secEl('pkg').querySelector('.pcSecB')], ['planPanel', () => secEl('plan').querySelector('.pcSecB')], ['pkgClientBox', () => secEl('cx').querySelector('.pcSecB')], ['promoOptTitleSw', vidBox, () => $('promoOptTitleSw') && $('promoOptTitleSw').closest('label')], ['promoOptLogoSw', vidBox, () => $('promoOptLogoSw') && $('promoOptLogoSw').closest('label')], ['promoOptGo', vidRow]];
   const PANELS = ['viewsPanel', 'pkgPanel', 'planPanel'];
   const marks = {};
   let isOn = false;
   function enter() {
     PLACES.forEach(([id, to, get]) => { const el = get ? get() : $(id); if (!el) return; if (!marks[id]) { marks[id] = document.createComment(id); el.replaceWith(marks[id]); } to().appendChild(el); });
+    vidBox().querySelectorAll('.chk').forEach(l => l.classList.remove('tgl'));   // plain check boxes, like the plan section (the client's pop-up keeps its switches)
     PANELS.forEach(id => { const el = $(id); if (el) el.hidden = false; });
     ['optMenu', 'colorPanel'].forEach(id => { const el = $(id); if (el) el.hidden = true; });
   }
   function leave() {
     PANELS.forEach(id => { const el = $(id); if (el) el.hidden = true; });
+    vidBox().querySelectorAll('.chk').forEach(l => l.classList.add('tgl'));
     PLACES.forEach(([id, , get]) => { const el = get ? get() : $(id); if (el && marks[id]) { marks[id].replaceWith(el); delete marks[id]; } });
   }
   // while the columns are open their panels stay open (the old buttons closed one panel when another opened)

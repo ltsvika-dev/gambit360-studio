@@ -70,6 +70,10 @@
   .pcSec.shut .chev { transform:rotate(-90deg); }
   :root[dir=rtl] .pcSec.shut .chev { transform:rotate(90deg); }
   .pcSec.shut .pcSecB { display:none; }
+  .pcSec #pkgClientBox { margin:0; padding:0; border:0; }
+  .pcSec #pkgClientBox > b { display:none; }
+  .pcSec .pcNote { margin:0 0 10px; opacity:.8; font-size:.86rem; line-height:1.45; }
+  .pcSec #promoBtn { display:flex; width:100%; justify-content:center; }
 
   /* what is centred on the screen is centred on the 3D view */
   body.pcSide #dock, body.pcSide #hint, body.pcSide #status, body.pcSide #projTitle, body.pcSide #pkgFloat, body.pcSide #tagCard, body.pcSide #tagEd, body.pcSide #tagTyEd { left:calc((100vw - var(--pcSideW, 0px)) / 2); }

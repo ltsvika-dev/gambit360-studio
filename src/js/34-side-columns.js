@@ -9,8 +9,8 @@
   if (window.G360_CLIENT) return;
   const $ = id => document.getElementById(id);
   const TX = {
-    he: { pc:'ענני נקודות', live:'סיורים חיים', colList:'הצגה או הסתרה של נקודות העניין', colEdit:'הצגה או הסתרה של כרטיסי הפרויקט', pkg:'חבילה ללקוח', close:'סגירה', closeTip:'סגירת המודל וחזרה למסך הפתיחה', lang:'English', plan:'ייצוא תכניות קומה', acc:'צבע הממשק', src:'תיקיית ה-Studio', openTip:'לפרויקט חדש, לחץ קודם על סגירה' },
-    en: { pc:'Point clouds', live:'Live tours', colList:'Show or hide the points of interest', colEdit:'Show or hide the project cards', pkg:'Client package', close:'Close', closeTip:'Close the model and go back to the start screen', lang:'עברית', plan:'Export floor plans', acc:'Interface colour', src:'Studio folder', openTip:'For a new project, press Close first' }
+    he: { pc:'ענני נקודות', live:'סיורים חיים', colList:'הצגה או הסתרה של נקודות העניין', colEdit:'הצגה או הסתרה של כרטיסי הפרויקט', pkg:'חבילה ללקוח', close:'סגירה', closeTip:'סגירת המודל וחזרה למסך הפתיחה', lang:'English', plan:'ייצוא תכניות קומה', acc:'צבע הממשק', src:'תיקיית ה-Studio', openTip:'לפרויקט חדש, לחץ קודם על סגירה', cx:'חוויית הלקוח', video:'ייצוא סרטון וידאו', videoNote:'סרטון של כ-30 שניות: סיבוב סביב המבנה, הליכה בתוכו ויציאה. הוא נשמר בתיקיית ההורדות, ואפשר לצרף אותו לחבילה ללקוח.' },
+    en: { pc:'Point clouds', live:'Live tours', colList:'Show or hide the points of interest', colEdit:'Show or hide the project cards', pkg:'Client package', close:'Close', closeTip:'Close the model and go back to the start screen', lang:'עברית', plan:'Export floor plans', acc:'Interface colour', src:'Studio folder', openTip:'For a new project, press Close first', cx:'Client experience', video:'Export a video', videoNote:'A video of about 30 seconds: a turn around the building, a walk inside and back out. It is saved to your Downloads folder, and you can attach it to the client package.' }
   };
   const T = k => TX[document.documentElement.lang === 'en' ? 'en' : 'he'][k];
   const LIST_W = 280, EDIT_W = 360, WIDE = matchMedia('(min-width:901px)');
@@ -88,7 +88,8 @@
   // ---- the two columns ----
   const side = document.createElement('div'); side.id = 'pcSide'; side.hidden = true;
   const sec = k => '<div class="pcSec" data-s="' + k + '"><button type="button" class="pcSecH">' + CHEV + '<span></span></button><div class="pcSecB"></div></div>';
-  side.innerHTML = '<div class="pcCol" id="pcListCol"></div><div class="pcCol" id="pcEditCol">' + sec('pkg') + sec('plan') + '</div>';
+  side.innerHTML = '<div class="pcCol" id="pcListCol"></div><div class="pcCol" id="pcEditCol">' + sec('pkg') + sec('cx') + sec('plan') + sec('video') + '</div>';
+  side.querySelector('.pcSec[data-s="video"] .pcSecB').innerHTML = '<p class="pcNote"></p>';
   document.body.appendChild(side);
   const secEl = k => side.querySelector('.pcSec[data-s="' + k + '"]');
   side.querySelectorAll('.pcSec').forEach(s => {
@@ -96,7 +97,7 @@
     s.querySelector('.pcSecH').onclick = () => { ui.shut[s.dataset.s] = s.classList.toggle('shut'); saveUi(); };
   });
   // where each panel goes; a comment keeps its place for when it goes back (phone width, start screen)
-  const PLACES = [['topRight', () => $('pcListCol')], ['viewsPanel', () => $('pcListCol')], ['pkgPanel', () => secEl('pkg').querySelector('.pcSecB')], ['planPanel', () => secEl('plan').querySelector('.pcSecB')]];
+  const PLACES = [['topRight', () => $('pcListCol')], ['viewsPanel', () => $('pcListCol')], ['pkgPanel', () => secEl('pkg').querySelector('.pcSecB')], ['planPanel', () => secEl('plan').querySelector('.pcSecB')], ['pkgClientBox', () => secEl('cx').querySelector('.pcSecB')], ['promoBtn', () => secEl('video').querySelector('.pcSecB')]];
   const PANELS = ['viewsPanel', 'pkgPanel', 'planPanel'];
   const marks = {};
   let isOn = false;
@@ -123,9 +124,10 @@
     if (wide !== barOn) { barOn = wide; barIn(wide); }
     if (on !== isOn) { isOn = on; document.body.classList.toggle('pcSide', on); if (on) enter(); else leave(); }
     const pkgOk = !!$('pkgTopBtn') && !$('pkgTopBtn').hidden, planOk = !!$('pdfBtn') && !$('pdfBtn').hidden;
-    secEl('pkg').hidden = !pkgOk; secEl('plan').hidden = !planOk;
+    const vidOk = !!$('promoBtn') && !$('promoBtn').hidden;
+    secEl('pkg').hidden = secEl('cx').hidden = !pkgOk; secEl('plan').hidden = !planOk; secEl('video').hidden = !vidOk;
     // the width is kept from the start screen on, so a model that opens is framed for the narrower view at once
-    const lw = wide && !ui.noList ? LIST_W : 0, ew = wide && !noEdit() && (!on || pkgOk || planOk) ? EDIT_W : 0, w = lw + ew;
+    const lw = wide && !ui.noList ? LIST_W : 0, ew = wide && !noEdit() && (!on || pkgOk || planOk || vidOk) ? EDIT_W : 0, w = lw + ew;
     side.classList.toggle('noList', !lw); side.classList.toggle('noEdit', !ew); side.hidden = !on || !w;
     $('pcColList').classList.toggle('off', !!ui.noList); $('pcColEdit').classList.toggle('off', noEdit());
     $('pcColList').hidden = $('pcColEdit').hidden = $('pcClose').hidden = !on;
@@ -136,7 +138,7 @@
   $('pcColEdit').onclick = () => { ui.noEdit = !noEdit(); saveUi(); apply(); };
   // a model opens or closes (start screen), or the package / plan buttons come and go
   const watch = new MutationObserver(apply);
-  ['start', 'pkgTopBtn', 'pdfBtn'].forEach(id => { const el = $(id); if (el) watch.observe(el, { attributes:true, attributeFilter:['hidden'] }); });
+  ['start', 'pkgTopBtn', 'pdfBtn', 'promoBtn'].forEach(id => { const el = $(id); if (el) watch.observe(el, { attributes:true, attributeFilter:['hidden'] }); });
   watch.observe(document.body, { childList:true });   // the 3D view's canvas is added when the first model opens
   if (WIDE.addEventListener) WIDE.addEventListener('change', apply);
   addEventListener('resize', apply);
@@ -147,7 +149,7 @@
     $('pcClose').lastChild.textContent = T('close'); $('pcClose').title = T('closeTip'); $('projOpen').title = T('openTip');
     BAR.forEach(([id]) => { const el = $(id); if (el && el.id === 'liveSetMenuBtn') { const sp = el.querySelector('span'); if (sp) el.title = sp.textContent; } });
     $('pcColList').title = T('colList'); $('pcColEdit').title = T('colEdit');
-    side.querySelectorAll('.pcSec').forEach(s => { s.querySelector('.pcSecH span').textContent = T(s.dataset.s); });
+    side.querySelectorAll('.pcSec').forEach(s => { s.querySelector('.pcSecH span').textContent = T(s.dataset.s); }); side.querySelector('.pcNote').textContent = T('videoNote');
   }
   const prevRelang = window.G360_relang;
   window.G360_relang = function () { if (prevRelang) prevRelang.apply(this, arguments); texts(); };

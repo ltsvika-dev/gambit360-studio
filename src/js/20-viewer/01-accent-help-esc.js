@@ -31,9 +31,19 @@
     if (!$('colorPanel').hidden) applyAccent(pkgAccent);   // shown on the model at once, as the client will see it
   }
   let uiAccent = accent;   // the Studio's own colour; while the client colour window is open the view shows the client's colour instead
-  window.G360_setUiAccent = hex => { uiAccent = hex.toLowerCase(); applyAccent(uiAccent, true); };
+  window.G360_setUiAccent = hex => { uiAccent = hex.toLowerCase(); applyAccent(uiAccent, true); if (!window.G360_CLIENT) previewAccent(); };
   window.G360_uiAccent = () => uiAccent;
-  if (!window.G360_CLIENT) new MutationObserver(() => applyAccent($('colorPanel').hidden ? uiAccent : pkgAccent)).observe($('colorPanel'), { attributes:true, attributeFilter:['hidden'] });
+  // The preview is only for what the client sees: the Studio's own bar, columns and panels keep the Studio colour
+  const STUDIO_PARTS = ['pcTop', 'pcSide', 'uiColor', 'pkgPanel', 'planPanel', 'live'];
+  function onAccent(hex) { const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16); return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55 ? '#0b1412' : '#ffffff'; }
+  function previewAccent() {
+    const on = !$('colorPanel').hidden;
+    applyAccent(on ? pkgAccent : uiAccent);
+    STUDIO_PARTS.forEach(id => { const el = $(id); if (!el) return;
+      if (on) { el.style.setProperty('--accent', uiAccent); el.style.setProperty('--on-accent', onAccent(uiAccent)); }
+      else { el.style.removeProperty('--accent'); el.style.removeProperty('--on-accent'); } });
+  }
+  if (!window.G360_CLIENT) new MutationObserver(previewAccent).observe($('colorPanel'), { attributes:true, attributeFilter:['hidden'] });
   const pkgAccField = () => pkgAccent !== DEFAULT_ACCENT ? pkgAccent : undefined;   // the manifest's 'acc'
   function pkgBaseAccent(hex) {   // the client's copy: the package's colour, unless the client chose one
     if (!/^#[0-9a-f]{6}$/i.test(hex || '')) return;

@@ -9,8 +9,8 @@
   if (window.G360_CLIENT) return;
   const $ = id => document.getElementById(id);
   const TX = {
-    he: { pc:'ענני נקודות', live:'סיורים חיים', colList:'הצגה או הסתרה של נקודות העניין', colEdit:'הצגה או הסתרה של כרטיסי הפרויקט', pkg:'חבילה ללקוח', close:'סגירה', closeTip:'סגירת המודל וחזרה למסך הפתיחה', lang:'English', plan:'ייצוא תכניות קומה', acc:'צבע הממשק', src:'תיקיית ה-Studio' },
-    en: { pc:'Point clouds', live:'Live tours', colList:'Show or hide the points of interest', colEdit:'Show or hide the project cards', pkg:'Client package', close:'Close', closeTip:'Close the model and go back to the start screen', lang:'עברית', plan:'Export floor plans', acc:'Interface colour', src:'Studio folder' }
+    he: { pc:'ענני נקודות', live:'סיורים חיים', colList:'הצגה או הסתרה של נקודות העניין', colEdit:'הצגה או הסתרה של כרטיסי הפרויקט', pkg:'חבילה ללקוח', close:'סגירה', closeTip:'סגירת המודל וחזרה למסך הפתיחה', lang:'English', plan:'ייצוא תכניות קומה', acc:'צבע הממשק', src:'תיקיית ה-Studio', openTip:'לפרויקט חדש, לחץ קודם על סגירה' },
+    en: { pc:'Point clouds', live:'Live tours', colList:'Show or hide the points of interest', colEdit:'Show or hide the project cards', pkg:'Client package', close:'Close', closeTip:'Close the model and go back to the start screen', lang:'עברית', plan:'Export floor plans', acc:'Interface colour', src:'Studio folder', openTip:'For a new project, press Close first' }
   };
   const T = k => TX[document.documentElement.lang === 'en' ? 'en' : 'he'][k];
   const LIST_W = 280, EDIT_W = 360, WIDE = matchMedia('(min-width:901px)');
@@ -144,7 +144,7 @@
   function texts() {
     document.querySelectorAll('.modTabs button').forEach(b => { b.textContent = T(b.dataset.m); });
     $('pcAcc').title = T('acc'); $('pcLang').textContent = document.documentElement.lang === 'en' ? '\u05e2\u05d1' : 'EN'; $('pcLang').title = T('lang');
-    $('pcClose').lastChild.textContent = T('close'); $('pcClose').title = T('closeTip');
+    $('pcClose').lastChild.textContent = T('close'); $('pcClose').title = T('closeTip'); $('projOpen').title = T('openTip');
     BAR.forEach(([id]) => { const el = $(id); if (el && el.id === 'liveSetMenuBtn') { const sp = el.querySelector('span'); if (sp) el.title = sp.textContent; } });
     $('pcColList').title = T('colList'); $('pcColEdit').title = T('colEdit');
     side.querySelectorAll('.pcSec').forEach(s => { s.querySelector('.pcSecH span').textContent = T(s.dataset.s); });

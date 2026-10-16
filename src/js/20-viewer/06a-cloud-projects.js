@@ -3,7 +3,7 @@
   // (title, tags, views, measurements) is kept on the server too, one per model, and opens from any computer and from the Studio online.
   // Only the project goes up, never the E57 itself: on another computer the scan file is picked once and remembered there.
   // Each computer keeps up by itself: a change here goes up within seconds, and a newer copy from another computer comes in when the model opens. ----
-  Object.assign(I18N.he, { cpOpenBtn: 'פתיחת פרויקט מהענן', cpH: 'פרויקטים בענן', cpLoading: 'טוען את הרשימה…', cpClose: 'סגירה', cpDel: 'מחיקה מהענן',
+  Object.assign(I18N.he, { cpOpenBtn: 'פתיחת פרויקט מהשרת', cpH: 'פרויקטים בענן', cpLoading: 'טוען את הרשימה…', cpClose: 'סגירה', cpDel: 'מחיקה מהענן',
     cpNone: 'עוד אין פרויקטים בענן. כל פרויקט שיש בו משהו (כותרת, תגיות, נקודות מבט, מדידות) נשמר בענן לבד כשהמחשב מחובר לענן.',
     cpNote: 'רק קובץ הפרויקט נשמר בענן, לא קובץ ה-E57. במחשב שאין בו את קובץ הסריקה בוחרים אותו פעם אחת.',
     cpInfo: (d, n) => 'נשמר ' + d + (n ? ' · ' + n + ' תגיות' : ''), cpDelAsk: n => 'למחוק את "' + n + '" מהענן?\nקובץ הפרויקט וקובץ הסריקה במחשבים לא נמחקים, ועותק נשאר בשרת.',
@@ -16,7 +16,7 @@
     pubNoPkg: n => 'לא נמצאה חבילה בשם "' + n + '" בתיקייה Export\\Client Packages. צרו אותה קודם בלחיצה על "יצירת חבילה ללקוח" כש"מודל" מסומן.',
     pubBusy: (i, n) => 'מעלה את החבילה לשרת… ' + i + ' מתוך ' + n, pubDone: (u, c) => 'החבילה פורסמה בשרת ✓ הקישור ללקוח: ' + u + ' · קוד להורדת החבילה: ' + c, pubCodeLine: c => 'קוד להורדת החבילה: ' + c, pubFail: e => 'הפרסום בשרת נכשל: ' + e + '. החבילה במחשב מוכנה ותקינה.',
     pubBig: (f, mb) => 'הקובץ ' + f + ' גדול מדי לשרת (' + mb + 'MB, עד 45MB). אפשר לבחור איכות פנורמות נמוכה יותר או סרטון קצר יותר.' });
-  Object.assign(I18N.en, { cpOpenBtn: 'Open a project from the cloud', cpH: 'Projects in the cloud', cpLoading: 'Loading the list…', cpClose: 'Close', cpDel: 'Delete from the cloud',
+  Object.assign(I18N.en, { cpOpenBtn: 'Open a project from the server', cpH: 'Projects in the cloud', cpLoading: 'Loading the list…', cpClose: 'Close', cpDel: 'Delete from the cloud',
     cpNone: 'No projects in the cloud yet. Every project with something in it (title, tags, views, measurements) is kept in the cloud by itself while this computer is connected to the cloud.',
     cpNote: 'Only the project file is kept in the cloud, not the E57 file. On a computer without the scan file, it is picked once.',
     cpInfo: (d, n) => 'Saved ' + d + (n ? ' · ' + n + ' tags' : ''), cpDelAsk: n => 'Delete "' + n + '" from the cloud?\nThe project and scan files on the computers stay, and a copy stays on the server.',
@@ -213,10 +213,11 @@
     try { await sleep(40); ok = await openProjectData(d); } finally { hideBoot(); if (!ok) backToImport(); }
     if (d.saved) cpSetAt(d.model, Date.parse(d.saved) || 0);   // what came from the cloud counts as this computer's copy, so the cloud copy is not taken again over it
   }
-  // the button under "Open an existing project" shows only on a computer connected to the cloud
+  // the button beside "Open a local project" (one row) shows only on a computer connected to the cloud
   { const ps = $('projOpenStart');
     if (ps && ps.parentNode) {
-      const b = document.createElement('button'); b.type = 'button'; b.id = 'cpOpenBtn'; b.className = 'resume'; b.hidden = true; b.onclick = cpOpenList; ps.insertAdjacentElement('afterend', b);
+      const row = document.createElement('div'); row.className = 'loadRow'; row.id = 'openRow'; ps.insertAdjacentElement('beforebegin', row); row.appendChild(ps);
+      const b = document.createElement('button'); b.type = 'button'; b.id = 'cpOpenBtn'; b.className = 'resume'; b.hidden = true; b.onclick = cpOpenList; row.appendChild(b);
       const show = async () => { b.textContent = t('cpOpenBtn'); b.hidden = !(await cpCfg()); };
       setTimeout(show, 300); addEventListener('focus', () => { if (!started) { cpCfgAt = 0; show(); } });
       const prev = window.G360_relang; window.G360_relang = function () { if (prev) prev.apply(this, arguments); b.textContent = t('cpOpenBtn'); if (cpDlg && !cpDlg.hidden) cpOpenList(); };

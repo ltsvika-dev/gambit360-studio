@@ -46,7 +46,7 @@
 
   // entry points: the start screen and the Options menu
   const startBox = $('projOpenStart');
-  if (startBox) { const b = document.createElement('button'); b.type = 'button'; b.id = 'liveStartBtn'; b.className = 'resume'; b.onclick = open; startBox.insertAdjacentElement('afterend', b); }
+  if (startBox) { const b = document.createElement('button'); b.type = 'button'; b.id = 'liveStartBtn'; b.className = 'resume'; b.onclick = open; (startBox.closest('#openRow') || startBox).insertAdjacentElement('afterend', b); }
   const menu = $('optMenu');
   if (menu) { const b = document.createElement('button'); b.type = 'button'; b.id = 'liveMenuBtn'; b.className = 'ib'; b.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span></span>'; b.onclick = open; const pk = $('pkgTopBtn'); if (pk && pk.parentNode === menu) pk.insertAdjacentElement('afterend', b); else menu.insertBefore(b, menu.firstChild);
     // the Options screen (my logo, cloud, server) opens from the point-cloud module too, without opening the tours screen

@@ -355,6 +355,7 @@
   #projOpenStart, #cpOpenBtn { background:transparent; color:var(--ink); border:1.5px solid var(--line); border-radius:10px; padding:13px 16px; }
   #projOpenStart:hover, #cpOpenBtn:hover { border-color:var(--accent); background:var(--hov); }
   #cpOpenBtn[hidden] { display:none; }
+  #openRow { margin:8px 0 0; } #openRow > button { flex:1 1 0; margin-top:0; min-width:0; }   /* local and server side by side */
   /* projects in the cloud: the list window (06a-cloud-projects.js) */
   #cpDlg { position:fixed; inset:0; z-index:990; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; padding:16px; }
   #cpDlg[hidden] { display:none; }

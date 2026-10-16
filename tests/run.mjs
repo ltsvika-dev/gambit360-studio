@@ -203,6 +203,7 @@ try {
   const c = await computer(browser, 'computer C');
   await c.page.waitForSelector('#cpOpenBtn:not([hidden])', { timeout: 10000 }).catch(() => {});
   ok(await c.page.locator('#cpOpenBtn').isVisible(), 'a computer connected to the cloud has "Open a project from the cloud" on the start screen');
+  ok(await c.page.evaluate(() => { const a = document.getElementById('projOpenStart').getBoundingClientRect(), b = document.getElementById('cpOpenBtn').getBoundingClientRect(), l = document.getElementById('liveStartBtn'); return Math.abs(a.top - b.top) < 1 && Math.abs(a.width - b.width) < 2 && (!l || l.getBoundingClientRect().top > a.bottom); }), 'local and server project buttons share one row, above the live tours button');
   await c.page.click('#cpOpenBtn');
   await c.page.waitForSelector('#cpDlg .it', { timeout: 10000 }).catch(() => {});
   ok(await c.page.locator('#cpDlg .it').count() === 1, 'the cloud list shows the project');
